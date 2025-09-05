@@ -33,7 +33,6 @@ class HomePageRoute extends StatelessWidget {
         foregroundColor: Colors.white.withValues(
           alpha: 0.9,
         ), // Add foreground color to the app bar
-        backButton: true,
       ),
       body: HomePage(), // Use the HomePage widget
     );
@@ -46,7 +45,7 @@ class HomePage extends StatelessWidget {
     return ListView(
       children: [
         GestureDetector(
-          onTap: () => {context.go('/settings')},
+          onTap: () => {context.push('/settings')},
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
             child: Container(
@@ -93,7 +92,12 @@ class HomePage extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.access_time, size: 13),
+                          Column(
+                            children: [
+                              Icon(Icons.access_time, size: 15.8),
+                              Padding(padding: EdgeInsets.only(bottom: 2.25))
+                            ],
+                          ),
                           Text(" 12:30 ", style: TextStyle(fontSize: 16.5), strutStyle: StrutStyle(forceStrutHeight: true)),
                           Text("10", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary), strutStyle: StrutStyle(forceStrutHeight: true)),
                           SizedBox(width: 3),

@@ -4,6 +4,7 @@ import 'package:flow_by_spooky_services/packageMods/chat_bubbles/one.dart';
 import 'package:flow_by_spooky_services/packageMods/chat_bubbles/three.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:yaru/yaru.dart';
 import 'functions/ui.dart';
 
@@ -211,7 +212,7 @@ class MultiplatWidgets {
             (backButton) ?
             CupertinoNavigationBarBackButton(
               color: (!uf.isDarkMode(context)) ? foregroundColor : null, // set your desired color
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.pop(),
             ) : null,
       );
     } else {
@@ -220,6 +221,12 @@ class MultiplatWidgets {
         backgroundColor: backgroundColor, // Add background color to the app bar
         foregroundColor: foregroundColor,
         actions: (actions != null && actions.isNotEmpty) ? actions : null,
+        leading: (backButton)
+            ? IconButton(
+                icon: Icon(Icons.arrow_back, color: foregroundColor),
+                onPressed: () => context.pop(),
+              )
+            : null,
       );
     }
   }
