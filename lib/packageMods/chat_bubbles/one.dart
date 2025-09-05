@@ -1,5 +1,5 @@
-import 'package:flow_by_spooky_services/functions/ui.dart';
-import 'package:flow_by_spooky_services/packageMods/linkifier/url.dart';
+import 'package:hktransports/functions/ui.dart';
+import 'package:hktransports/packageMods/linkifier/url.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:url_launcher/url_launcher.dart';

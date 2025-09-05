@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dynamik_theme/dynamik_theme.dart';
-import 'package:flow_by_spooky_services/auth/page.dart';
-import 'package:flow_by_spooky_services/dataStore/shared_preferences.dart';
-import 'package:flow_by_spooky_services/functions/app.dart';
-import 'package:flow_by_spooky_services/functions/platform.dart';
-import 'package:flow_by_spooky_services/pages/home.dart';
+import 'package:hktransports/auth/page.dart';
+import 'package:hktransports/dataStore/shared_preferences.dart';
+import 'package:hktransports/functions/app.dart';
+import 'package:hktransports/functions/platform.dart';
+import 'package:hktransports/pages/home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
@@ -19,7 +19,7 @@ import 'functions/ui.dart';
 import 'pages/settings_page.dart';
 
 import 'empty.dart'
-    if (dart.library.html) 'package:flow_by_spooky_services/auth/web.dart';
+    if (dart.library.html) 'package:hktransports/auth/web.dart';
 
 import 'package:go_router/go_router.dart';
 

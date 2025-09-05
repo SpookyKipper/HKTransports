@@ -1,7 +1,7 @@
-import 'package:flow_by_spooky_services/dataStore/shared_preferences.dart';
+import 'package:hktransports/dataStore/shared_preferences.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:http/http.dart' as http;
-import 'package:flow_by_spooky_services/multiplat_ui.dart';
+import 'package:hktransports/multiplat_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:protocol_handler/protocol_handler.dart';
 

@@ -1,5 +1,5 @@
-import 'package:flow_by_spooky_services/dataStore/shared_preferences.dart';
-import 'package:flow_by_spooky_services/functions/platform.dart';
+import 'package:hktransports/dataStore/shared_preferences.dart';
+import 'package:hktransports/functions/platform.dart';
 import 'package:flutter/material.dart';
 
 class UiFunctions {

@@ -1,6 +1,6 @@
 import 'package:dynamik_theme/dynamik_theme.dart';
-import 'package:flow_by_spooky_services/auth/logout_page.dart';
-import 'package:flow_by_spooky_services/dataStore/shared_preferences.dart';
+import 'package:hktransports/auth/logout_page.dart';
+import 'package:hktransports/dataStore/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:url_launcher/url_launcher.dart';
