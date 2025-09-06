@@ -1,4 +1,5 @@
 // Return UI Elements based on platform
+import 'package:hktransports/customWidgets/nullWidget.dart';
 import 'package:hktransports/functions/platform.dart';
 import 'package:hktransports/packageMods/chat_bubbles/one.dart';
 import 'package:hktransports/packageMods/chat_bubbles/three.dart';
@@ -9,21 +10,23 @@ import 'package:yaru/yaru.dart';
 import 'functions/ui.dart';
 
 class MultiplatWidgets {
-  String themeTemplate = "material"; // Default to material
-  void updateTemplate(BuildContext context) {
-    uf.getCurrentThemeTemplate(context).then((template) {
-      if (template == "system") {
-        final platformName = pf.getPlatformName(context, noWeb: true);
-        if (platformName == "iOS") {
-          themeTemplate = "cupertino";
-        } else if (platformName == "Linux GNOME") {
-          themeTemplate = "yaru";
-        } else {
-          themeTemplate = "material"; // Default for other platforms
-        }
+  String themeTemplate = "system"; // Default to material
+  Future<String> updateTemplate(BuildContext context) async {
+    String template = await uf.getCurrentThemeTemplate(context);
+    if (template == "system") {
+      final platformName = pf.getPlatformName(context, noWeb: true);
+      if (platformName == "iOS") {
+        themeTemplate = "cupertino";
+      } else if (platformName == "Linux GNOME") {
+        themeTemplate = "yaru";
+      } else {
+        themeTemplate = "material"; // Default for other platforms
       }
+      return themeTemplate;
+    } else {
       themeTemplate = template;
-    });
+      return themeTemplate;
+    }
   }
 
   Widget button({
@@ -196,28 +199,34 @@ class MultiplatWidgets {
 
   PreferredSizeWidget appBar({
     required BuildContext context,
-    required String title,
+    String? title,
     required backgroundColor,
     required foregroundColor,
     List<Widget>? actions,
+    Widget? bottom,
     bool backButton = false,
   }) {
     updateTemplate(context);
     if (themeTemplate == "cupertino") {
       return CupertinoNavigationBar(
-        middle: Text(title, style: TextStyle(color: foregroundColor)),
+        middle: (title != null && title.isNotEmpty)
+            ? Text(title, style: TextStyle(color: foregroundColor))
+            : nullWidget(),
         backgroundColor: backgroundColor,
         trailing: (actions != null && actions.isNotEmpty) ? actions[0] : null,
-        leading:
-            (backButton) ?
-            CupertinoNavigationBarBackButton(
-              color: (!uf.isDarkMode(context)) ? foregroundColor : null, // set your desired color
-              onPressed: () => context.pop(),
-            ) : null,
+        leading: (backButton)
+            ? CupertinoNavigationBarBackButton(
+                color: (!uf.isDarkMode(context))
+                    ? foregroundColor
+                    : null, // set your desired color
+                onPressed: () => context.pop(),
+              )
+            : null,
+        bottom: (bottom != null) ? bottom as PreferredSizeWidget : null,
       );
     } else {
       return AppBar(
-        title: Text(title),
+        title: (title != null && title.isNotEmpty) ? Text(title) : nullWidget(),
         backgroundColor: backgroundColor, // Add background color to the app bar
         foregroundColor: foregroundColor,
         actions: (actions != null && actions.isNotEmpty) ? actions : null,
@@ -227,8 +236,80 @@ class MultiplatWidgets {
                 onPressed: () => context.pop(),
               )
             : null,
+        bottom: (bottom != null) ? bottom as PreferredSizeWidget : null,
       );
     }
+  }
+
+  Widget tabBar({required BuildContext context, required List<Tab> tabs}) {
+    updateTemplate(context);
+    if (themeTemplate == "cupertino") {
+      return CupertinoTabBar(
+        items: tabs.map((tab) {
+          return BottomNavigationBarItem(
+            icon: Icon(Icons.circle), // Placeholder icon
+            label: tab.text,
+          );
+        }).toList(),
+      );
+    } else {
+      return TabBar(tabs: tabs);
+    }
+  }
+
+  Widget tabUiPage({
+    required BuildContext context,
+    required List<Widget> tabTitles,
+    required List<Widget> children,
+  }) {
+    updateTemplate(context);
+    if (themeTemplate == "cupertino") {
+      return CupertinoTabScaffold(
+        tabBar: CupertinoTabBar(
+          items: tabTitles.map((tab) {
+            return BottomNavigationBarItem(
+              icon: nullWidget(), // Placeholder icon
+              label: (tab is Tab) ? tab.text : 'Tab',
+            );
+          }).toList(),
+        ),
+        tabBuilder: (BuildContext context, int index) {
+          return CupertinoTabView(
+            builder: (BuildContext context) {
+              return children[index];
+            },
+          );
+        },
+      );
+    } else {
+      return DefaultTabController(
+        length: tabTitles.length,
+        child: Column(
+          children: [
+            TabBar(tabs: tabTitles, isScrollable: true, tabAlignment: TabAlignment.start,),
+            Expanded(child: TabBarView(children: children)),
+          ],
+        ),
+      );
+    }
+  }
+
+  FutureBuilder<String?> ensureUpdated({
+    required Widget Function(String value) builder,
+    required BuildContext context,
+  }) {
+    return FutureBuilder<String>(
+      future: updateTemplate(context),
+      builder: (BuildContext context, AsyncSnapshot<String?> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Text("Loading...");
+        } else if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        } else {
+          return builder(snapshot.data ?? "Get version failed");
+        }
+      },
+    );
   }
 }
 

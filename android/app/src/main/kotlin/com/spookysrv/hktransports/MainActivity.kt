@@ -1,4 +1,4 @@
-package com.spookysrv.hkbus
+package com.spookysrv.hktransports
 
 import io.flutter.embedding.android.FlutterActivity
 
