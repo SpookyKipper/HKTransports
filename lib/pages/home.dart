@@ -1,17 +1,7 @@
-import 'package:dynamik_theme/dynamik_theme.dart';
-import 'package:hktransports/auth/logout_page.dart';
 import 'package:hktransports/customWidgets/nullWidget.dart';
 import 'package:hktransports/customWidgets/stackedWidgets.dart';
-import 'package:hktransports/dataStore/shared_preferences.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:hktransports/customWidgets/nullWidget.dart';
-import 'package:hktransports/customWidgets/stackedWidgets.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../functions/platform.dart';
-import '../functions/text.dart';
 import '../functions/ui.dart';
-import '../functions/app.dart';
 import '../multiplat_ui.dart';
 
 import 'package:go_router/go_router.dart';
@@ -49,16 +39,6 @@ class HomePage extends StatelessWidget {
       tabTitles: [
         Tab(text: 'Homae'),
         Tab(text: 'Settings'),
-        Tab(text: 'Profile'),
-        Tab(text: 'Profile'),
-        Tab(text: 'Profile'),
-        Tab(text: 'Profile'),
-        Tab(text: 'Profile'),
-        Tab(text: 'Profile'),
-        Tab(text: 'Profile'),
-        Tab(text: 'Profile'),
-        Tab(text: 'Profile'),
-        Tab(text: 'Profile'),
       ],
       children: [
         RouteTile(
@@ -71,51 +51,9 @@ class HomePage extends StatelessWidget {
           onPressed: () => context.push('/settings'),
           child: Text("a"),
         ),
-        nullWidget(),
-        nullWidget(),
-        nullWidget(),
-        nullWidget(),
-        nullWidget(),
-        nullWidget(),
-        nullWidget(),
-        nullWidget(),
-        nullWidget(),
-        nullWidget(),
       ],
     );
 
-    dynamic a = DefaultTabController(
-      length: 3,
-      child: Column(
-        children: [
-          w.tabBar(
-            context: context,
-            tabs: [
-              Tab(text: 'Home'),
-              Tab(text: 'Settings'),
-              Tab(text: 'Profile'),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                RouteTile(
-                  route: "290A",
-                  operator: "九巴",
-                  dest: "荃灣西站",
-                  onBoardStop: "培城路",
-                ),
-                ElevatedButton(
-                  onPressed: () => context.push('/settings'),
-                  child: Text("a"),
-                ),
-                nullWidget(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

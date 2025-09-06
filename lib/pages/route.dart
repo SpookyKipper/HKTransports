@@ -69,7 +69,7 @@ class Mapbox extends StatelessWidget {
       children: [
         TileLayer(
           urlTemplate:
-              "https://api.mapbox.com/styles/v1/mapbox/streets-v9/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1Ijoic3Bvb2t5a2lwcGVyIiwiYSI6ImNtZjd6YmhyZzB3MGcya3M0anEwNG1sZDMifQ.i-YO3a0Nd1R9QVV5qsHt2A",
+              "https://go.spookysrv.com/HKTransports/MapTiles/{z}/{x}/{y}",
           userAgentPackageName: 'com.spookysrv.hktransports',
         ),
         RichAttributionWidget(
