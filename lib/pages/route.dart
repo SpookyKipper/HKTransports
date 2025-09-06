@@ -45,7 +45,7 @@ class RoutePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.5,
+      height: MediaQuery.of(context).size.height * 0.4,
       child: Mapbox(latlng: LatLng(22.3193, 114.1694)),
     );
   }
@@ -58,6 +58,7 @@ class Mapbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return FlutterMap(
       mapController: MapController(),
       options: MapOptions(
@@ -65,29 +66,26 @@ class Mapbox extends StatelessWidget {
         initialCenter: latlng,
         maxZoom: 22,
         minZoom: 10.5,
+        cameraConstraint: CameraConstraint.contain(
+          bounds: LatLngBounds(
+            LatLng(22.05729, 113.75606), // Southwest coordinates
+            LatLng(22.628782, 114.427859), // Northeast coordinates
+          ),
+        ),
+        interactionOptions: InteractionOptions(
+          cursorKeyboardRotationOptions: CursorKeyboardRotationOptions.disabled(),
+          enableMultiFingerGestureRace: false,
+        ),
       ),
       children: [
         TileLayer(
           urlTemplate:
-              "https://go.spookysrv.com/HKTransports/MapTiles/{z}/{x}/{y}",
+              "https://apiproxy.spookysrv.com/HKTransports/MapTiles/{z}/{x}/{y}",
           userAgentPackageName: 'com.spookysrv.hktransports',
+          maxNativeZoom: 22,
         ),
         RichAttributionWidget(
-          alignment: AttributionAlignment.bottomLeft,
-          attributions: [
-            LogoSourceAttribution(
-              Image(image: AssetImage('assets/images/mapbox-logo-black.png')),
-              onTap: () => launchUrl(
-                Uri.parse('https://www.mapbox.com/about/maps'),
-              ), // (external)
-            ),
-          ],
-          showFlutterMapAttribution: false,
-          openButton: (_, _) => SizedBox(height: 40),
-        ),
-        RichAttributionWidget(
-          alignment: AttributionAlignment.bottomRight,
-          showFlutterMapAttribution: false,
+          alignment: AttributionAlignment.topLeft,
           attributions: [
             TextSourceAttribution(
               'Mapbox',
@@ -98,7 +96,7 @@ class Mapbox extends StatelessWidget {
             TextSourceAttribution(
               'OpenStreetMap',
               onTap: () => launchUrl(
-                Uri.parse('https://www.openstreetmap.org/about/'),
+                Uri.parse('https://www.openstreetmap.org/copyright/'),
               ), // (external)
             ),
             TextSourceAttribution(
@@ -108,13 +106,25 @@ class Mapbox extends StatelessWidget {
               ), // (external)
               prependCopyright: false,
             ),
-            // LogoSourceAttribution(Image(image: AssetImage('assets/images/mapbox-logo-black.png')),
-            //   onTap: () => launchUrl(
-            //     Uri.parse('https://www.mapbox.com/about/maps'),
-            //   ), // (external)
-            // ),
           ],
+          showFlutterMapAttribution: false,
+          openButton: (_, open) => LogoSourceAttribution(
+              Image(image: AssetImage('assets/images/mapbox-logo-black.png')),
+              onTap: open, // (external)
+            ),
+          closeButton: (_, close) => Column( // TODO: cannot click links above
+            children: [
+              SizedBox(height: 63),
+              w.button(context: context, child: Row(
+                children: [
+                  Icon(Icons.close),
+                  Text(" Close")
+                ],
+              ), onPressed: close),
+            ],
+          )
         ),
+        
       ],
     );
   }

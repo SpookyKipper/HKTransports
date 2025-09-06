@@ -37,7 +37,7 @@ class HomePage extends StatelessWidget {
     return w.tabUiPage(
       context: context,
       tabTitles: [
-        Tab(text: 'Homae'),
+        Tab(text: 'Home'),
         Tab(text: 'Settings'),
       ],
       children: [

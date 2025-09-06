@@ -8,7 +8,6 @@ import 'package:hktransports/functions/app.dart';
 import 'package:hktransports/functions/platform.dart';
 import 'package:hktransports/pages/home.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:hktransports/pages/route.dart';
 import 'package:share_handler/share_handler.dart';

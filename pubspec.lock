@@ -233,10 +233,9 @@ packages:
   flutter_map:
     dependency: "direct main"
     description:
-      name: flutter_map
-      sha256: df33e784b09fae857c6261a5521dd42bd4d3342cb6200884bb70730638af5fd5
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/modified/flutter_map-8.2.1"
+      relative: true
+    source: path
     version: "8.2.1"
   flutter_phoenix:
     dependency: "direct main"
