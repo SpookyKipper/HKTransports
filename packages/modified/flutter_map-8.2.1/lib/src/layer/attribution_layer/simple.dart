@@ -13,7 +13,7 @@ import 'package:flutter_map/flutter_map.dart';
 @immutable
 class SimpleAttributionWidget extends StatelessWidget {
   /// Attribution text, such as 'OpenStreetMap contributors'
-  final Text source;
+  final Widget source;
 
   /// Callback called when [source] is tapped/clicked
   final VoidCallback? onTap;
@@ -50,7 +50,7 @@ class SimpleAttributionWidget extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('flutter_map | © '),
+                    // const Text('flutter_map | © '),
                     MouseRegion(
                       cursor: onTap == null
                           ? MouseCursor.defer

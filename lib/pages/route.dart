@@ -44,9 +44,10 @@ class RoutePageRoute extends StatelessWidget {
 class RoutePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.4,
-      child: Mapbox(latlng: LatLng(22.3193, 114.1694)),
+    return Column(
+      children: [
+        Expanded(flex: 4, child: Mapbox(latlng: LatLng(22.3193, 114.1694))),
+      ],
     );
   }
 }
@@ -58,7 +59,7 @@ class Mapbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
+    final screenHeight = MediaQuery.of(context).size.height;
     return FlutterMap(
       mapController: MapController(),
       options: MapOptions(
@@ -69,62 +70,100 @@ class Mapbox extends StatelessWidget {
         cameraConstraint: CameraConstraint.contain(
           bounds: LatLngBounds(
             LatLng(22.05729, 113.75606), // Southwest coordinates
-            LatLng(22.628782, 114.427859), // Northeast coordinates
+            LatLng(22.60008, 114.487967), // Northeast coordinates
           ),
         ),
         interactionOptions: InteractionOptions(
-          cursorKeyboardRotationOptions: CursorKeyboardRotationOptions.disabled(),
+          cursorKeyboardRotationOptions:
+              CursorKeyboardRotationOptions.disabled(),
           enableMultiFingerGestureRace: false,
         ),
       ),
       children: [
         TileLayer(
           urlTemplate:
-              "https://apiproxy.spookysrv.com/HKTransports/MapTiles/{z}/{x}/{y}",
+              "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Maptiler/{z}/{x}/{y}",
+          // "https://apiproxy.spookysrv.com/HKTransports/MapTiles/{z}/{x}/{y}",
           userAgentPackageName: 'com.spookysrv.hktransports',
           maxNativeZoom: 22,
         ),
+
+        if (screenHeight > 900)
+        SimpleAttributionWidget(
+          source: SizedBox(
+            height: 20,
+            child: Row(
+              children: [
+                TextButton(
+                  onPressed: () => launchUrl(Uri.parse('https://maptiler.com/')),
+                  child: Text(
+                    "© MapTiler",
+                    style: TextStyle(color: Colors.black.withValues(alpha: 0.8)),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => launchUrl(Uri.parse('https://openstreetmap.org/')),
+                  child: Text(
+                    "© OpenStreetMap contributors",
+                    style: TextStyle(color: Colors.black.withValues(alpha: 0.8)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          alignment: Alignment.bottomRight,
+          backgroundColor: Colors.white70,
+        ),
+        if (screenHeight > 900)
+        RichAttributionWidget(
+          alignment: AttributionAlignment.bottomLeft,
+          attributions: [],
+          showFlutterMapAttribution: false,
+          openButton: (_, open) => Row(
+            children: [
+              LogoSourceAttribution(
+                Image(image: AssetImage('assets/images/maptiler.png')),
+                onTap: () =>
+                    launchUrl(Uri.parse('https://maptiler.com/')), // (external)
+              ),
+            ],
+          ),
+          closeButton: (_, close) => nullWidget(),
+        ),
+        if (screenHeight <= 900)
         RichAttributionWidget(
           alignment: AttributionAlignment.topLeft,
           attributions: [
             TextSourceAttribution(
-              'Mapbox',
+              'MapTiler',
               onTap: () => launchUrl(
-                Uri.parse('https://www.mapbox.com/about/maps'),
+                Uri.parse('hhttps://maptiler.com/'),
               ), // (external)
             ),
             TextSourceAttribution(
-              'OpenStreetMap',
+              'OpenStreetMap contributors',
               onTap: () => launchUrl(
-                Uri.parse('https://www.openstreetmap.org/copyright/'),
+                Uri.parse('https://www.openstreetmap.org/'),
               ), // (external)
-            ),
-            TextSourceAttribution(
-              'Improve this map',
-              onTap: () => launchUrl(
-                Uri.parse('https://apps.mapbox.com/feedback/'),
-              ), // (external)
-              prependCopyright: false,
             ),
           ],
           showFlutterMapAttribution: false,
-          openButton: (_, open) => LogoSourceAttribution(
-              Image(image: AssetImage('assets/images/mapbox-logo-black.png')),
-              onTap: open, // (external)
-            ),
-          closeButton: (_, close) => Column( // TODO: cannot click links above
+          openButton: (_, open) => Row(
             children: [
-              SizedBox(height: 63),
-              w.button(context: context, child: Row(
-                children: [
-                  Icon(Icons.close),
-                  Text(" Close")
-                ],
-              ), onPressed: close),
+              IconButton(
+                icon: Icon(Icons.info_outline),
+                color: Colors.black,
+                onPressed: open,
+              ),
+              LogoSourceAttribution(
+                Image(image: AssetImage('assets/images/maptiler.png')),
+                onTap: () =>
+                    launchUrl(Uri.parse('https://maptiler.com/')), // (external)
+              ),
             ],
-          )
+          ),
+          closeButton: (_, close) => nullWidget(),
         ),
-        
       ],
     );
   }

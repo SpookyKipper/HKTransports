@@ -255,7 +255,7 @@ class _RichAttributionWidgetState extends State<RichAttributionWidget> {
                             prependCopyright: false,
                             textStyle: TextStyle(fontStyle: FontStyle.italic),
                           ),
-                        SizedBox(height: (widget.permanentHeight - 24) + 32),
+                        // SizedBox(height: (widget.permanentHeight - 24) + 32), // Disables extra bottom padding
                       ],
                     ),
                   ),
@@ -276,7 +276,9 @@ class _RichAttributionWidgetState extends State<RichAttributionWidget> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children:
-                          widget.alignment == AttributionAlignment.bottomLeft
+                          widget.alignment == AttributionAlignment.topLeft ||
+                                  widget.alignment == AttributionAlignment
+                                      .bottomLeft
                               ? persistentAttributionItems.reversed.toList()
                               : persistentAttributionItems,
                     ),
