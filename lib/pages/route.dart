@@ -7,8 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../functions/ui.dart';
 import '../multiplat_ui.dart';
 
-import 'package:go_router/go_router.dart';
-
 class RoutePageRoute extends StatelessWidget {
   const RoutePageRoute({super.key});
 

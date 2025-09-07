@@ -6,7 +6,6 @@ import 'package:hktransports/packageMods/chat_bubbles/three.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:yaru/yaru.dart';
 import 'functions/ui.dart';
 
 class MultiplatWidgets {
@@ -85,13 +84,6 @@ class MultiplatWidgets {
           mainAxisSize: MainAxisSize.min,
           children: [Icon(icon, color: color)],
         ),
-      );
-    } else if (themeTemplate == "yaru") {
-      return YaruIconButton(
-        icon: Icon(icon, color: color), // Required: The icon to display
-        onPressed: onPressed,
-        tooltip: tooltip, // Optional: A tooltip for accessibility
-        iconSize: iconSize, // Optional: Adjust the size of the icon
       );
     } else {
       return IconButton(

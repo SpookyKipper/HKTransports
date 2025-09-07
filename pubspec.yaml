@@ -11,7 +11,6 @@ dependencies:
     sdk: flutter
   provider: ^6.1.5
   chat_bubbles: ^1.7.0
-  yaru: ^8.1.0
   dynamik_theme: ^0.1.4
   package_info_plus: ^8.3.0
   shared_preferences: ^2.5.3
@@ -31,12 +30,16 @@ dependencies:
   flutter_map: 
     path: ./packages/modified/flutter_map-8.2.1
   latlong2: ^0.9.1
+  objectbox: ^4.3.1
+  objectbox_flutter_libs: any
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
   change_app_package_name: ^1.5.0
+  build_runner: ^2.7.1
+  objectbox_generator: any
 
 flutter:
   uses-material-design: true
