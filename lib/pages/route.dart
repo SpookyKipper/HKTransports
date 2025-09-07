@@ -50,10 +50,12 @@ class RoutePage extends StatelessWidget {
           children: [
             SizedBox(
               height: constraints.maxHeight * 0.4,
-              child: Maptiler(latlng: LatLng(22.3193, 114.1694)),
+              child: //nullWidget(),
+               Maptiler(latlng: LatLng(22.3193, 114.1694)),
             ),
+            Divider(height: 0.025),
             SizedBox(
-              height: constraints.maxHeight * 0.6,
+              height: constraints.maxHeight * 0.6 - 0.025,
               child: ListView(
                 children: [
                   StationTile(stopnum: 10, station: "彩明", price: 1),
@@ -239,14 +241,17 @@ class StationTile extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: Theme.of(context).dividerColor),
+              bottom: BorderSide(color: Theme.of(context).dividerColor)
             ),
           ),
           child: Row(
             children: [
               // Leading section
-              Text(stopnum.toString(), style: TextStyle(fontSize: 20)),
-              Padding(padding: EdgeInsets.only(right: 10)),
+              SizedBox(
+                width: 30,
+                child: Center(child: Text(stopnum.toString(), style: TextStyle(fontSize: 20))),
+              ),
+              Padding(padding: EdgeInsets.only(right: 20)),
               // Title and subtitle section
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
