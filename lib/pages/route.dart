@@ -238,137 +238,134 @@ class StationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => {},
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: Theme.of(context).dividerColor),
-            ),
-          ),
-          child: ExpansionTile(
-            title: Row(
-              children: [
-                // Leading section
-                SizedBox(
-                  width: 30,
-                  child: Center(
-                    child: Text(
-                      stopnum.toString(),
-                      style: TextStyle(fontSize: 20),
-                    ),
-                  ),
+    return Container( // remove for no border
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Theme.of(context).dividerColor),
+        ),
+      ),
+      child: ExpansionTile(
+        title: Row(
+          children: [
+            // Leading section
+            SizedBox(
+              width: 30,
+              child: Center(
+                child: Text(
+                  stopnum.toString(),
+                  style: TextStyle(fontSize: 20),
                 ),
-                Padding(padding: EdgeInsets.only(right: 20)),
-                // Title and subtitle section
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    stackedWidgets(
-                      nullWidget(),
-                      Text(station, style: TextStyle(fontSize: 20)),
-                      Text("車費: \$$price", style: TextStyle(fontSize: 15)),
-                    ),
-                  ],
+              ),
+            ),
+            SizedBox(width: 20),
+            // Title and subtitle section
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                stackedWidgets(
+                  nullWidget(),
+                  Text(station, style: TextStyle(fontSize: 20)),
+                  Text("車費: \$$price", style: TextStyle(fontSize: 15)),
                 ),
               ],
             ),
-            children: [
-              ListTile(
-                title: Padding(
-                  padding: EdgeInsets.only(left: 10, bottom: 11),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        children: [
+          ListTile(
+            title: Padding(
+              padding: EdgeInsets.only(left: 10, bottom: 11),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                         
-                          Text(
-                            " 12:30 ",
-                            style: TextStyle(fontSize: 14.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          Text(
-                            "10",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          SizedBox(width: 3),
-                          Text(
-                            "分鐘",
-                            style: TextStyle(fontSize: 16.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                        ],
+                     
+                      Text(
+                        " 12:30 ",
+                        style: TextStyle(fontSize: 14.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
                       ),
-                      SizedBox(height: 5),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          
-                          Text(
-                            " 12:30 ",
-                            style: TextStyle(fontSize: 14.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          Text(
-                            "10",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          SizedBox(width: 2),
-                          Text(
-                            "分鐘",
-                            style: TextStyle(fontSize: 13.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                        ],
+                      SizedBox(width: 5),
+                      Text(
+                        "10",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
                       ),
-                      SizedBox(height: 5),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          
-                          Text(
-                            " 12:30 ",
-                            style: TextStyle(fontSize: 14.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          Text(
-                            "10",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          SizedBox(width: 2),
-                          Text(
-                            "分鐘",
-                            style: TextStyle(fontSize: 13.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                        ],
+                      SizedBox(width: 3),
+                      Text(
+                        "分鐘",
+                        style: TextStyle(fontSize: 13.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
                       ),
                     ],
                   ),
-                ),
+                  SizedBox(height: 5),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      
+                      Text(
+                        " 12:30 ",
+                        style: TextStyle(fontSize: 14.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        "10",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
+                      ),
+                      SizedBox(width: 2),
+                      Text(
+                        "分鐘",
+                        style: TextStyle(fontSize: 13.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 5),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      
+                      Text(
+                        " 12:30 ",
+                        style: TextStyle(fontSize: 14.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        "10",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
+                      ),
+                      SizedBox(width: 2),
+                      Text(
+                        "分鐘",
+                        style: TextStyle(fontSize: 13.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
