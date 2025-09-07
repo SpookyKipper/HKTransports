@@ -56,32 +56,32 @@ class RoutePage extends StatelessWidget {
               height: constraints.maxHeight * 0.6,
               child: ListView(
                 children: [
-                  StationTile(stopnum: 10, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
-                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 10, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
+                  StationTile(stopnum: 1, station: "彩明", price: 1),
                 ],
               ),
             ),
@@ -221,12 +221,12 @@ class StationTile extends StatelessWidget {
   const StationTile({
     super.key,
     required this.stopnum,
-    required this.dest,
+    required this.station,
     required this.price,
   });
 
   final int stopnum;
-  final String dest;
+  final String station;
   final double price;
 
   @override
@@ -253,7 +253,7 @@ class StationTile extends StatelessWidget {
                 children: [
                   stackedWidgets(
                     nullWidget(),
-                    Text(dest, style: TextStyle(fontSize: 20)),
+                    Text(station, style: TextStyle(fontSize: 20)),
                     Text("車費: \$$price", style: TextStyle(fontSize: 15)),
                   ),
                 ],
