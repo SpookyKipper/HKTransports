@@ -44,16 +44,56 @@ class RoutePageRoute extends StatelessWidget {
 class RoutePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(flex: 4, child: Mapbox(latlng: LatLng(22.3193, 114.1694))),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
+          children: [
+            SizedBox(
+              height: constraints.maxHeight * 0.4,
+              child: Maptiler(latlng: LatLng(22.3193, 114.1694)),
+            ),
+            SizedBox(
+              height: constraints.maxHeight * 0.6,
+              child: ListView(
+                children: [
+                  StationTile(stopnum: 10, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                  StationTile(stopnum: 1, dest: "彩明", price: 1),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
-class Mapbox extends StatelessWidget {
-  const Mapbox({super.key, required this.latlng});
+class Maptiler extends StatelessWidget {
+  const Maptiler({super.key, required this.latlng});
 
   final LatLng latlng;
 
@@ -89,81 +129,89 @@ class Mapbox extends StatelessWidget {
         ),
 
         if (screenHeight > 900)
-        SimpleAttributionWidget(
-          source: SizedBox(
-            height: 20,
-            child: Row(
+          SimpleAttributionWidget(
+            source: SizedBox(
+              height: 20,
+              child: Row(
+                children: [
+                  TextButton(
+                    onPressed: () =>
+                        launchUrl(Uri.parse('https://maptiler.com/')),
+                    child: Text(
+                      "© MapTiler",
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        launchUrl(Uri.parse('https://openstreetmap.org/')),
+                    child: Text(
+                      "© OpenStreetMap contributors",
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            alignment: Alignment.bottomRight,
+            backgroundColor: Colors.white70,
+          ),
+        if (screenHeight > 900)
+          RichAttributionWidget(
+            alignment: AttributionAlignment.bottomLeft,
+            attributions: [],
+            showFlutterMapAttribution: false,
+            openButton: (_, open) => Row(
               children: [
-                TextButton(
-                  onPressed: () => launchUrl(Uri.parse('https://maptiler.com/')),
-                  child: Text(
-                    "© MapTiler",
-                    style: TextStyle(color: Colors.black.withValues(alpha: 0.8)),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => launchUrl(Uri.parse('https://openstreetmap.org/')),
-                  child: Text(
-                    "© OpenStreetMap contributors",
-                    style: TextStyle(color: Colors.black.withValues(alpha: 0.8)),
-                  ),
+                LogoSourceAttribution(
+                  Image(image: AssetImage('assets/images/maptiler.png')),
+                  onTap: () => launchUrl(
+                    Uri.parse('https://maptiler.com/'),
+                  ), // (external)
                 ),
               ],
             ),
+            closeButton: (_, close) => nullWidget(),
           ),
-          alignment: Alignment.bottomRight,
-          backgroundColor: Colors.white70,
-        ),
-        if (screenHeight > 900)
-        RichAttributionWidget(
-          alignment: AttributionAlignment.bottomLeft,
-          attributions: [],
-          showFlutterMapAttribution: false,
-          openButton: (_, open) => Row(
-            children: [
-              LogoSourceAttribution(
-                Image(image: AssetImage('assets/images/maptiler.png')),
-                onTap: () =>
-                    launchUrl(Uri.parse('https://maptiler.com/')), // (external)
-              ),
-            ],
-          ),
-          closeButton: (_, close) => nullWidget(),
-        ),
         if (screenHeight <= 900)
-        RichAttributionWidget(
-          alignment: AttributionAlignment.topLeft,
-          attributions: [
-            TextSourceAttribution(
-              'MapTiler',
-              onTap: () => launchUrl(
-                Uri.parse('hhttps://maptiler.com/'),
-              ), // (external)
-            ),
-            TextSourceAttribution(
-              'OpenStreetMap contributors',
-              onTap: () => launchUrl(
-                Uri.parse('https://www.openstreetmap.org/'),
-              ), // (external)
-            ),
-          ],
-          showFlutterMapAttribution: false,
-          openButton: (_, open) => Row(
-            children: [
-              IconButton(
-                icon: Icon(Icons.info_outline),
-                color: Colors.black,
-                onPressed: open,
+          RichAttributionWidget(
+            alignment: AttributionAlignment.topLeft,
+            attributions: [
+              TextSourceAttribution(
+                'MapTiler',
+                onTap: () => launchUrl(
+                  Uri.parse('hhttps://maptiler.com/'),
+                ), // (external)
               ),
-              LogoSourceAttribution(
-                Image(image: AssetImage('assets/images/maptiler.png')),
-                onTap: () =>
-                    launchUrl(Uri.parse('https://maptiler.com/')), // (external)
+              TextSourceAttribution(
+                'OpenStreetMap contributors',
+                onTap: () => launchUrl(
+                  Uri.parse('https://www.openstreetmap.org/'),
+                ), // (external)
               ),
             ],
+            showFlutterMapAttribution: false,
+            openButton: (_, open) => Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.info_outline),
+                  color: Colors.black,
+                  onPressed: open,
+                ),
+                LogoSourceAttribution(
+                  Image(image: AssetImage('assets/images/maptiler.png')),
+                  onTap: () => launchUrl(
+                    Uri.parse('https://maptiler.com/'),
+                  ), // (external)
+                ),
+              ],
+            ),
+            closeButton: (_, close) => nullWidget(),
           ),
-          closeButton: (_, close) => nullWidget(),
-        ),
       ],
     );
   }
@@ -172,162 +220,141 @@ class Mapbox extends StatelessWidget {
 class StationTile extends StatelessWidget {
   const StationTile({
     super.key,
-    required this.route,
-    required this.operator,
+    required this.stopnum,
     required this.dest,
-    required this.onBoardStop,
+    required this.price,
   });
 
-  final String route;
-  final String operator;
+  final int stopnum;
   final String dest;
-  final String onBoardStop;
+  final double price;
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        GestureDetector(
-          onTap: () => {context.pushNamed('/route?route=$route&bound=I')},
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Theme.of(context).dividerColor),
-                ),
-              ),
-              child: Row(
+    return GestureDetector(
+      onTap: () => {},
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Leading section
+              Text(stopnum.toString(), style: TextStyle(fontSize: 20)),
+              Padding(padding: EdgeInsets.only(right: 10)),
+              // Title and subtitle section
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Leading section
                   stackedWidgets(
                     nullWidget(),
-                    Text(route, style: TextStyle(fontSize: 20)),
-                    Text(operator, style: TextStyle(fontSize: 12)),
+                    Text(dest, style: TextStyle(fontSize: 20)),
+                    Text("車費: \$$price", style: TextStyle(fontSize: 15)),
                   ),
-                  Padding(padding: EdgeInsets.only(right: 10)),
-                  // Title and subtitle section
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ],
+              ),
+              Spacer(),
+              // Trailing section
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      stackedWidgets(
-                        nullWidget(),
-                        Row(
-                          children: [
-                            Column(
-                              children: [
-                                Padding(padding: EdgeInsets.only(top: 5.5)),
-                                Text("往 ", style: TextStyle(fontSize: 15)),
-                              ],
-                            ),
-                            Text(dest, style: TextStyle(fontSize: 20)),
-                          ],
+                      Column(
+                        children: [
+                          Icon(Icons.access_time, size: 15.8),
+                          Padding(padding: EdgeInsets.only(bottom: 2.25)),
+                        ],
+                      ),
+                      Text(
+                        " 12:30 ",
+                        style: TextStyle(fontSize: 16.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
+                      ),
+                      Text(
+                        "10",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
-                        Text(onBoardStop, style: TextStyle(fontSize: 15)),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
+                      ),
+                      SizedBox(width: 3),
+                      Text(
+                        "分鐘",
+                        style: TextStyle(fontSize: 16.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
                       ),
                     ],
                   ),
-                  Spacer(),
-                  // Trailing section
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  SizedBox(height: 2.5),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Column(
-                            children: [
-                              Icon(Icons.access_time, size: 15.8),
-                              Padding(padding: EdgeInsets.only(bottom: 2.25)),
-                            ],
-                          ),
-                          Text(
-                            " 12:30 ",
-                            style: TextStyle(fontSize: 16.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          Text(
-                            "10",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          SizedBox(width: 3),
-                          Text(
-                            "分鐘",
-                            style: TextStyle(fontSize: 16.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                        ],
+                      Icon(Icons.access_time, size: 13),
+                      Text(
+                        " 12:30 ",
+                        style: TextStyle(fontSize: 13.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
                       ),
-                      SizedBox(height: 2.5),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.access_time, size: 13),
-                          Text(
-                            " 12:30 ",
-                            style: TextStyle(fontSize: 13.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          Text(
-                            "10",
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          SizedBox(width: 2),
-                          Text(
-                            "分鐘",
-                            style: TextStyle(fontSize: 13.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                        ],
+                      Text(
+                        "10",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
                       ),
-                      SizedBox(height: 2.5),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.access_time, size: 13),
-                          Text(
-                            " 12:30 ",
-                            style: TextStyle(fontSize: 13.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          Text(
-                            "10",
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                          SizedBox(width: 2),
-                          Text(
-                            "分鐘",
-                            style: TextStyle(fontSize: 13.5),
-                            strutStyle: StrutStyle(forceStrutHeight: true),
-                          ),
-                        ],
+                      SizedBox(width: 2),
+                      Text(
+                        "分鐘",
+                        style: TextStyle(fontSize: 13.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 2.5),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.access_time, size: 13),
+                      Text(
+                        " 12:30 ",
+                        style: TextStyle(fontSize: 13.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
+                      ),
+                      Text(
+                        "10",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
+                      ),
+                      SizedBox(width: 2),
+                      Text(
+                        "分鐘",
+                        style: TextStyle(fontSize: 13.5),
+                        strutStyle: StrutStyle(forceStrutHeight: true),
                       ),
                     ],
                   ),
                 ],
               ),
-            ),
+            ],
           ),
         ),
-        //
-      ],
+      ),
     );
   }
 }
