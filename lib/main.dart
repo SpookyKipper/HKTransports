@@ -15,7 +15,6 @@ import 'multiplat_ui.dart';
 import 'functions/ui.dart';
 import 'pages/settings_page.dart';
 
-
 import 'package:go_router/go_router.dart';
 
 final _router = GoRouter(
@@ -34,6 +33,7 @@ final _router = GoRouter(
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // await FlutterDisplayMode.setHighRefreshRate();
   runApp(Phoenix(child: MyApp()));
 }
 
