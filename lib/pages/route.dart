@@ -389,7 +389,8 @@ class EtaRow extends StatelessWidget {
               ),
               strutStyle: StrutStyle(forceStrutHeight: true),
             ),
-          if (seconds <= 14 && seconds > -7)
+          Text(seconds.toString()),
+          if ((seconds <= 14 || minutes == 0) && seconds > -7)
             Text(
               "已到達  ",
               style: TextStyle(
