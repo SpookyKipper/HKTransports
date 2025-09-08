@@ -16,8 +16,6 @@ class MultiplatWidgets {
       final platformName = pf.getPlatformName(context, noWeb: true);
       if (platformName == "iOS") {
         themeTemplate = "cupertino";
-      } else if (platformName == "Linux GNOME") {
-        themeTemplate = "yaru";
       } else {
         themeTemplate = "material"; // Default for other platforms
       }

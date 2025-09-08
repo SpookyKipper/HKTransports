@@ -17,6 +17,9 @@ import 'pages/settings_page.dart';
 
 import 'package:go_router/go_router.dart';
 
+import 'package:hkbusapi/kmb/functions.dart' as kmb;
+
+
 final _router = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomePageRoute()),
@@ -34,6 +37,8 @@ final _router = GoRouter(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await FlutterDisplayMode.setHighRefreshRate();
+  // kmb.saveAllStops();
+  // kmb.saveAllRoutes();
   runApp(Phoenix(child: MyApp()));
 }
 

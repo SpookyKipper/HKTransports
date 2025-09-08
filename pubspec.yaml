@@ -30,24 +30,24 @@ dependencies:
   flutter_map: 
     path: ./packages/modified/flutter_map-8.2.1
   latlong2: ^0.9.1
-  objectbox: ^4.3.1
-  objectbox_flutter_libs: any
+  hkbusapi:
+    path: /home/kipper/Documents/GitKraken/hkbusapi
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
   change_app_package_name: ^1.5.0
-  build_runner: ^2.7.1
-  objectbox_generator: any
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/logo.png
-    - assets/images/mapbox-logo-black.png
-    - assets/images/mapbox-logo-white.png
+    # - assets/images/mapbox-logo-black.png
+    # - assets/images/mapbox-logo-white.png
     - assets/images/maptiler.png
+    - assets/images/mapMarkers/kmb.png
 
 flutter_icons:
   android: true
