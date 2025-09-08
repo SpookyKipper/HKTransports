@@ -249,8 +249,9 @@ class Maptiler extends StatelessWidget {
                     ),
                   ),
                   TextButton(
-                    onPressed: () =>
-                        launchUrl(Uri.parse('https://openstreetmap.org/')),
+                    onPressed: () => launchUrl(
+                      Uri.parse('https://openstreetmap.org/copyright'),
+                    ),
                     child: Text(
                       "© OpenStreetMap contributors",
                       style: TextStyle(
@@ -294,7 +295,7 @@ class Maptiler extends StatelessWidget {
               TextSourceAttribution(
                 'OpenStreetMap contributors',
                 onTap: () => launchUrl(
-                  Uri.parse('https://www.openstreetmap.org/'),
+                  Uri.parse('https://www.openstreetmap.org/copyright'),
                 ), // (external)
               ),
             ],
@@ -323,7 +324,8 @@ class Maptiler extends StatelessWidget {
 
 class EtaRow extends StatelessWidget {
   final String time;
-  final int minute;
+  final int seconds;
+  final int minutes;
   final String? remarks;
   final int etaSeq;
   final int stopSeq;
@@ -331,7 +333,8 @@ class EtaRow extends StatelessWidget {
   const EtaRow({
     super.key,
     required this.time,
-    required this.minute,
+    required this.seconds,
+    required this.minutes,
     this.remarks,
     required this.etaSeq,
     required this.stopSeq,
@@ -344,7 +347,7 @@ class EtaRow extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (minute > 1)
+          if (minutes > 1)
             Row(
               children: [
                 Text(
@@ -354,7 +357,7 @@ class EtaRow extends StatelessWidget {
                 ),
                 SizedBox(width: 5),
                 Text(
-                  minute.toString(),
+                  minutes.toString(),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -373,8 +376,8 @@ class EtaRow extends StatelessWidget {
                 SizedBox(width: 5),
               ],
             ),
-          if (minute <= 1) SizedBox(width: 4),
-          if (minute == 1)
+          if (minutes <= 1) SizedBox(width: 4),
+          if (minutes == 1 && seconds > 14)
             Text(
               stopSeq == 1 ? "準備出車" : "即將到達",
               style: TextStyle(
@@ -386,7 +389,19 @@ class EtaRow extends StatelessWidget {
               ),
               strutStyle: StrutStyle(forceStrutHeight: true),
             ),
-          if (minute <= 0)
+          if (seconds <= 14 && seconds > -7)
+            Text(
+              "已到達",
+              style: TextStyle(
+                fontSize: 16,
+                // fontWeight: FontWeight.bold,
+                color: etaSeq == 1
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.secondaryFixedDim,
+              ),
+              // strutStyle: StrutStyle(forceStrutHeight: true),
+            ),
+          if (seconds <= -7)
             Text(
               "正在離開",
               style: TextStyle(
@@ -468,11 +483,13 @@ class _StationTileState extends State<StationTile> {
         _etarows = etas.map((eta) {
           DateTime now = DateTime.now();
           Duration difference = eta.eta.difference(now);
+          int seconds = difference.inSeconds;
           int minutes = difference.inMinutes;
 
           return EtaRow(
             time: DateFormat('HH:mm').format(eta.eta),
-            minute: minutes,
+            seconds: seconds,
+            minutes: minutes,
             remarks: eta.remarks.isEmpty ? null : eta.remarks[0],
             etaSeq: eta.etaSeq,
             stopSeq: widget.stopSeq,
@@ -551,12 +568,18 @@ class _StationTileState extends State<StationTile> {
                       if (stationCode != null)
                         Text(
                           " • 站碼 ${stationCode.replaceFirst(" (", "").replaceFirst(")", "")}",
-                          style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.outline),
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
                         ),
                       if (platformCode != null)
                         Text(
                           " • 月台 ${platformCode.replaceFirst(" (", "").replaceFirst(")", "")}",
-                          style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.secondary),
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
                         ),
                     ],
                   ),
