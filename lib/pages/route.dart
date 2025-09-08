@@ -347,7 +347,7 @@ class EtaRow extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (minutes > 1)
+          if (seconds >= 55)
             Row(
               children: [
                 Text(
@@ -376,8 +376,8 @@ class EtaRow extends StatelessWidget {
                 SizedBox(width: 5),
               ],
             ),
-          if (minutes <= 1) SizedBox(width: 4),
-          if (minutes == 1 && seconds > 14)
+          if (seconds <= 55) SizedBox(width: 4),
+          if (seconds < 55 && seconds > 14)
             Text(
               stopSeq == 1 ? "準備出車  " : "即將到達  ",
               style: TextStyle(
@@ -390,7 +390,7 @@ class EtaRow extends StatelessWidget {
               strutStyle: StrutStyle(forceStrutHeight: true),
             ),
           Text(seconds.toString()),
-          if ((seconds <= 14 || minutes == 0) && seconds > -7)
+          if (seconds <= 14 && seconds > -7)
             Text(
               "已到達  ",
               style: TextStyle(
