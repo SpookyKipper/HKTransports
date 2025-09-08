@@ -37,8 +37,8 @@ final _router = GoRouter(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await FlutterDisplayMode.setHighRefreshRate();
-  // kmb.saveAllStops();
-  // kmb.saveAllRoutes();
+  kmb.saveAllStops();
+  kmb.saveAllRoutes();
   runApp(Phoenix(child: MyApp()));
 }
 

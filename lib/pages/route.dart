@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_map/flutter_map.dart';
 import 'package:hkbusapi/kmb/classes.dart';
 import 'package:hktransports/customWidgets/nullWidget.dart';
@@ -324,6 +326,7 @@ class EtaRow extends StatelessWidget {
   final int minute;
   final String? remarks;
   final int etaSeq;
+  final int stopSeq;
 
   const EtaRow({
     super.key,
@@ -331,6 +334,7 @@ class EtaRow extends StatelessWidget {
     required this.minute,
     this.remarks,
     required this.etaSeq,
+    required this.stopSeq,
   });
 
   @override
@@ -369,11 +373,10 @@ class EtaRow extends StatelessWidget {
                 SizedBox(width: 5),
               ],
             ),
-          if (minute <= 1)
-          SizedBox(width: 4),
+          if (minute <= 1) SizedBox(width: 4),
           if (minute == 1)
             Text(
-              "即將到達",
+              stopSeq == 1 ? "準備出車" : "即將到達",
               style: TextStyle(
                 fontSize: 16,
                 // fontWeight: FontWeight.bold,
@@ -437,6 +440,7 @@ class _StationTileState extends State<StationTile> {
   DateTime? _lastFetched;
   List<Widget> _etarows = [];
   bool _hasFetchedOnce = false;
+  Timer? _refreshTimer;
 
   Future<void> fetchEta() async {
     // await Future.delayed(Duration(milliseconds: 1000)); // Simulate network delay
@@ -456,7 +460,7 @@ class _StationTileState extends State<StationTile> {
       if (etas.isEmpty) {
         _etarows = [
           Text(
-            "暫無資料",
+            "暫無資料 No Data",
             style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
           ),
         ];
@@ -471,14 +475,47 @@ class _StationTileState extends State<StationTile> {
             minute: minutes,
             remarks: eta.remarks.isEmpty ? null : eta.remarks[0],
             etaSeq: eta.etaSeq,
+            stopSeq: widget.stopSeq,
           );
         }).toList();
       }
     });
   }
 
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+      fetchEta();
+    });
+  }
+
+  void _stopAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _stopAutoRefresh();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final String originalName = widget.stationName;
+    final RegExp platformRegex = RegExp(r' \([A-Z][0-9]{1,2}\)');
+    final RegExp stationCodeRegex = RegExp(r' \([A-Z]{2}[0-9]{3}\)');
+
+    final String? stationCode = stationCodeRegex
+        .firstMatch(originalName)
+        ?.group(0);
+    final String? platformCode = platformRegex
+        .firstMatch(originalName)
+        ?.group(0);
+    final String processedName = originalName
+        .replaceFirst("$stationCode", "")
+        .replaceFirst("$platformCode", "");
+
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -503,8 +540,26 @@ class _StationTileState extends State<StationTile> {
               children: [
                 stackedWidgets(
                   nullWidget(),
-                  Text(widget.stationName, style: TextStyle(fontSize: 20)),
-                  Text("車費: \$${widget.price}", style: TextStyle(fontSize: 15)),
+                  Text(processedName, style: TextStyle(fontSize: 18.5)),
+                  Row(
+                    children: [
+                      Text(
+                        "車費 \$${widget.price}",
+                        style: TextStyle(fontSize: 15),
+                      ),
+
+                      if (stationCode != null)
+                        Text(
+                          " • 站碼 ${stationCode.replaceFirst(" (", "").replaceFirst(")", "")}",
+                          style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.outline),
+                        ),
+                      if (platformCode != null)
+                        Text(
+                          " • 月台 ${platformCode.replaceFirst(" (", "").replaceFirst(")", "")}",
+                          style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.secondary),
+                        ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -531,6 +586,9 @@ class _StationTileState extends State<StationTile> {
                 now.difference(_lastFetched!).inSeconds >= 10) {
               fetchEta();
             }
+            _startAutoRefresh();
+          } else {
+            _stopAutoRefresh();
           }
         },
       ),
