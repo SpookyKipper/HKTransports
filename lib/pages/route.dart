@@ -379,7 +379,7 @@ class EtaRow extends StatelessWidget {
           if (minutes <= 1) SizedBox(width: 4),
           if (minutes == 1 && seconds > 14)
             Text(
-              stopSeq == 1 ? "準備出車" : "即將到達",
+              stopSeq == 1 ? "準備出車  " : "即將到達  ",
               style: TextStyle(
                 fontSize: 16,
                 // fontWeight: FontWeight.bold,
@@ -391,7 +391,7 @@ class EtaRow extends StatelessWidget {
             ),
           if (seconds <= 14 && seconds > -7)
             Text(
-              "已到達",
+              "已到達  ",
               style: TextStyle(
                 fontSize: 16,
                 // fontWeight: FontWeight.bold,
@@ -403,7 +403,7 @@ class EtaRow extends StatelessWidget {
             ),
           if (seconds <= -7)
             Text(
-              "正在離開",
+              "正在離開  ",
               style: TextStyle(
                 fontSize: 16,
                 // fontWeight: FontWeight.bold,
@@ -501,7 +501,7 @@ class _StationTileState extends State<StationTile> {
 
   void _startAutoRefresh() {
     _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+    _refreshTimer = Timer.periodic(Duration(seconds: 17), (timer) {
       fetchEta();
     });
   }
