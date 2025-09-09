@@ -5,6 +5,7 @@ import 'package:hkbusapi/kmb/classes.dart';
 import 'package:hktransports/customWidgets/null_widget.dart';
 import 'package:hktransports/customWidgets/stacked_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -180,6 +181,8 @@ class Maptiler extends StatelessWidget {
   final Widget? markerWidget;
   final List<LatLng>? markerPoints;
 
+  // final _mapController = MapController();
+
   @override
   Widget build(BuildContext context) {
     if (!((markerWidget != null && markerPoints != null) ||
@@ -193,7 +196,7 @@ class Maptiler extends StatelessWidget {
     //   print("Current active mode: ${mode.width}x${mode.height} @ ${mode.refreshRate}Hz");
     // });
     return FlutterMap(
-      mapController: MapController(),
+      // mapController: _mapController,
       options: MapOptions(
         initialZoom: 11.5,
         initialCenter: latlng,
@@ -214,11 +217,19 @@ class Maptiler extends StatelessWidget {
       children: [
         TileLayer(
           urlTemplate:
-              "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Maptiler/{z}/{x}/{y}",
-          // "https://apiproxy.spookysrv.com/HKTransports/MapTiles/{z}/{x}/{y}",
+             "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Tomtom/baseMap/${uf.getCurrentThemeSetting() == 1 ? "main" : "night"}/{z}/{x}/{y}",
           userAgentPackageName: 'com.spookysrv.hktransports',
           maxNativeZoom: 22,
         ),
+        if (sp.getBool('trafficLayer') ?? false)
+          TileLayer(
+            // traffic status
+            urlTemplate:
+                "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Tomtom/traffic/{z}/{x}/{y}",
+            userAgentPackageName: 'com.spookysrv.hktransports',
+            maxNativeZoom: 22,
+            minZoom: 15.25, // only show when close enough
+          ),
         if (markerWidget != null && markerPoints != null)
           MarkerLayer(
             markers: [
@@ -232,91 +243,62 @@ class Maptiler extends StatelessWidget {
                 ),
             ],
           ),
-        if (screenHeight > 950)
-          SimpleAttributionWidget(
-            source: SizedBox(
-              height: 20,
-              child: Row(
-                children: [
-                  TextButton(
-                    onPressed: () =>
-                        launchUrl(Uri.parse('https://maptiler.com/')),
-                    child: Text(
-                      "© MapTiler",
-                      style: TextStyle(
-                        color: Colors.black.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => launchUrl(
-                      Uri.parse('https://openstreetmap.org/copyright'),
-                    ),
-                    child: Text(
-                      "© OpenStreetMap contributors",
-                      style: TextStyle(
-                        color: Colors.black.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            alignment: Alignment.bottomRight,
-            backgroundColor: Colors.white70,
-          ),
-        if (screenHeight > 950)
-          RichAttributionWidget(
-            alignment: AttributionAlignment.bottomLeft,
-            attributions: [],
-            showFlutterMapAttribution: false,
-            openButton: (_, open) => Row(
+
+        SimpleAttributionWidget(
+          source: SizedBox(
+            height: 20,
+            child: Row(
               children: [
-                LogoSourceAttribution(
-                  Image(image: AssetImage('assets/images/maptiler.png')),
-                  onTap: () => launchUrl(
-                    Uri.parse('https://maptiler.com/'),
-                  ), // (external)
+                TextButton(
+                  onPressed: () => launchUrl(
+                    Uri.parse(
+                      "https://www.tomtom.com/legal/en_gb/product-attributions/",
+                    ),
+                  ),
+                  child: Text(
+                    "© TomTom",
+                    style: TextStyle(
+                      color: Colors.black.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => launchUrl(
+                    Uri.parse("https://www.openstreetmap.org/copyright"),
+                  ),
+                  child: Text(
+                    "© OpenStreetMap",
+                    style: TextStyle(
+                      color: Colors.black.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+                TextButton(onPressed: () => showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("Map Data Copyright Information"),
+                        content: Text(
+                          "© 1992 - 2025 TomTom. All rights reserved. This material is proprietary and the subject of copyright protection, database right protection and other intellectual property rights owned by TomTom or its suppliers. The use of this material is subject to the terms of a license agreement. Any unauthorized copying or disclosure of this material will lead to criminal and civil liabilities.\n\nData Source © 2025 TomTom\n\nBased on https://www.tomtom.com/legal/en_gb/product-attributions/",
+                        ),
+                        actions: <Widget>[
+                          TextButton(
+                            child: Text("Close"),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  ), child: Icon(Icons.info_outline, size: 18, color: Colors.black,),
                 ),
               ],
             ),
-            closeButton: (_, close) => nullWidget(),
           ),
-        if (screenHeight <= 950)
-          RichAttributionWidget(
-            alignment: AttributionAlignment.topLeft,
-            attributions: [
-              TextSourceAttribution(
-                'MapTiler',
-                onTap: () => launchUrl(
-                  Uri.parse('hhttps://maptiler.com/'),
-                ), // (external)
-              ),
-              TextSourceAttribution(
-                'OpenStreetMap contributors',
-                onTap: () => launchUrl(
-                  Uri.parse('https://www.openstreetmap.org/copyright'),
-                ), // (external)
-              ),
-            ],
-            showFlutterMapAttribution: false,
-            openButton: (_, open) => Row(
-              children: [
-                IconButton(
-                  icon: Icon(Icons.info_outline),
-                  color: Colors.black,
-                  onPressed: open,
-                ),
-                LogoSourceAttribution(
-                  Image(image: AssetImage('assets/images/maptiler.png')),
-                  onTap: () => launchUrl(
-                    Uri.parse('https://maptiler.com/'),
-                  ), // (external)
-                ),
-              ],
-            ),
-            closeButton: (_, close) => nullWidget(),
-          ),
+          alignment: Alignment.bottomRight,
+          backgroundColor: Colors.white12,
+        ),
       ],
     );
   }

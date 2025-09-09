@@ -75,6 +75,34 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(3, 1793369626612371521),
+    name: 'BoxKeyPairBool',
+    lastPropertyId: const obx_int.IdUid(3, 1577287548978114386),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8310908982777104881),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 9159945401474698838),
+        name: 'key',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 1577287548978114386),
+        name: 'value',
+        type: 1,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -115,7 +143,7 @@ Future<obx.Store> openStore({
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(2, 3514187227267197589),
+    lastEntityId: const obx_int.IdUid(3, 1793369626612371521),
     lastIndexId: const obx_int.IdUid(0, 0),
     lastRelationId: const obx_int.IdUid(0, 0),
     lastSequenceId: const obx_int.IdUid(0, 0),
@@ -215,6 +243,50 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    BoxKeyPairBool: obx_int.EntityDefinition<BoxKeyPairBool>(
+      model: _entities[2],
+      toOneRelations: (BoxKeyPairBool object) => [],
+      toManyRelations: (BoxKeyPairBool object) => {},
+      getId: (BoxKeyPairBool object) => object.id,
+      setId: (BoxKeyPairBool object, int id) {
+        object.id = id;
+      },
+      objectToFB: (BoxKeyPairBool object, fb.Builder fbb) {
+        final keyOffset = fbb.writeString(object.key);
+        fbb.startTable(4);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, keyOffset);
+        fbb.addBool(2, object.value);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final keyParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final valueParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          8,
+          false,
+        );
+        final object = BoxKeyPairBool(
+          key: keyParam,
+          id: idParam,
+          value: valueParam,
+        );
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -253,5 +325,23 @@ class BoxKeyPairString_ {
   /// See [BoxKeyPairString.value].
   static final value = obx.QueryStringProperty<BoxKeyPairString>(
     _entities[1].properties[2],
+  );
+}
+
+/// [BoxKeyPairBool] entity fields to define ObjectBox queries.
+class BoxKeyPairBool_ {
+  /// See [BoxKeyPairBool.id].
+  static final id = obx.QueryIntegerProperty<BoxKeyPairBool>(
+    _entities[2].properties[0],
+  );
+
+  /// See [BoxKeyPairBool.key].
+  static final key = obx.QueryStringProperty<BoxKeyPairBool>(
+    _entities[2].properties[1],
+  );
+
+  /// See [BoxKeyPairBool.value].
+  static final value = obx.QueryBooleanProperty<BoxKeyPairBool>(
+    _entities[2].properties[2],
   );
 }

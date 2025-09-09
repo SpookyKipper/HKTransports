@@ -57,6 +57,13 @@ class SharedPreferencesFunctions {
         .findFirst()?.value;
   }
 
+  bool? getBool(String key) {
+    return objectBox!.keyValueBoolBox
+        .query(BoxKeyPairBool_.key.equals(key))
+        .build()
+        .findFirst()?.value;
+  }
+
   // FutureBuilder<int?> getIntBuilder({
   //   required String key,
   //   required Widget Function(int? value) builder,
@@ -79,6 +86,13 @@ class SharedPreferencesFunctions {
     final box = objectBox!.keyValueStringBox;
     box.query(BoxKeyPairString_.key.equals(key)).build().remove();
     box.put(BoxKeyPairString(key:key, value:value));
+    return true;
+  }
+
+  bool setBool(String key, bool value) {
+    final box = objectBox!.keyValueBoolBox;
+    box.query(BoxKeyPairBool_.key.equals(key)).build().remove();
+    box.put(BoxKeyPairBool(key:key, value:value));
     return true;
   }
 

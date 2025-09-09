@@ -18,14 +18,24 @@ class BoxKeyPairInt {
   BoxKeyPairInt({required this.key, this.id = 0, required this.value});
 }
 
+@Entity()
+class BoxKeyPairBool {
+  int id;
+  String key;
+  bool value;
+  BoxKeyPairBool({required this.key, this.id = 0, required this.value});
+}
+
 class ObjectBox {
   late final Store store;
   late final Box<BoxKeyPairString> keyValueStringBox;
   late final Box<BoxKeyPairInt> keyValueIntBox;
+  late final Box<BoxKeyPairBool> keyValueBoolBox;
 
   ObjectBox._create(this.store) {
     keyValueStringBox = store.box<BoxKeyPairString>();
     keyValueIntBox = store.box<BoxKeyPairInt>();
+    keyValueBoolBox = store.box<BoxKeyPairBool>();
   }
 
   static Future<ObjectBox> create() async {

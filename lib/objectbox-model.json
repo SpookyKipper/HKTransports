@@ -50,9 +50,33 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "3:1793369626612371521",
+      "lastPropertyId": "3:1577287548978114386",
+      "name": "BoxKeyPairBool",
+      "properties": [
+        {
+          "id": "1:8310908982777104881",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:9159945401474698838",
+          "name": "key",
+          "type": 9
+        },
+        {
+          "id": "3:1577287548978114386",
+          "name": "value",
+          "type": 1
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "2:3514187227267197589",
+  "lastEntityId": "3:1793369626612371521",
   "lastIndexId": "0:0",
   "lastRelationId": "0:0",
   "lastSequenceId": "0:0",

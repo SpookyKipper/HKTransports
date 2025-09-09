@@ -36,7 +36,19 @@ class SettingsPageRoute extends StatelessWidget {
   }
 }
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+
+  bool trafficLayer = sp.getBool("trafficLayer") ?? false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -50,7 +62,7 @@ class SettingsPage extends StatelessWidget {
         ListTile(
           title: Text('Theme Mode'),
           trailing:  DropdownButton<ThemeMode>(
-                value: uf.getCurrentThemeMode() ?? ThemeMode.system,
+                value: uf.getCurrentThemeMode(),
                 items: ThemeMode.values.map((ThemeMode mode) {
                   return DropdownMenuItem<ThemeMode>(
                     value: mode,
@@ -104,6 +116,17 @@ class SettingsPage extends StatelessWidget {
         ),
 
         ListTile(
+          title: Text('顯示交通狀況'),
+          subtitle: Text("在地圖上顯示即時交通狀況 (需要一定 zoom level 才會顯示)"),
+          trailing: Switch(value: trafficLayer, onChanged: (bool value) {
+            sp.setBool("trafficLayer", value);
+            setState(() {
+              trafficLayer = value;
+            });
+          }),
+        ),
+
+         ListTile(
           title: Text('更新路線及車站資料'),
           trailing: w.button(
             context: context,
