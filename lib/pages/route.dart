@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_map/flutter_map.dart';
 import 'package:hkbusapi/kmb/classes.dart';
-import 'package:hktransports/customWidgets/nullWidget.dart';
-import 'package:hktransports/customWidgets/stackedWidgets.dart';
+import 'package:hktransports/customWidgets/null_widget.dart';
+import 'package:hktransports/customWidgets/stacked_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';

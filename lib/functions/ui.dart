@@ -1,30 +1,30 @@
-import 'package:hktransports/dataStore/shared_preferences.dart';
+import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:hktransports/functions/platform.dart';
 import 'package:flutter/material.dart';
 
 class UiFunctions {
-  Future<int> getCurrentThemeSetting() async {
-    return await sp.getInt('themeMode') ?? 0;
+  int getCurrentThemeSetting() {
+    return sp.getInt('themeMode') ?? 0; // Default to system
   }
 
-  Future<ThemeMode> getCurrentThemeMode() async {
-    final int themeSetting = await getCurrentThemeSetting();
+  ThemeMode getCurrentThemeMode() {
+    final int themeSetting = getCurrentThemeSetting();
     return ThemeMode.values[themeSetting];
   }
 
-  Future<int> getCurrentThemePlatformId() async {
-    return await sp.getInt('themePlatform') ?? 0;
+  int getCurrentThemePlatformId() {
+    return sp.getInt('themePlatform') ?? 0; // Default to system
   }
 
   final themePlatforms = ["system", "material", "cupertino", "yaru"];
-  Future<String> getCurrentThemePlatform() async {
-    return themePlatforms[await getCurrentThemePlatformId()]; // 0: System, 1: Material, 2: Cupertino, 3: Yaru
+  String getCurrentThemePlatform() {
+    return themePlatforms[getCurrentThemePlatformId()]; // 0: System, 1: Material, 2: Cupertino, 3: Yaru
   }
 
-  Future<bool> setCurrentThemePlatform(String platform) async {
+  bool setCurrentThemePlatform(String platform) {
     final int index = themePlatforms.indexOf(platform);
     if (index != -1) {
-      return await sp.setInt('themePlatform', index);
+      return sp.setInt('themePlatform', index);
     }
     return false; // Invalid platform
   }
@@ -33,8 +33,8 @@ class UiFunctions {
     setCurrentThemePlatform(platform);
   }
 
-  Future<String> getCurrentThemeTemplate(BuildContext context) async {
-    if (await getCurrentThemePlatform() == "system") {
+  String getCurrentThemeTemplate(BuildContext context) {
+    if (getCurrentThemePlatform() == "system") {
       if (context.mounted) {
         if (pf.getPlatformName(context) == "iOS") {
           return "cupertino";
@@ -49,7 +49,7 @@ class UiFunctions {
         return "material"; // Fallback if context is not mounted
       }
     } else {
-      return await getCurrentThemePlatform();
+      return getCurrentThemePlatform();
     }
   }
 

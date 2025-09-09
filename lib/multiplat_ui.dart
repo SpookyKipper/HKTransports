@@ -1,5 +1,5 @@
 // Return UI Elements based on platform
-import 'package:hktransports/customWidgets/nullWidget.dart';
+import 'package:hktransports/customWidgets/null_widget.dart';
 import 'package:hktransports/functions/platform.dart';
 import 'package:hktransports/packageMods/chat_bubbles/one.dart';
 import 'package:hktransports/packageMods/chat_bubbles/three.dart';
@@ -11,7 +11,7 @@ import 'functions/ui.dart';
 class MultiplatWidgets {
   String themeTemplate = "system"; // Default to material
   Future<String> updateTemplate(BuildContext context) async {
-    String template = await uf.getCurrentThemeTemplate(context);
+    String template = uf.getCurrentThemeTemplate(context);
     if (template == "system") {
       final platformName = pf.getPlatformName(context, noWeb: true);
       if (platformName == "iOS") {

@@ -1,6 +1,6 @@
 import 'package:dynamik_theme/dynamik_theme.dart';
-import 'package:hktransports/auth/logout_page.dart';
-import 'package:hktransports/dataStore/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,7 +18,7 @@ class SettingsPageRoute extends StatelessWidget {
     return Scaffold(
       appBar: w.appBar(
         context: context,
-        title: 'Flow Settings',
+        title: 'HKTransports Settings',
         backgroundColor: uf.cLD(
           context: context,
           color: [
@@ -49,11 +49,8 @@ class SettingsPage extends StatelessWidget {
         ),
         ListTile(
           title: Text('Theme Mode'),
-          trailing: FutureBuilder(
-            future: uf.getCurrentThemeMode(),
-            builder: (context, asyncSnapshot) {
-              return DropdownButton<ThemeMode>(
-                value: asyncSnapshot.data ?? ThemeMode.system,
+          trailing:  DropdownButton<ThemeMode>(
+                value: uf.getCurrentThemeMode() ?? ThemeMode.system,
                 items: ThemeMode.values.map((ThemeMode mode) {
                   return DropdownMenuItem<ThemeMode>(
                     value: mode,
@@ -68,77 +65,53 @@ class SettingsPage extends StatelessWidget {
                 onChanged: (ThemeMode? newValue) {
                   if (newValue != null) {
                     DynamikTheme.of(context).setThemeMode(newValue);
-                    sp.setIntSync(
+                    sp.setInt(
                       'themeMode',
                       ThemeMode.values.indexOf(newValue),
                     );
                   }
                 },
-              );
-            },
-          ),
+              )
+          
+          
         ),
 
         ListTile(
           title: Text('Theme Template'),
           subtitle: Text("App will restart on change"),
-          trailing: FutureBuilder(
-            future: uf.getCurrentThemePlatform(),
-            builder: (context, asyncSnapshot) {
-              return DropdownButton<String>(
-                value: asyncSnapshot.data,
-                items: uf.themePlatforms.map((String platform) {
-                  return DropdownMenuItem<String>(
-                    value: platform,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(tf.capitalizeFirst(platform)),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) async {
-                  if (newValue != null) {
-                    bool res =
-                        await uf.setCurrentThemePlatform(newValue) &&
-                        await sp.setString('startingPage', 'settings');
-                    if (res == true) {
-                      Phoenix.rebirth(context);
-                    }
-                  }
-                },
+          trailing: DropdownButton<String>(
+            value: uf.getCurrentThemePlatform(),
+            items: uf.themePlatforms.map((String platform) {
+              return DropdownMenuItem<String>(
+                value: platform,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(tf.capitalizeFirst(platform)),
+                ),
               );
+            }).toList(),
+            onChanged: (String? newValue) async {
+              if (newValue != null) {
+                bool res =
+                    uf.setCurrentThemePlatform(newValue) &&
+                    sp.setString('startingPage', 'settings');
+                if (res == true) {
+                  Phoenix.rebirth(context);
+                }
+              }
             },
           ),
         ),
 
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (pf.isAppleOS(context))
-              w.button(
-                context: context,
-                child: Text("Get iOS Shortcut"),
-                onPressed: () async {
-                  launchUrl(
-                    Uri.parse(
-                      "https://flow.spookysrv.com/ios-shortcut?device=${await sp.getString('convoToken')}",
-                    ),
-                  );
-                },
-              ),
-            if (pf.isAppleOS(context)) SizedBox(width: 15),
-            w.button(
-              context: context,
-              child: Text("Logout"),
-              onPressed: () async {
-                Navigator.pushReplacement(
-                  // ignore: use_build_context_synchronously
-                  context,
-                  MaterialPageRoute(builder: (context) => LogoutPageRoute()),
-                );
-              },
-            ),
-          ],
+        ListTile(
+          title: Text('更新路線及車站資料'),
+          trailing: w.button(
+            context: context,
+            child: Text("立即更新"),
+            onPressed: () {
+              context.go("/updateData");
+            },
+          ),
         ),
 
         Divider(

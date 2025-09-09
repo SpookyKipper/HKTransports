@@ -1,6 +1,8 @@
-import 'package:hktransports/customWidgets/nullWidget.dart';
-import 'package:hktransports/customWidgets/stackedWidgets.dart';
+import 'package:dynamik_theme/dynamik_theme.dart';
+import 'package:hktransports/customWidgets/null_widget.dart';
+import 'package:hktransports/customWidgets/stacked_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:hktransports/dataStore/objectbox.dart';
 import '../functions/ui.dart';
 import '../multiplat_ui.dart';
 
@@ -31,7 +33,29 @@ class HomePageRoute extends StatelessWidget {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      void checkTheme() {
+        final int currentThemeMode = sp.getInt('themeMode') ?? 0;
+        if (currentThemeMode == 1) {
+          DynamikTheme.of(context).setThemeMode(ThemeMode.light);
+        } else if (currentThemeMode == 2) {
+          DynamikTheme.of(context).setThemeMode(ThemeMode.dark);
+        }
+      }
+
+      checkTheme();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return w.tabUiPage(
@@ -53,7 +77,6 @@ class HomePage extends StatelessWidget {
         ),
       ],
     );
-
   }
 }
 

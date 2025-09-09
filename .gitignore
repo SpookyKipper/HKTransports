@@ -49,3 +49,4 @@ app.*.map.json
 
 # Route DB
 hkbusapi/
+hktransports/

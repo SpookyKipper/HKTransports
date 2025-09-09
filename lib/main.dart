@@ -2,22 +2,21 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dynamik_theme/dynamik_theme.dart';
-import 'package:hktransports/auth/page.dart';
-import 'package:hktransports/dataStore/shared_preferences.dart';
+import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:hktransports/functions/app.dart';
 import 'package:hktransports/functions/platform.dart';
+import 'package:hktransports/objectBox/store.dart';
 import 'package:hktransports/pages/home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:hktransports/pages/route.dart';
+import 'package:hktransports/pages/update_data.dart';
 import 'package:share_handler/share_handler.dart';
-import 'multiplat_ui.dart';
 import 'functions/ui.dart';
 import 'pages/settings_page.dart';
 
 import 'package:go_router/go_router.dart';
 
-import 'package:hkbusapi/kmb/functions.dart' as kmb;
 
 
 final _router = GoRouter(
@@ -31,14 +30,17 @@ final _router = GoRouter(
       path: '/settings',
       builder: (context, state) => const SettingsPageRoute(),
     ),
+    GoRoute(
+      path: '/updateData',
+      builder: (context, state) => const UpdateDataPageRoute(),
+    ),
   ],
 );
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initObjectBox();
   // await FlutterDisplayMode.setHighRefreshRate();
-  // kmb.saveAllStops();
-  // kmb.saveAllRoutes();
   runApp(Phoenix(child: MyApp()));
 }
 
@@ -119,12 +121,10 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    if (!pf.isWeb() && Platform.isAndroid) {
-      initPlatformState(); // Initialize platform state for shared media
-    }
+    
 
-    Future<void> checkTheme() async {
-      final int? currentThemeMode = await sp.getInt('themeMode');
+    void checkTheme() {
+      final int currentThemeMode = sp.getInt('themeMode') ?? 0;
       if (currentThemeMode == 1) {
         DynamikTheme.of(context).setThemeMode(ThemeMode.light);
       } else if (currentThemeMode == 2) {
@@ -170,18 +170,18 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                           ),
                           SizedBox(height: 8),
-                          w.button(
-                            context: context,
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AuthPageRoute(),
-                                ),
-                              );
-                            },
-                            child: Text("Login"),
-                          ),
+                          // w.button(
+                          //   context: context,
+                          //   onPressed: () {
+                          //     Navigator.pushReplacement(
+                          //       context,
+                          //       MaterialPageRoute(
+                          //         builder: (context) => AuthPageRoute(),
+                          //       ),
+                          //     );
+                          //   },
+                          //   child: Text("Login"),
+                          // ),
                           SizedBox(height: 10),
                           Center(
                             child: af.getVersionBuilder(
