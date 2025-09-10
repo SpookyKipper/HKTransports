@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import '../objectbox.g.dart';
 // ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
+import 'package:path_provider/path_provider.dart';
 
 @Entity()
 class BoxKeyPairString {
@@ -39,8 +42,10 @@ class ObjectBox {
   }
 
   static Future<ObjectBox> create() async {
+    Directory dir = await getApplicationDocumentsDirectory();
+    String path = dir.path;
     final store = await openStore(
-      directory: "hktransports",
+      directory: "$path/hktransports",
     ); // uses default model from objectbox.g.dart
     return ObjectBox._create(store);
   }
