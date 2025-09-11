@@ -45,7 +45,7 @@ class ObjectBox {
     Directory dir = await getApplicationDocumentsDirectory();
     String path = dir.path;
     final store = await openStore(
-      directory: "$path/hktransports",
+      directory: "$path/hktransports/appdata",
     ); // uses default model from objectbox.g.dart
     return ObjectBox._create(store);
   }

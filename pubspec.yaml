@@ -34,6 +34,7 @@ dependencies:
     path: /home/kipper/Documents/GitKraken/hkbusapi
   objectbox: ^4.3.1
   objectbox_flutter_libs: any
+  path_provider: ^2.1.5
 
 
 dev_dependencies:

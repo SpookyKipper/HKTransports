@@ -11,13 +11,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:hktransports/pages/route.dart';
 import 'package:hktransports/pages/update_data.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_handler/share_handler.dart';
 import 'functions/ui.dart';
 import 'pages/settings_page.dart';
 
 import 'package:go_router/go_router.dart';
 
-
+import 'package:hkbusapi/hkbusapi.dart';
 
 final _router = GoRouter(
   routes: [
@@ -39,7 +40,10 @@ final _router = GoRouter(
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Directory dir = await getApplicationDocumentsDirectory();
+  String path = dir.path;
   await initObjectBox();
+  await initBusApiObjectBox(dir: "$path/hktransports/busapi");
   // await FlutterDisplayMode.setHighRefreshRate();
   runApp(Phoenix(child: MyApp()));
 }
@@ -121,7 +125,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    
 
     void checkTheme() {
       final int currentThemeMode = sp.getInt('themeMode') ?? 0;
