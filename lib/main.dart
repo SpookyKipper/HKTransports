@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dynamik_theme/dynamik_theme.dart';
+import 'package:go_transitions/go_transitions.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:hktransports/functions/app.dart';
 import 'package:hktransports/functions/platform.dart';
@@ -20,68 +21,25 @@ import 'package:go_router/go_router.dart';
 
 import 'package:hkbusapi/hkbusapi.dart';
 
-CustomTransitionPage<T> buildPageWithTransition<T>({
-  required BuildContext context,
-  required GoRouterState state,
-  required Widget child,
-}) {
-  return CustomTransitionPage<T>(
-    key: state.pageKey,
-    child: child,
-    transitionDuration: const Duration(milliseconds: 350),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      const begin = Offset(1.0, 0.0);
-      const end = Offset.zero;
-      const curve = Curves.fastOutSlowIn;
-
-      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-      var slideTransition = animation.drive(tween);
-
-      var secondaryTween = Tween(begin: Offset.zero, end: const Offset(-1.0 / 4.0, 0.0))
-          .chain(CurveTween(curve: Curves.easeInOut));
-      var secondarySlideTransition = secondaryAnimation.drive(secondaryTween);
-
-      return SlideTransition(
-        position: secondarySlideTransition,
-        child: SlideTransition(
-          position: slideTransition,
-          child: child,
-        ),
-      );
-    },
-  );
-}
 
 final _router = GoRouter(
   routes: [
+    GoRoute(path: '/', builder: (context, state) => const HomePageRoute()),
     GoRoute(
-        path: '/',
-        pageBuilder: (context, state) => buildPageWithTransition(
-              context: context,
-              state: state,
-              child: const HomePageRoute(),
-            )),
+      path: '/route',
+      builder: (context, state) => const RoutePageRoute(),
+      pageBuilder: GoTransitions.cupertino.call, 
+    ),
     GoRoute(
-        path: '/route',
-        pageBuilder: (context, state) => buildPageWithTransition(
-              context: context,
-              state: state,
-              child: const RoutePageRoute(),
-            )),
+      path: '/settings',
+      builder: (context, state) => const SettingsPageRoute(),
+      pageBuilder: GoTransitions.cupertino.call, 
+    ),
     GoRoute(
-        path: '/settings',
-        pageBuilder: (context, state) => buildPageWithTransition(
-              context: context,
-              state: state,
-              child: const SettingsPageRoute(),
-            )),
-    GoRoute(
-        path: '/updateData',
-        pageBuilder: (context, state) => buildPageWithTransition(
-              context: context,
-              state: state,
-              child: const UpdateDataPageRoute(),
-            )),
+      path: '/updateData',
+      builder: (context, state) => const UpdateDataPageRoute(),
+      pageBuilder: GoTransitions.cupertino.call, 
+    ),
   ],
 );
 
