@@ -42,16 +42,22 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-
+  bool _showContent = false;
   bool trafficLayer = sp.getBool("trafficLayer") ?? false;
 
   @override
   void initState() {
     super.initState();
+    Future.delayed(Duration(milliseconds: 300), () {
+      setState(() {
+        _showContent = true;
+      });
+    });
   }
+
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return _showContent ? ListView(
       children: [
         Padding(
           padding: const EdgeInsets.all(12.5),
@@ -61,31 +67,26 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         ListTile(
           title: Text('Theme Mode'),
-          trailing:  DropdownButton<ThemeMode>(
-                value: uf.getCurrentThemeMode(),
-                items: ThemeMode.values.map((ThemeMode mode) {
-                  return DropdownMenuItem<ThemeMode>(
-                    value: mode,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        tf.capitalizeFirst(mode.toString().split('.').last),
-                      ),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (ThemeMode? newValue) {
-                  if (newValue != null) {
-                    DynamikTheme.of(context).setThemeMode(newValue);
-                    sp.setInt(
-                      'themeMode',
-                      ThemeMode.values.indexOf(newValue),
-                    );
-                  }
-                },
-              )
-          
-          
+          trailing: DropdownButton<ThemeMode>(
+            value: uf.getCurrentThemeMode(),
+            items: ThemeMode.values.map((ThemeMode mode) {
+              return DropdownMenuItem<ThemeMode>(
+                value: mode,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    tf.capitalizeFirst(mode.toString().split('.').last),
+                  ),
+                ),
+              );
+            }).toList(),
+            onChanged: (ThemeMode? newValue) {
+              if (newValue != null) {
+                DynamikTheme.of(context).setThemeMode(newValue);
+                sp.setInt('themeMode', ThemeMode.values.indexOf(newValue));
+              }
+            },
+          ),
         ),
 
         ListTile(
@@ -118,15 +119,18 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           title: Text('顯示交通狀況'),
           subtitle: Text("在地圖上顯示即時交通狀況 (需要一定 zoom level 才會顯示)"),
-          trailing: Switch(value: trafficLayer, onChanged: (bool value) {
-            sp.setBool("trafficLayer", value);
-            setState(() {
-              trafficLayer = value;
-            });
-          }),
+          trailing: Switch(
+            value: trafficLayer,
+            onChanged: (bool value) {
+              sp.setBool("trafficLayer", value);
+              setState(() {
+                trafficLayer = value;
+              });
+            },
+          ),
         ),
 
-         ListTile(
+        ListTile(
           title: Text('更新路線及車站資料'),
           trailing: w.button(
             context: context,
@@ -185,6 +189,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         ),
       ],
-    );
+    ): Center(child: w.loadingIcon(context: context));
   }
 }
