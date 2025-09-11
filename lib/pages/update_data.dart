@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hktransports/dataStore/objectbox.dart';
 import '../multiplat_ui.dart';
 
 import 'package:hkbusapi/kmb/functions.dart' as kmb;
@@ -44,9 +45,9 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     setState(() {
       updateStatus = "更新完成 Update complete!";
     });
+    sp.setInt("dataLastUpdated", DateTime.now().millisecondsSinceEpoch ~/ 1000);
     await Future.delayed(Duration(milliseconds: 100));
     if (mounted) {
-      context.go('/settings');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Center(
@@ -63,8 +64,19 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
           ),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.all(50),
+          duration: Duration(milliseconds: 2500),
         ),
       );
+      final String returnPage =
+          GoRouter.of(
+            context,
+          ).routeInformationProvider.value.uri.queryParameters['return'] ??
+          'N/A';
+      if (returnPage == 'home') {
+        context.go('/');
+      } else {
+        context.go('/settings');
+      }
     }
   }
 

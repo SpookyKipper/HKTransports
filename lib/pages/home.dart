@@ -1,4 +1,5 @@
 import 'package:dynamik_theme/dynamik_theme.dart';
+import 'package:hkbusapi/hkbusapi.dart';
 import 'package:hktransports/customWidgets/null_widget.dart';
 import 'package:hktransports/customWidgets/stacked_widgets.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +54,17 @@ class _HomePageState extends State<HomePage> {
       }
 
       checkTheme();
+
+      void checkDataPresence() {
+        final bool hasData = sp.getInt("dataLastUpdated") != null;
+        if (!hasData) {
+          if (context.mounted) {
+            context.go('/updateData?return=home');
+          }
+        }
+      }
+      checkDataPresence();
+
     });
   }
 
