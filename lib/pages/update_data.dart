@@ -75,7 +75,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
       if (returnPage == 'home') {
         context.go('/');
       } else {
-        context.go('/settings');
+        context.go('/?return=settings');
       }
     }
   }

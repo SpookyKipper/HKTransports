@@ -23,10 +23,16 @@ class RoutePageRoute extends StatefulWidget {
 
 class _RoutePageRouteState extends State<RoutePageRoute> {
   String dest = "Loading...";
+  bool _showContent = false;
 
   @override
   void initState() {
     super.initState();
+    Future.delayed(Duration(milliseconds: 300), () {
+      setState(() {
+        _showContent = true;
+      });
+    });
   }
 
   @override
@@ -77,31 +83,35 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
           alpha: 0.9,
         ), // Add foreground color to the app bar
       ),
-      body: FutureBuilder(
-        future: kmb.getRouteStops(
-          route: route,
-          bound: bound,
-          servicetype: servicetype,
-        ),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: w.loadingIcon(context: context));
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No data available'));
-          } else {
-            // Data is available, build the ListView
-            final stops = snapshot.data!;
-            return RoutePage(
-              routeStops: stops,
-              route: route,
-              servicetype: servicetype,
-              bound: bound,
-            ); // Replace with actual data handling
-          }
-        },
-      ), // Use the RoutePage widget
+      body: _showContent
+          ? FutureBuilder(
+              future: kmb.getRouteStops(
+                route: route,
+                bound: bound,
+                servicetype: servicetype,
+              ),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: w.loadingIcon(context: context));
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text('No data available'));
+                } else {
+                  // Data is available, build the ListView
+                  final stops = snapshot.data!;
+                  return RoutePage(
+                    routeStops: stops,
+                    route: route,
+                    servicetype: servicetype,
+                    bound: bound,
+                  ); // Replace with actual data handling
+                }
+              },
+            )
+          : Center(
+              child: w.loadingIcon(context: context),
+            ), // Use the RoutePage widget
     );
   }
 }
@@ -217,7 +227,7 @@ class Maptiler extends StatelessWidget {
       children: [
         TileLayer(
           urlTemplate:
-             "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Tomtom/baseMap/${uf.getCurrentThemeSetting() == 1 ? "main" : "night"}/{z}/{x}/{y}",
+              "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Tomtom/baseMap/${uf.getCurrentThemeSetting() == 1 ? "main" : "night"}/{z}/{x}/{y}",
           userAgentPackageName: 'com.spookysrv.hktransports',
           maxNativeZoom: 22,
         ),
@@ -273,7 +283,8 @@ class Maptiler extends StatelessWidget {
                     ),
                   ),
                 ),
-                TextButton(onPressed: () => showDialog(
+                TextButton(
+                  onPressed: () => showDialog(
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
@@ -291,7 +302,12 @@ class Maptiler extends StatelessWidget {
                         ],
                       );
                     },
-                  ), child: Icon(Icons.info_outline, size: 18, color: Colors.black,),
+                  ),
+                  child: Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: Colors.black,
+                  ),
                 ),
               ],
             ),

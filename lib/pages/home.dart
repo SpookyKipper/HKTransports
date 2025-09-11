@@ -63,9 +63,24 @@ class _HomePageState extends State<HomePage> {
           }
         }
       }
+
       checkDataPresence();
 
+      void checkPage() {
+        final String returnPage =
+          GoRouter.of(
+            context,
+          ).routeInformationProvider.value.uri.queryParameters['return'] ??
+          'N/A';
+        if (returnPage != null && returnPage == "settings") {
+          if (context.mounted) {
+            context.push('/settings');
+          }
+        }
+      }
+      checkPage();
     });
+  
   }
 
   @override

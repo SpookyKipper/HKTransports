@@ -30,6 +30,27 @@ final _router = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsPageRoute(),
+      pageBuilder: (context, state) {
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: SettingsPageRoute(),
+          transitionDuration: const Duration(milliseconds: 750),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            // Use a fastOutSlowIn curve for the slide transition, with a 100ms delay
+            final delayedAnimation = CurvedAnimation(
+              parent: animation,
+              curve: Interval(0.2, 1.0, curve: Curves.fastEaseInToSlowEaseOut),
+            );
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1.0, 0.0), // Starts from the right
+                end: Offset.zero, // Ends at the center
+              ).animate(delayedAnimation),
+              child: child,
+            );
+          },
+        );
+      },
     ),
     GoRoute(
       path: '/updateData',
