@@ -20,42 +20,68 @@ import 'package:go_router/go_router.dart';
 
 import 'package:hkbusapi/hkbusapi.dart';
 
+CustomTransitionPage<T> buildPageWithTransition<T>({
+  required BuildContext context,
+  required GoRouterState state,
+  required Widget child,
+}) {
+  return CustomTransitionPage<T>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 350),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      const begin = Offset(1.0, 0.0);
+      const end = Offset.zero;
+      const curve = Curves.fastOutSlowIn;
+
+      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      var slideTransition = animation.drive(tween);
+
+      var secondaryTween = Tween(begin: Offset.zero, end: const Offset(-1.0 / 4.0, 0.0))
+          .chain(CurveTween(curve: Curves.easeInOut));
+      var secondarySlideTransition = secondaryAnimation.drive(secondaryTween);
+
+      return SlideTransition(
+        position: secondarySlideTransition,
+        child: SlideTransition(
+          position: slideTransition,
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 final _router = GoRouter(
   routes: [
-    GoRoute(path: '/', builder: (context, state) => const HomePageRoute()),
     GoRoute(
-      path: '/route',
-      builder: (context, state) => const RoutePageRoute(),
-    ),
+        path: '/',
+        pageBuilder: (context, state) => buildPageWithTransition(
+              context: context,
+              state: state,
+              child: const HomePageRoute(),
+            )),
     GoRoute(
-      path: '/settings',
-      builder: (context, state) => const SettingsPageRoute(),
-      pageBuilder: (context, state) {
-        return CustomTransitionPage(
-          key: state.pageKey,
-          child: SettingsPageRoute(),
-          transitionDuration: const Duration(milliseconds: 750),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            // Use a fastOutSlowIn curve for the slide transition, with a 100ms delay
-            final delayedAnimation = CurvedAnimation(
-              parent: animation,
-              curve: Interval(0.2, 1.0, curve: Curves.fastEaseInToSlowEaseOut),
-            );
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(1.0, 0.0), // Starts from the right
-                end: Offset.zero, // Ends at the center
-              ).animate(delayedAnimation),
-              child: child,
-            );
-          },
-        );
-      },
-    ),
+        path: '/route',
+        pageBuilder: (context, state) => buildPageWithTransition(
+              context: context,
+              state: state,
+              child: const RoutePageRoute(),
+            )),
     GoRoute(
-      path: '/updateData',
-      builder: (context, state) => const UpdateDataPageRoute(),
-    ),
+        path: '/settings',
+        pageBuilder: (context, state) => buildPageWithTransition(
+              context: context,
+              state: state,
+              child: const SettingsPageRoute(),
+            )),
+    GoRoute(
+        path: '/updateData',
+        pageBuilder: (context, state) => buildPageWithTransition(
+              context: context,
+              state: state,
+              child: const UpdateDataPageRoute(),
+            )),
   ],
 );
 
