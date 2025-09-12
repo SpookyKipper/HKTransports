@@ -122,13 +122,14 @@ class _SettingsPageState extends State<SettingsPage> {
           trailing: DropdownButton<String>(
             value: sp.getString("appLanguage") ?? "zh_Hant",
             items: ["繁體中文", "English"].map((String lang) {
+              late final String langVal;
               if (lang == "繁體中文") {
-                lang = "zh_Hant";
+                langVal = "zh_Hant";
               } else if (lang == "English") {
-                lang = "en";
+                langVal = "en";
               }
               return DropdownMenuItem<String>(
-                value: lang,
+                value: langVal,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(tf.capitalizeFirst(lang)),
