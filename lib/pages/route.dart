@@ -228,7 +228,7 @@ class Maptiler extends StatelessWidget {
       children: [
         TileLayer(
           urlTemplate:
-              "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Tomtom/baseMap/${uf.getCurrentThemeSetting() == 1 ? "main" : "night"}/{z}/{x}/{y}?language=zh-TW",
+              "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Tomtom/baseMap/${uf.getCurrentThemeSetting() == 1 ? "main" : "night"}/{z}/{x}/{y}${sp.getString("appLanguage") == "en" ? "?language=en" : "?language=zh-TW"}",
           userAgentPackageName: 'com.spookysrv.hktransports',
           maxNativeZoom: 22,
         ),
@@ -256,13 +256,17 @@ class Maptiler extends StatelessWidget {
           ),
 
         Transform.scale(
-          alignment:  screenHeight > 1200 ? Alignment.bottomRight : Alignment.topRight,
+          alignment: screenHeight > 1200
+              ? Alignment.bottomRight
+              : Alignment.topLeft,
           scale: 0.65,
           child: SimpleAttributionWidget(
             source: SizedBox(
               height: 20,
               child: Row(
                 children: [
+                  if (screenHeight <= 1200)
+                    CopyrightInfoButton(context),
                   w.button(
                     context: context,
                     onPressed: () => launchUrl(
@@ -278,7 +282,7 @@ class Maptiler extends StatelessWidget {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
-                      elevation: 0
+                      elevation: 0,
                     ),
                   ),
                   w.button(
@@ -294,50 +298,57 @@ class Maptiler extends StatelessWidget {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
-                      elevation: 0
+                      elevation: 0,
                     ),
                   ),
-                  w.button(
-                    context: context,
-                    onPressed: () => showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text("Map Data Copyright Information"),
-                          content: Text(
-                            "© 1992 - 2025 TomTom. All rights reserved. This material is proprietary and the subject of copyright protection, database right protection and other intellectual property rights owned by TomTom or its suppliers. The use of this material is subject to the terms of a license agreement. Any unauthorized copying or disclosure of this material will lead to criminal and civil liabilities.\n\nData Source © 2025 TomTom\n\nBased on https://www.tomtom.com/legal/en_gb/product-attributions/",
-                          ),
-                          actions: <Widget>[
-                            TextButton(
-                              child: Text("Close"),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                    child: Icon(
-                      Icons.info_outline,
-                      size: 18,
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0
-                    ),
-                  ),
+                  if (screenHeight > 1200)
+                    CopyrightInfoButton(context),
                 ],
               ),
             ),
-            alignment:  screenHeight > 1200 ? Alignment.bottomRight : Alignment.topRight,
+            alignment: screenHeight > 1200
+                ? Alignment.bottomRight
+                : Alignment.topLeft,
             backgroundColor: Colors.white12,
           ),
         ),
       ],
     );
   }
+}
+
+Widget CopyrightInfoButton(context) {
+  return w.button(
+    context: context,
+    onPressed: () => showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Map Data Copyright Information"),
+          content: Text(
+            "© 1992 - 2025 TomTom. All rights reserved. This material is proprietary and the subject of copyright protection, database right protection and other intellectual property rights owned by TomTom or its suppliers. The use of this material is subject to the terms of a license agreement. Any unauthorized copying or disclosure of this material will lead to criminal and civil liabilities.\n\nData Source © 2025 TomTom\n\nBased on https://www.tomtom.com/legal/en_gb/product-attributions/",
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text("Close"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    ),
+    child: Icon(
+      Icons.info_outline,
+      size: 18,
+      color: Colors.white.withValues(alpha: 0.7),
+    ),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+    ),
+  );
 }
 
 class EtaRow extends StatelessWidget {

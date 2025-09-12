@@ -21,6 +21,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:hkbusapi/hkbusapi.dart';
 
+import 'package:flutter_localizations/flutter_localizations.dart';
+
 final _router = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomePageRoute()),
@@ -46,12 +48,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Directory dir = await getApplicationDocumentsDirectory();
   String path = dir.path;
-  final Directory dirAppdata =  Directory("$path/hktransports/appdata"); // check if the appdata directory exists, if not create it
+  final Directory dirAppdata = Directory(
+    "$path/hktransports/appdata",
+  ); // check if the appdata directory exists, if not create it
   await dirAppdata.exists() ? null : await dirAppdata.create(recursive: true);
   await initObjectBox();
 
-  final Directory dirBusApiData =  Directory("$path/hktransports/appdata"); // check if BusAPI the directory exists, if not create it
-  await dirBusApiData.exists() ? null : await dirBusApiData.create(recursive: true);
+  final Directory dirBusApiData = Directory(
+    "$path/hktransports/appdata",
+  ); // check if BusAPI the directory exists, if not create it
+  await dirBusApiData.exists()
+      ? null
+      : await dirBusApiData.create(recursive: true);
   await initBusApiObjectBox(dir: "$path/hktransports/busapi");
   // await FlutterDisplayMode.setHighRefreshRate();
   runApp(Phoenix(child: MyApp()));
@@ -93,6 +101,15 @@ class MyApp extends StatelessWidget {
           darkTheme: darkTheme,
           debugShowCheckedModeBanner: false,
           routerConfig: _router,
+          localizationsDelegates: [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: [
+            Locale('en'), // English
+            Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'), // Chinese Traditional
+          ],
           // scaffoldMessengerKey: snackbarKey,
         );
         // MaterialApp(

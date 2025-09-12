@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:hktransports/objectBox/store.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../functions/platform.dart';
 import '../functions/text.dart';
@@ -112,6 +113,30 @@ class _SettingsPageState extends State<SettingsPage> {
                   Phoenix.rebirth(context);
                 }
               }
+            },
+          ),
+        ),
+
+        ListTile(
+          title: Text('界面語言 (App Language)'),
+          trailing: DropdownButton<String>(
+            value: sp.getString("appLanguage") ?? "zh_Hant",
+            items: ["繁體中文", "English"].map((String lang) {
+              if (lang == "繁體中文") {
+                lang = "zh_Hant";
+              } else if (lang == "English") {
+                lang = "en";
+              }
+              return DropdownMenuItem<String>(
+                value: lang,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(tf.capitalizeFirst(lang)),
+                ),
+              );
+            }).toList(),
+            onChanged: (String? newValue) async {
+              sp.setString("appLanguage", newValue!);
             },
           ),
         ),
