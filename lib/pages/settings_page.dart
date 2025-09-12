@@ -132,7 +132,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 value: langVal,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Text(tf.capitalizeFirst(lang)),
+                  child: Text(lang),
                 ),
               );
             }).toList(),
