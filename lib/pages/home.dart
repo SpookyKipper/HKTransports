@@ -28,6 +28,18 @@ class HomePageRoute extends StatelessWidget {
         foregroundColor: Colors.white.withValues(
           alpha: 0.9,
         ), // Add foreground color to the app bar
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: w.iconButton(
+              context: context,
+              icon: Icons.settings,
+              onPressed: () {
+                context.push('/settings');
+              },
+            ),
+          ),
+        ],
       ),
       body: HomePage(), // Use the HomePage widget
     );

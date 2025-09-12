@@ -138,6 +138,9 @@ class _SettingsPageState extends State<SettingsPage> {
             }).toList(),
             onChanged: (String? newValue) async {
               sp.setString("appLanguage", newValue!);
+              setState(() {
+                // Update the UI to reflect the language change
+              });
             },
           ),
         ),

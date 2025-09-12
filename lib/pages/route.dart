@@ -7,6 +7,7 @@ import 'package:hktransports/customWidgets/null_widget.dart';
 import 'package:hktransports/customWidgets/stacked_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
+import 'package:hktransports/functions/text.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -24,12 +25,12 @@ class RoutePageRoute extends StatefulWidget {
 
 class _RoutePageRouteState extends State<RoutePageRoute> {
   String dest = "Loading...";
-  bool _showContent = true;
+  bool _showContent = false;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(milliseconds: 300), () {
+    Future.delayed(Duration(milliseconds: 250), () {
       setState(() {
         _showContent = true;
       });
@@ -62,7 +63,7 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
       late final String dest;
       final language = sp.getString("appLanguage") ?? "zh_Hant";
       if (language == "en" && routeData.dest.length > 1) {
-        dest = routeData.dest[3];
+        dest = tf.capitalizeWords(routeData.dest[2]);
       } else {
         dest = routeData.dest[0];
       }
@@ -141,7 +142,9 @@ class RoutePage extends StatelessWidget {
     return routeStops.map((routeStop) {
       return StationTile(
         stopSeq: routeStop.seq,
-        stationName: routeStop.stop.name[0],
+        stationName: sp.getString("appLanguage") == "en"
+            ? routeStop.stop.name[2]
+            : routeStop.stop.name[0],
         stopid: routeStop.stop.stopid,
         price: 1,
         route: route,
@@ -209,6 +212,7 @@ class Maptiler extends StatelessWidget {
       );
     }
     final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
     // FlutterDisplayMode.active.then((mode) {
     //   print("Current active mode: ${mode.width}x${mode.height} @ ${mode.refreshRate}Hz");
     // });
@@ -265,7 +269,9 @@ class Maptiler extends StatelessWidget {
           alignment: screenHeight > 1200
               ? Alignment.bottomRight
               : Alignment.topLeft,
-          scale: 0.65,
+          scale: screenWidth > 1200
+              ? 0.8
+              : 0.65,
           child: SimpleAttributionWidget(
             source: SizedBox(
               height: 20,
@@ -273,12 +279,15 @@ class Maptiler extends StatelessWidget {
                 children: [
                   if (screenHeight <= 1200)
                     CopyrightInfoButton(context),
-                  w.button(
-                    context: context,
+                  ElevatedButton(
                     onPressed: () => launchUrl(
                       Uri.parse(
                         "https://www.tomtom.com/legal/en_gb/product-attributions/",
                       ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
                     ),
                     child: Text(
                       "© TomTom",
@@ -286,25 +295,20 @@ class Maptiler extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => launchUrl(
+                      Uri.parse("https://www.openstreetmap.org/copyright"),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       elevation: 0,
-                    ),
-                  ),
-                  w.button(
-                    context: context,
-                    onPressed: () => launchUrl(
-                      Uri.parse("https://www.openstreetmap.org/copyright"),
                     ),
                     child: Text(
                       "© OpenStreetMap",
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.7),
                       ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
                     ),
                   ),
                   if (screenHeight > 1200)
@@ -324,8 +328,7 @@ class Maptiler extends StatelessWidget {
 }
 
 Widget CopyrightInfoButton(context) {
-  return w.button(
-    context: context,
+  return ElevatedButton(
     onPressed: () => showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -345,14 +348,14 @@ Widget CopyrightInfoButton(context) {
         );
       },
     ),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+    ),
     child: Icon(
       Icons.info_outline,
       size: 18,
       color: Colors.white.withValues(alpha: 0.7),
-    ),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
     ),
   );
 }
@@ -537,7 +540,9 @@ class _StationTileState extends State<StationTile> {
             time: DateFormat('HH:mm').format(eta.eta),
             seconds: seconds,
             minutes: minutes,
-            remarks: eta.remarks.isEmpty ? null : eta.remarks[0],
+            remarks: eta.remarks.isEmpty ? null : sp.getString("appLanguage") == "en"
+                ? eta.remarks[2]
+                : eta.remarks[0],
             etaSeq: eta.etaSeq,
             stopSeq: widget.stopSeq,
           );
@@ -567,7 +572,7 @@ class _StationTileState extends State<StationTile> {
   @override
   Widget build(BuildContext context) {
     final String originalName = widget.stationName;
-    final RegExp platformRegex = RegExp(r' \([A-Z][0-9]{1,2}\)');
+    final RegExp platformRegex = RegExp(r'\([A-Z][0-9]{1,2}\)');
     final RegExp stationCodeRegex = RegExp(r' \([A-Z]{2}[0-9]{3}\)');
 
     final String? stationCode = stationCodeRegex
@@ -576,9 +581,9 @@ class _StationTileState extends State<StationTile> {
     final String? platformCode = platformRegex
         .firstMatch(originalName)
         ?.group(0);
-    final String processedName = originalName
+    final String processedName = tf.capitalizeWords(originalName
         .replaceFirst("$stationCode", "")
-        .replaceFirst("$platformCode", "");
+        .replaceFirst("$platformCode", "")).replaceAll("Bbi", "BBI");
 
     return Container(
       decoration: BoxDecoration(
@@ -622,7 +627,7 @@ class _StationTileState extends State<StationTile> {
                         ),
                       if (platformCode != null)
                         Text(
-                          " • 月台 ${platformCode.replaceFirst(" (", "").replaceFirst(")", "")}",
+                          " • 月台 ${platformCode.replaceFirst("(", "").replaceFirst(")", "")}",
                           style: TextStyle(
                             fontSize: 15,
                             color: Theme.of(context).colorScheme.secondary,
