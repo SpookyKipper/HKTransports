@@ -59,7 +59,13 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
         bound: bound,
         servicetype: servicetype,
       );
-      final String dest = routeData.dest[0];
+      late final String dest;
+      final language = sp.getString("appLanguage") ?? "zh_Hant";
+      if (language == "en" && routeData.dest.length > 1) {
+        dest = routeData.dest[3];
+      } else {
+        dest = routeData.dest[0];
+      }
       setState(() {
         this.dest = dest;
       });
