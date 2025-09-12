@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:hkbusapi/kmb/classes.dart';
 import 'package:hktransports/customWidgets/null_widget.dart';
@@ -23,7 +24,7 @@ class RoutePageRoute extends StatefulWidget {
 
 class _RoutePageRouteState extends State<RoutePageRoute> {
   String dest = "Loading...";
-  bool _showContent = false;
+  bool _showContent = true;
 
   @override
   void initState() {
@@ -227,7 +228,7 @@ class Maptiler extends StatelessWidget {
       children: [
         TileLayer(
           urlTemplate:
-              "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Tomtom/baseMap/${uf.getCurrentThemeSetting() == 1 ? "main" : "night"}/{z}/{x}/{y}",
+              "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Tomtom/baseMap/${uf.getCurrentThemeSetting() == 1 ? "main" : "night"}/{z}/{x}/{y}?language=zh-TW",
           userAgentPackageName: 'com.spookysrv.hktransports',
           maxNativeZoom: 22,
         ),
@@ -238,7 +239,7 @@ class Maptiler extends StatelessWidget {
                 "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Tomtom/traffic/{z}/{x}/{y}",
             userAgentPackageName: 'com.spookysrv.hktransports',
             maxNativeZoom: 22,
-            minZoom: 15.25, // only show when close enough
+            minZoom: 13.5, // only show when close enough   15.25
           ),
         if (markerWidget != null && markerPoints != null)
           MarkerLayer(
@@ -254,66 +255,85 @@ class Maptiler extends StatelessWidget {
             ],
           ),
 
-        SimpleAttributionWidget(
-          source: SizedBox(
-            height: 20,
-            child: Row(
-              children: [
-                TextButton(
-                  onPressed: () => launchUrl(
-                    Uri.parse(
-                      "https://www.tomtom.com/legal/en_gb/product-attributions/",
-                    ),
-                  ),
-                  child: Text(
-                    "© TomTom",
-                    style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => launchUrl(
-                    Uri.parse("https://www.openstreetmap.org/copyright"),
-                  ),
-                  child: Text(
-                    "© OpenStreetMap",
-                    style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => showDialog(
+        Transform.scale(
+          alignment:  screenHeight > 1200 ? Alignment.bottomRight : Alignment.topRight,
+          scale: 0.65,
+          child: SimpleAttributionWidget(
+            source: SizedBox(
+              height: 20,
+              child: Row(
+                children: [
+                  w.button(
                     context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text("Map Data Copyright Information"),
-                        content: Text(
-                          "© 1992 - 2025 TomTom. All rights reserved. This material is proprietary and the subject of copyright protection, database right protection and other intellectual property rights owned by TomTom or its suppliers. The use of this material is subject to the terms of a license agreement. Any unauthorized copying or disclosure of this material will lead to criminal and civil liabilities.\n\nData Source © 2025 TomTom\n\nBased on https://www.tomtom.com/legal/en_gb/product-attributions/",
-                        ),
-                        actions: <Widget>[
-                          TextButton(
-                            child: Text("Close"),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
+                    onPressed: () => launchUrl(
+                      Uri.parse(
+                        "https://www.tomtom.com/legal/en_gb/product-attributions/",
+                      ),
+                    ),
+                    child: Text(
+                      "© TomTom",
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0
+                    ),
+                  ),
+                  w.button(
+                    context: context,
+                    onPressed: () => launchUrl(
+                      Uri.parse("https://www.openstreetmap.org/copyright"),
+                    ),
+                    child: Text(
+                      "© OpenStreetMap",
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0
+                    ),
+                  ),
+                  w.button(
+                    context: context,
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Map Data Copyright Information"),
+                          content: Text(
+                            "© 1992 - 2025 TomTom. All rights reserved. This material is proprietary and the subject of copyright protection, database right protection and other intellectual property rights owned by TomTom or its suppliers. The use of this material is subject to the terms of a license agreement. Any unauthorized copying or disclosure of this material will lead to criminal and civil liabilities.\n\nData Source © 2025 TomTom\n\nBased on https://www.tomtom.com/legal/en_gb/product-attributions/",
                           ),
-                        ],
-                      );
-                    },
+                          actions: <Widget>[
+                            TextButton(
+                              child: Text("Close"),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0
+                    ),
                   ),
-                  child: Icon(
-                    Icons.info_outline,
-                    size: 18,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
+            alignment:  screenHeight > 1200 ? Alignment.bottomRight : Alignment.topRight,
+            backgroundColor: Colors.white12,
           ),
-          alignment: Alignment.bottomRight,
-          backgroundColor: Colors.white12,
         ),
       ],
     );

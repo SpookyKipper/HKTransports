@@ -30,12 +30,17 @@ class MultiplatWidgets {
     required BuildContext context,
     onPressed,
     required Widget child,
+    ButtonStyle? style,
   }) {
     updateTemplate(context);
     if (themeTemplate == "cupertino") {
       return CupertinoButton(onPressed: onPressed, child: child);
     } else {
-      return ElevatedButton(onPressed: onPressed, child: child);
+      return ElevatedButton(
+        onPressed: onPressed,
+        style: style,
+        child: child,
+      );
     }
   }
 
@@ -276,7 +281,11 @@ class MultiplatWidgets {
         length: tabTitles.length,
         child: Column(
           children: [
-            TabBar(tabs: tabTitles, isScrollable: true, tabAlignment: TabAlignment.start,),
+            TabBar(
+              tabs: tabTitles,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+            ),
             Expanded(child: TabBarView(children: children)),
           ],
         ),

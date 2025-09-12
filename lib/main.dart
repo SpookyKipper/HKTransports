@@ -21,24 +21,23 @@ import 'package:go_router/go_router.dart';
 
 import 'package:hkbusapi/hkbusapi.dart';
 
-
 final _router = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomePageRoute()),
     GoRoute(
       path: '/route',
       builder: (context, state) => const RoutePageRoute(),
-      pageBuilder: GoTransitions.cupertino.call, 
+      pageBuilder: GoTransitions.cupertino.call,
     ),
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsPageRoute(),
-      pageBuilder: GoTransitions.cupertino.call, 
+      pageBuilder: GoTransitions.cupertino.call,
     ),
     GoRoute(
       path: '/updateData',
       builder: (context, state) => const UpdateDataPageRoute(),
-      pageBuilder: GoTransitions.cupertino.call, 
+      pageBuilder: GoTransitions.cupertino.call,
     ),
   ],
 );
@@ -47,7 +46,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Directory dir = await getApplicationDocumentsDirectory();
   String path = dir.path;
+  final Directory dirAppdata =  Directory("$path/hktransports/appdata"); // check if the appdata directory exists, if not create it
+  await dirAppdata.exists() ? null : await dirAppdata.create(recursive: true);
   await initObjectBox();
+
+  final Directory dirBusApiData =  Directory("$path/hktransports/appdata"); // check if BusAPI the directory exists, if not create it
+  await dirBusApiData.exists() ? null : await dirBusApiData.create(recursive: true);
   await initBusApiObjectBox(dir: "$path/hktransports/busapi");
   // await FlutterDisplayMode.setHighRefreshRate();
   runApp(Phoenix(child: MyApp()));
