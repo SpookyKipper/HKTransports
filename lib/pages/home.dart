@@ -110,10 +110,7 @@ class _HomePageState extends State<HomePage> {
           dest: "荃灣西站",
           onBoardStop: "培城路",
         ),
-        ElevatedButton(
-          onPressed: () => context.push('/settings'),
-          child: Text("a"),
-        ),
+        nullWidget(),
       ],
     );
   }

@@ -43,13 +43,13 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _showContent = false;
+  bool _showContent = true;
   bool trafficLayer = sp.getBool("trafficLayer") ?? false;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(milliseconds: 250), () {
+    Future.delayed(Duration(milliseconds: 300), () {
       setState(() {
         _showContent = true;
       });

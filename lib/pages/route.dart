@@ -30,7 +30,7 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(milliseconds: 250), () {
+    Future.delayed(Duration(milliseconds: 10), () {
       setState(() {
         _showContent = true;
       });
@@ -367,6 +367,7 @@ class EtaRow extends StatelessWidget {
   final String? remarks;
   final int etaSeq;
   final int stopSeq;
+  final DateTime? timestamp;
 
   const EtaRow({
     super.key,
@@ -376,6 +377,7 @@ class EtaRow extends StatelessWidget {
     this.remarks,
     required this.etaSeq,
     required this.stopSeq,
+    this.timestamp,
   });
 
   @override
@@ -451,7 +453,7 @@ class EtaRow extends StatelessWidget {
               ),
               // strutStyle: StrutStyle(forceStrutHeight: true),
             ),
-          if (seconds < -75)
+          if (seconds < -75 && timestamp != DateTime.fromMillisecondsSinceEpoch(0))
             Text(
               "已離開，請等候下一班車  ",
               style: TextStyle(
@@ -463,6 +465,19 @@ class EtaRow extends StatelessWidget {
               ),
               // strutStyle: StrutStyle(forceStrutHeight: true),
             ),
+          if (timestamp == DateTime.fromMillisecondsSinceEpoch(0))
+           Text(
+            remarks ?? "",
+            style: TextStyle(
+                fontSize: 16,
+                // fontWeight: FontWeight.bold,
+                color: etaSeq == 1
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.secondaryFixedDim,
+              ),
+            strutStyle: StrutStyle(forceStrutHeight: true),
+          ),
+          if (timestamp != DateTime.fromMillisecondsSinceEpoch(0))
           Text(
             remarks ?? "",
             style: TextStyle(
@@ -545,6 +560,7 @@ class _StationTileState extends State<StationTile> {
                 : eta.remarks[0],
             etaSeq: eta.etaSeq,
             stopSeq: widget.stopSeq,
+            timestamp: eta.eta
           );
         }).toList();
       }
@@ -577,13 +593,14 @@ class _StationTileState extends State<StationTile> {
 
     final String? stationCode = stationCodeRegex
         .firstMatch(originalName)
-        ?.group(0);
+        ?.group(0); // Check KMB station code
     final String? platformCode = platformRegex
         .firstMatch(originalName)
-        ?.group(0);
+        ?.group(0); // check KMB platform code
     final String processedName = tf.capitalizeWords(originalName
         .replaceFirst("$stationCode", "")
         .replaceFirst("$platformCode", "")).replaceAll("Bbi", "BBI");
+        // format station name
 
     return Container(
       decoration: BoxDecoration(
