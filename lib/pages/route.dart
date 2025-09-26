@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:desktop_webview_window/desktop_webview_window.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:hkbusapi/kmb/classes.dart';
+import 'package:hkbusapi/universal/classes.dart';
 import 'package:hktransports/customWidgets/null_widget.dart';
 import 'package:hktransports/customWidgets/stacked_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
+import 'package:hktransports/functions/platform.dart';
 import 'package:hktransports/functions/text.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
@@ -15,6 +19,8 @@ import '../functions/ui.dart';
 import '../multiplat_ui.dart';
 
 import 'package:hkbusapi/kmb/functions.dart' as kmb;
+import 'package:hkbusapi/universal/functions.dart';
+import 'package:hkbusapi/classes.dart';
 
 class RoutePageRoute extends StatefulWidget {
   const RoutePageRoute({super.key});
@@ -54,8 +60,8 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
     final String bound = "I";
     final String servicetype = "1";
 
-    Future<void> getDest() async {
-      final KMBRoute routeData = await kmb.getRoute(
+    void getDest() {
+      final KMBRoute routeData = kmb.getRoute(
         route: route,
         bound: bound,
         servicetype: servicetype,
@@ -76,6 +82,92 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
       getDest();
     }
 
+    /*   Get route data such as fares and GTFS ID */
+    final KMBRoute routeData = kmb.getRoute(
+      route: route,
+      bound: bound,
+      servicetype: servicetype,
+    );
+
+    final destUnformat = routeData.dest[2];
+    final origin = routeData.origin[2];
+
+    final data = getRouteData(
+      route,
+      int.parse(servicetype),
+      origin,
+      destUnformat,
+    );
+    final List<String>? fares = data.fares;
+    final String? gtfsId = data.gtfsId;
+    print("GTFS ID: $gtfsId");
+    print("Fares: $fares");
+    /* End get route data */
+
+    /* Timetable dialog */
+    String language = sp.getString("appLanguage") ?? "zh_Hant";
+    if (language == "zh_Hant") {
+      language = "tc";
+    } else {
+      language = "en";
+    }
+    void showTimetableDialog() async {
+      final webview = await WebviewWindow.create(
+        configuration: CreateConfiguration(
+          windowHeight: 1385,
+          windowWidth: 804,
+          title: "時間表 Timetable - $route $origin → $dest",
+          titleBarTopPadding: Platform.isMacOS ? 20 : 0,
+        ),
+      );
+      // 💡 Set up the onClose handler
+      webview.onClose.whenComplete(() {
+        debugPrint("Webview window is closing, but the app stays open!");
+        // Note: We are NOT calling exit(0) here.
+        // The plugin handles the window destruction.
+      });
+
+      webview.launch(
+        "https://smd.hkemobility.gov.hk/ptheadway/getPTheadway/$gtfsId/1/$language",
+      );
+    }
+
+    /* End timetable dialog */
+
+    /* More info dialog*/
+    void showMoreInfoDialog() {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Route Information"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                w.button(
+                  context: context,
+                  child: Text("時間表 Timetable"),
+                  onPressed: showTimetableDialog,
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              Expanded(
+                child: TextButton(
+                  child: Text("Close"),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+    /* End more info dialog */
+
     return Scaffold(
       appBar: w.appBar(
         context: context,
@@ -90,6 +182,16 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
         foregroundColor: Colors.white.withValues(
           alpha: 0.9,
         ), // Add foreground color to the app bar
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: Icon(Icons.info_outline),
+              onPressed: showMoreInfoDialog,
+              tooltip: "Refresh",
+            ),
+          ),
+        ],
       ),
       body: _showContent
           ? FutureBuilder(
@@ -113,6 +215,8 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
                     route: route,
                     servicetype: servicetype,
                     bound: bound,
+                    fares: fares,
+                    gtfsId: gtfsId,
                   ); // Replace with actual data handling
                 }
               },
@@ -129,6 +233,8 @@ class RoutePage extends StatelessWidget {
   final String route;
   final String servicetype;
   final String bound;
+  final String? gtfsId;
+  final List<String>? fares;
 
   const RoutePage({
     super.key,
@@ -136,6 +242,8 @@ class RoutePage extends StatelessWidget {
     required this.route,
     required this.servicetype,
     required this.bound,
+    this.gtfsId,
+    this.fares,
   });
 
   List<StationTile> getStopListUI() {
@@ -269,16 +377,13 @@ class Maptiler extends StatelessWidget {
           alignment: screenHeight > 1200
               ? Alignment.bottomRight
               : Alignment.topLeft,
-          scale: screenWidth > 1200
-              ? 0.8
-              : 0.65,
+          scale: screenWidth > 1200 ? 0.8 : 0.65,
           child: SimpleAttributionWidget(
             source: SizedBox(
               height: 20,
               child: Row(
                 children: [
-                  if (screenHeight <= 1200)
-                    copyrightInfoButton(context),
+                  if (screenHeight <= 1200) copyrightInfoButton(context),
                   ElevatedButton(
                     onPressed: () => launchUrl(
                       Uri.parse(
@@ -311,8 +416,7 @@ class Maptiler extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (screenHeight > 1200)
-                    copyrightInfoButton(context),
+                  if (screenHeight > 1200) copyrightInfoButton(context),
                 ],
               ),
             ),
@@ -453,7 +557,8 @@ class EtaRow extends StatelessWidget {
               ),
               // strutStyle: StrutStyle(forceStrutHeight: true),
             ),
-          if (seconds < -75 && timestamp != DateTime.fromMillisecondsSinceEpoch(0))
+          if (seconds < -75 &&
+              timestamp != DateTime.fromMillisecondsSinceEpoch(0))
             Text(
               "已離開，請等候下一班車  ",
               style: TextStyle(
@@ -466,26 +571,26 @@ class EtaRow extends StatelessWidget {
               // strutStyle: StrutStyle(forceStrutHeight: true),
             ),
           if (timestamp == DateTime.fromMillisecondsSinceEpoch(0))
-           Text(
-            remarks ?? "",
-            style: TextStyle(
+            Text(
+              remarks ?? "",
+              style: TextStyle(
                 fontSize: 16,
                 // fontWeight: FontWeight.bold,
                 color: etaSeq == 1
                     ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.secondaryFixedDim,
               ),
-            strutStyle: StrutStyle(forceStrutHeight: true),
-          ),
-          if (timestamp != DateTime.fromMillisecondsSinceEpoch(0))
-          Text(
-            remarks ?? "",
-            style: TextStyle(
-              fontSize: 13.5,
-              color: Theme.of(context).colorScheme.outline,
+              strutStyle: StrutStyle(forceStrutHeight: true),
             ),
-            strutStyle: StrutStyle(forceStrutHeight: true),
-          ),
+          if (timestamp != DateTime.fromMillisecondsSinceEpoch(0))
+            Text(
+              remarks ?? "",
+              style: TextStyle(
+                fontSize: 13.5,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+              strutStyle: StrutStyle(forceStrutHeight: true),
+            ),
         ],
       ),
     );
@@ -555,12 +660,14 @@ class _StationTileState extends State<StationTile> {
             time: DateFormat('HH:mm').format(eta.eta),
             seconds: seconds,
             minutes: minutes,
-            remarks: eta.remarks.isEmpty ? null : sp.getString("appLanguage") == "en"
+            remarks: eta.remarks.isEmpty
+                ? null
+                : sp.getString("appLanguage") == "en"
                 ? eta.remarks[2]
                 : eta.remarks[0],
             etaSeq: eta.etaSeq,
             stopSeq: widget.stopSeq,
-            timestamp: eta.eta
+            timestamp: eta.eta,
           );
         }).toList();
       }
@@ -597,10 +704,14 @@ class _StationTileState extends State<StationTile> {
     final String? platformCode = platformRegex
         .firstMatch(originalName)
         ?.group(0); // check KMB platform code
-    final String processedName = tf.capitalizeWords(originalName
-        .replaceFirst("$stationCode", "")
-        .replaceFirst("$platformCode", "")).replaceAll("Bbi", "BBI");
-        // format station name
+    final String processedName = tf
+        .capitalizeWords(
+          originalName
+              .replaceFirst("$stationCode", "")
+              .replaceFirst("$platformCode", ""),
+        )
+        .replaceAll("Bbi", "BBI");
+    // format station name
 
     return Container(
       decoration: BoxDecoration(

@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:desktop_webview_window/desktop_webview_window.dart';
 import 'package:dynamik_theme/dynamik_theme.dart';
 import 'package:go_transitions/go_transitions.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:hktransports/functions/app.dart';
 import 'package:hktransports/functions/platform.dart';
+import 'package:hktransports/global/is_web_view.dart';
 import 'package:hktransports/objectBox/store.dart';
 import 'package:hktransports/pages/home.dart';
 import 'package:flutter/material.dart';
@@ -44,24 +46,34 @@ final _router = GoRouter(
   ],
 );
 
-void main() async {
+void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
-  final Directory dir = await getApplicationDocumentsDirectory();
-  String path = dir.path;
-  final Directory dirAppdata = Directory(
-    "$path/hktransports/appdata",
-  ); // check if the appdata directory exists, if not create it
-  await dirAppdata.exists() ? null : await dirAppdata.create(recursive: true);
-  await initObjectBox();
+  final isWebview = args.any((arg) => arg.startsWith('--webview-window-id'));
+  if (isWebview) {
+    isWebViewChange(true);
+    if (runWebViewTitleBarWidget(args)) {
+      return;
+    }
+  } else {
+    // not webview
+    final Directory dir = await getApplicationDocumentsDirectory();
+    String path = dir.path;
+    final Directory dirAppdata = Directory(
+      "$path/hktransports/appdata",
+    ); // check if the appdata directory exists, if not create it
+    await dirAppdata.exists() ? null : await dirAppdata.create(recursive: true);
+    await initObjectBox();
 
-  final Directory dirBusApiData = Directory(
-    "$path/hktransports/appdata",
-  ); // check if BusAPI the directory exists, if not create it
-  await dirBusApiData.exists()
-      ? null
-      : await dirBusApiData.create(recursive: true);
-  await initBusApiObjectBox(dir: "$path/hktransports/busapi");
-  // await FlutterDisplayMode.setHighRefreshRate();
+    final Directory dirBusApiData = Directory(
+      "$path/hktransports/appdata",
+    ); // check if BusAPI the directory exists, if not create it
+    await dirBusApiData.exists()
+        ? null
+        : await dirBusApiData.create(recursive: true);
+    await initBusApiObjectBox(dir: "$path/hktransports/busapi");
+
+    // await FlutterDisplayMode.setHighRefreshRate();
+  }
   runApp(Phoenix(child: MyApp()));
 }
 
@@ -108,7 +120,10 @@ class MyApp extends StatelessWidget {
           ],
           supportedLocales: [
             Locale('en'), // English
-            Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'), // Chinese Traditional
+            Locale.fromSubtags(
+              languageCode: 'zh',
+              scriptCode: 'Hant',
+            ), // Chinese Traditional
           ],
           // scaffoldMessengerKey: snackbarKey,
         );

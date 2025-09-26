@@ -4,13 +4,54 @@ import 'package:hktransports/customWidgets/null_widget.dart';
 import 'package:hktransports/customWidgets/stacked_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
+import 'package:hktransports/global/is_web_view.dart';
+import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 import '../functions/ui.dart';
 import '../multiplat_ui.dart';
 
 import 'package:go_router/go_router.dart';
 
-class HomePageRoute extends StatelessWidget {
+class HomePageRoute extends StatefulWidget {
   const HomePageRoute({super.key});
+
+  @override
+  State<HomePageRoute> createState() => _HomePageRouteState();
+}
+
+class _HomePageRouteState extends State<HomePageRoute> with WindowListener {
+  @override
+  void initState() {
+    super.initState();
+    windowManager.addListener(this);
+   }
+  @override
+  void onWindowClose() async {
+    bool _isPreventClose = await windowManager.isPreventClose();
+    if (_isPreventClose) {
+      showDialog(
+        context: context,
+        builder: (_) {
+          return AlertDialog(
+            title: Text('Are you sure you want to close this window?'),
+            actions: [
+              TextButton(
+                child: Text('No'),
+                onPressed: () {
+                },
+              ),
+              TextButton(
+                child: Text('Yes'),
+                onPressed: () async {
+                  await windowManager.destroy();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +96,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bool isRunningInWebview = getIsWebView();
+
+
       void checkTheme() {
         final int currentThemeMode = sp.getInt('themeMode') ?? 0;
         if (currentThemeMode == 1) {
@@ -68,10 +113,13 @@ class _HomePageState extends State<HomePage> {
       checkTheme();
 
       void checkDataPresence() {
-        final bool hasData = sp.getInt("dataLastUpdated") != null;
-        if (!hasData) {
-          if (context.mounted) {
-            context.go('/updateData?return=home');
+        print("isRunningInWebview: $isRunningInWebview");
+        if (!isRunningInWebview) {
+          final bool hasData = sp.getInt("dataLastUpdated") != null;
+          if (!hasData) {
+            if (context.mounted) {
+              context.go('/updateData?return=home');
+            }
           }
         }
       }
@@ -80,19 +128,19 @@ class _HomePageState extends State<HomePage> {
 
       void checkPage() {
         final String returnPage =
-          GoRouter.of(
-            context,
-          ).routeInformationProvider.value.uri.queryParameters['return'] ??
-          'N/A';
+            GoRouter.of(
+              context,
+            ).routeInformationProvider.value.uri.queryParameters['return'] ??
+            'N/A';
         if (returnPage != null && returnPage == "settings") {
           if (context.mounted) {
             context.push('/settings');
           }
         }
       }
+
       checkPage();
     });
-  
   }
 
   @override

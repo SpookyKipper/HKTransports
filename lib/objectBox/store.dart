@@ -41,9 +41,10 @@ class ObjectBox {
     keyValueBoolBox = store.box<BoxKeyPairBool>();
   }
 
-  static Future<ObjectBox> create() async {
+  static Future<ObjectBox?> create() async {
     Directory dir = await getApplicationDocumentsDirectory();
     String path = dir.path;
+    if (Store.isOpen("$path/hktransports/appdata")) return null;
     final store = await openStore(
       directory: "$path/hktransports/appdata",
     ); // uses default model from objectbox.g.dart

@@ -51,6 +51,7 @@ class SharedPreferencesFunctions {
   // }
 
   int? getInt(String key) {
+    if (objectBox == null) return null;
     return objectBox!.keyValueIntBox
         .query(BoxKeyPairInt_.key.equals(key))
         .build()

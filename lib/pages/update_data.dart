@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hkbusapi/universal/functions.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
 import '../multiplat_ui.dart';
 
@@ -31,6 +32,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
       updateStatus = "正在下載路線資料 Downloading route data...";
     });
     await kmb.saveAllRoutes();
+    await refreshUniversalData();
     setState(() {
       updateStatus = "✅ 成功更新路線資料 Route data update successful";
     });
@@ -41,6 +43,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     setState(() {
       updateStatus = "✅ 成功更新車站資料 Stop data update successful";
     });
+    
     await Future.delayed(Duration(milliseconds: 100));
     setState(() {
       updateStatus = "更新完成 Update complete!";
