@@ -46,7 +46,7 @@ final _router = GoRouter(
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Directory dir = await getApplicationDocumentsDirectory();
+  final Directory dir = await getApplicationDocumentsDirectory();
   String path = dir.path;
   final Directory dirAppdata = Directory(
     "$path/hktransports/appdata",

@@ -278,7 +278,7 @@ class Maptiler extends StatelessWidget {
               child: Row(
                 children: [
                   if (screenHeight <= 1200)
-                    CopyrightInfoButton(context),
+                    copyrightInfoButton(context),
                   ElevatedButton(
                     onPressed: () => launchUrl(
                       Uri.parse(
@@ -312,7 +312,7 @@ class Maptiler extends StatelessWidget {
                     ),
                   ),
                   if (screenHeight > 1200)
-                    CopyrightInfoButton(context),
+                    copyrightInfoButton(context),
                 ],
               ),
             ),
@@ -327,7 +327,7 @@ class Maptiler extends StatelessWidget {
   }
 }
 
-Widget CopyrightInfoButton(context) {
+Widget copyrightInfoButton(context) {
   return ElevatedButton(
     onPressed: () => showDialog(
       context: context,

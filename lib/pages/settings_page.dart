@@ -58,166 +58,191 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return _showContent ? ListView(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12.5),
-          child: Center(
-            child: Text("Settings", style: TextStyle(fontSize: 24)),
-          ),
-        ),
-        ListTile(
-          title: Text('Theme Mode'),
-          trailing: DropdownButton<ThemeMode>(
-            value: uf.getCurrentThemeMode(),
-            items: ThemeMode.values.map((ThemeMode mode) {
-              return DropdownMenuItem<ThemeMode>(
-                value: mode,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    tf.capitalizeFirst(mode.toString().split('.').last),
-                  ),
+    return _showContent
+        ? ListView(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12.5),
+                child: Center(
+                  child: Text("Settings", style: TextStyle(fontSize: 24)),
                 ),
-              );
-            }).toList(),
-            onChanged: (ThemeMode? newValue) {
-              if (newValue != null) {
-                DynamikTheme.of(context).setThemeMode(newValue);
-                sp.setInt('themeMode', ThemeMode.values.indexOf(newValue));
-              }
-            },
-          ),
-        ),
-
-        ListTile(
-          title: Text('Theme Template'),
-          subtitle: Text("App will restart on change"),
-          trailing: DropdownButton<String>(
-            value: uf.getCurrentThemePlatform(),
-            items: uf.themePlatforms.map((String platform) {
-              return DropdownMenuItem<String>(
-                value: platform,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(tf.capitalizeFirst(platform)),
+              ),
+              ListTile(
+                title: Text('Theme Mode'),
+                trailing: DropdownButton<ThemeMode>(
+                  value: uf.getCurrentThemeMode(),
+                  items: ThemeMode.values.map((ThemeMode mode) {
+                    return DropdownMenuItem<ThemeMode>(
+                      value: mode,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          tf.capitalizeFirst(mode.toString().split('.').last),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (ThemeMode? newValue) {
+                    if (newValue != null) {
+                      DynamikTheme.of(context).setThemeMode(newValue);
+                      sp.setInt(
+                        'themeMode',
+                        ThemeMode.values.indexOf(newValue),
+                      );
+                    }
+                  },
                 ),
-              );
-            }).toList(),
-            onChanged: (String? newValue) async {
-              if (newValue != null) {
-                bool res =
-                    uf.setCurrentThemePlatform(newValue) &&
-                    sp.setString('startingPage', 'settings');
-                if (res == true) {
-                  Phoenix.rebirth(context);
-                }
-              }
-            },
-          ),
-        ),
+              ),
 
-        ListTile(
-          title: Text('界面語言 (App Language)'),
-          trailing: DropdownButton<String>(
-            value: sp.getString("appLanguage") ?? "zh_Hant",
-            items: ["繁體中文", "English"].map((String lang) {
-              late final String langVal;
-              if (lang == "繁體中文") {
-                langVal = "zh_Hant";
-              } else if (lang == "English") {
-                langVal = "en";
-              }
-              return DropdownMenuItem<String>(
-                value: langVal,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(lang),
+              ListTile(
+                title: Text('Theme Template'),
+                subtitle: Text("App will restart on change"),
+                trailing: DropdownButton<String>(
+                  value: uf.getCurrentThemePlatform(),
+                  items: uf.themePlatforms.map((String platform) {
+                    return DropdownMenuItem<String>(
+                      value: platform,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(tf.capitalizeFirst(platform)),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) async {
+                    if (newValue != null) {
+                      bool res =
+                          uf.setCurrentThemePlatform(newValue) &&
+                          sp.setString('startingPage', 'settings');
+                      if (res == true) {
+                        Phoenix.rebirth(context);
+                      }
+                    }
+                  },
                 ),
-              );
-            }).toList(),
-            onChanged: (String? newValue) async {
-              sp.setString("appLanguage", newValue!);
-              setState(() {
-                // Update the UI to reflect the language change
-              });
-            },
-          ),
-        ),
+              ),
 
-        ListTile(
-          title: Text('顯示交通狀況'),
-          subtitle: Text("在地圖上顯示即時交通狀況 (需要一定 zoom level 才會顯示)"),
-          trailing: Switch(
-            value: trafficLayer,
-            onChanged: (bool value) {
-              sp.setBool("trafficLayer", value);
-              setState(() {
-                trafficLayer = value;
-              });
-            },
-          ),
-        ),
+              ListTile(
+                title: Text('界面語言 (App Language)'),
+                trailing: DropdownButton<String>(
+                  value: sp.getString("appLanguage") ?? "zh_Hant",
+                  items: ["繁體中文", "English"].map((String lang) {
+                    late final String langVal;
+                    if (lang == "繁體中文") {
+                      langVal = "zh_Hant";
+                    } else if (lang == "English") {
+                      langVal = "en";
+                    }
+                    return DropdownMenuItem<String>(
+                      value: langVal,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(lang),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) async {
+                    sp.setString("appLanguage", newValue!);
+                    setState(() {
+                      // Update the UI to reflect the language change
+                    });
+                  },
+                ),
+              ),
 
-        ListTile(
-          title: Text('更新路線及車站資料'),
-          trailing: w.button(
-            context: context,
-            child: Text("立即更新"),
-            onPressed: () {
-              context.go("/updateData");
-            },
-          ),
-        ),
+              ListTile(
+                title: Text('顯示交通狀況'),
+                subtitle: Text("在地圖上顯示即時交通狀況 (需要一定 zoom level 才會顯示)"),
+                trailing: Switch(
+                  value: trafficLayer,
+                  onChanged: (bool value) {
+                    sp.setBool("trafficLayer", value);
+                    setState(() {
+                      trafficLayer = value;
+                    });
+                  },
+                ),
+              ),
 
-        Divider(
-          color: Theme.of(context).colorScheme.secondary,
-          height: 50, // Increased height for more vertical spacing
-        ),
-
-        Center(child: Text("About Flow", style: TextStyle(fontSize: 24))),
-
-        ListTile(
-          title: Text('Platform'),
-          subtitle: Text(pf.getPlatformName(context).replaceAll("GNOME", "")),
-        ),
-        ListTile(
-          title: Text("App Version"),
-          subtitle: af.getVersionBuilder(
-            builder: (res) => Text("$res [EARLY ACCESS]"),
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            w.button(
-              context: context,
-              child: Text("View Changelog"),
-              onPressed: () {
-                launchUrl(Uri.parse("https://changelog.flow.spookysrv.com"));
-              },
-            ),
-            SizedBox(width: 15), // Add space between buttons
-            w.button(
-              context: context,
-              child: Text("View Licenses"),
-              onPressed: () async {
-                showLicensePage(
+              ListTile(
+                title: Text('更新路線及車站資料'),
+                trailing: w.button(
                   context: context,
-                  applicationName: 'Flow by Spooky Services',
-                  applicationVersion:
-                      "${await af.getVersion()} (${await af.getBuildNumber()})",
-                  applicationIcon: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: 100),
-                    child: Image.asset("assets/images/logo.png"),
+                  child: Text("立即更新"),
+                  onPressed: () {
+                    context.go("/updateData");
+                  },
+                ),
+              ),
+
+              Divider(
+                color: Theme.of(context).colorScheme.secondary,
+                height: 50, // Increased height for more vertical spacing
+              ),
+
+              Center(child: Text("About Flow", style: TextStyle(fontSize: 24))),
+
+              ListTile(
+                title: Text('Platform'),
+                subtitle: Text(
+                  pf.getPlatformName(context).replaceAll("GNOME", ""),
+                ),
+              ),
+              ListTile(
+                title: Text("App Version"),
+                subtitle: af.getVersionBuilder(
+                  builder: (res) => Text("$res [EARLY ACCESS]"),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  w.button(
+                    context: context,
+                    child: Text("View Licenses"),
+                    onPressed: () async {
+                      showLicensePage(
+                        context: context,
+                        applicationName: 'Flow by Spooky Services',
+                        applicationVersion:
+                            "${await af.getVersion()} (${await af.getBuildNumber()})",
+                        applicationIcon: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: 100),
+                          child: Image.asset("assets/images/logo.png"),
+                        ),
+                        applicationLegalese: "© Spooky Services",
+                      );
+                    },
                   ),
-                  applicationLegalese: "© Spooky Services",
-                );
-              },
-            ),
-          ],
-        ),
-      ],
-    ): Center(child: w.loadingIcon(context: context));
+                  SizedBox(width: 15), // Add space between buttons
+                  w.button(
+                    context: context,
+                    child: Text("Other Copyright Info"),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text("Other Copyright Info"),
+                            content: Text(
+                              "This app makes use of:\nHK Bus Crawling@2021, https://github.com/hkbus/hk-bus-crawling",
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text("Close"),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          )
+        : Center(child: w.loadingIcon(context: context));
   }
 }
