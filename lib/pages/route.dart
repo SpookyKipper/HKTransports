@@ -657,7 +657,7 @@ class _StationTileState extends State<StationTile> {
           int minutes = difference.inMinutes;
 
           return EtaRow(
-            time: DateFormat('HH:mm').format(eta.eta),
+            time: DateFormat('HH:mm').format(eta.eta.toLocal()),
             seconds: seconds,
             minutes: minutes,
             remarks: eta.remarks.isEmpty

@@ -46,6 +46,8 @@ final _router = GoRouter(
   ],
 );
 
+
+
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   final isWebview = args.any((arg) => arg.startsWith('--webview-window-id'));
