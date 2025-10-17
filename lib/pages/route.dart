@@ -148,7 +148,7 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
                 w.button(
                   context: context,
                   child: Text("時間表 Timetable"),
-                  onPressed: showTimetableDialog,
+                  onPressed: () => {print("Timetable")},
                 ),
               ],
             ),
