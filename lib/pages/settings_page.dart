@@ -1,7 +1,7 @@
 import 'package:dynamik_theme/dynamik_theme.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide AppBar;
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:hktransports/objectBox/store.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,6 +10,8 @@ import '../functions/text.dart';
 import '../functions/ui.dart';
 import '../functions/app.dart';
 import '../multiplat_ui.dart';
+import 'package:spookyservices/widgets/widgets.dart';
+
 
 class SettingsPageRoute extends StatelessWidget {
   const SettingsPageRoute({super.key});
@@ -17,20 +19,19 @@ class SettingsPageRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: w.appBar(
-        context: context,
+      appBar: AppBar(
         title: 'HKTransports Settings',
-        backgroundColor: uf.cLD(
-          context: context,
-          color: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.onPrimary,
-          ],
-        ), // Add background color to the app bar
-        foregroundColor: Colors.white.withValues(
-          alpha: 0.9,
-        ), // Add foreground color to the app bar
-        backButton: true,
+        // backgroundColor: uf.cLD(
+        //   context: context,
+        //   color: [
+        //     Theme.of(context).colorScheme.primary,
+        //     Theme.of(context).colorScheme.onPrimary,
+        //   ],
+        // ), // Add background color to the app bar
+        // foregroundColor: Colors.white.withValues(
+        //   alpha: 0.9,
+        // ), // Add foreground color to the app bar
+        backButton: context.canPop(),
       ),
       body: SettingsPage(), // Use the SettingsPage widget
     );
@@ -94,32 +95,32 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
 
-              ListTile(
-                title: Text('Theme Template'),
-                subtitle: Text("App will restart on change"),
-                trailing: DropdownButton<String>(
-                  value: uf.getCurrentThemePlatform(),
-                  items: uf.themePlatforms.map((String platform) {
-                    return DropdownMenuItem<String>(
-                      value: platform,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(tf.capitalizeFirst(platform)),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) async {
-                    if (newValue != null) {
-                      bool res =
-                          uf.setCurrentThemePlatform(newValue) &&
-                          sp.setString('startingPage', 'settings');
-                      if (res == true) {
-                        Phoenix.rebirth(context);
-                      }
-                    }
-                  },
-                ),
-              ),
+              // ListTile(
+              //   title: Text('Theme Template'),
+              //   subtitle: Text("App will restart on change"),
+              //   trailing: DropdownButton<String>(
+              //     value: uf.getCurrentThemePlatform(),
+              //     items: uf.themePlatforms.map((String platform) {
+              //       return DropdownMenuItem<String>(
+              //         value: platform,
+              //         child: Padding(
+              //           padding: const EdgeInsets.all(8.0),
+              //           child: Text(tf.capitalizeFirst(platform)),
+              //         ),
+              //       );
+              //     }).toList(),
+              //     onChanged: (String? newValue) async {
+              //       if (newValue != null) {
+              //         bool res =
+              //             uf.setCurrentThemePlatform(newValue) &&
+              //             sp.setString('startingPage', 'settings');
+              //         if (res == true) {
+              //           Phoenix.rebirth(context);
+              //         }
+              //       }
+              //     },
+              //   ),
+              // ),
 
               ListTile(
                 title: Text('界面語言 (App Language)'),
@@ -165,9 +166,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
               ListTile(
                 title: Text('更新路線及車站資料'),
-                trailing: w.button(
-                  context: context,
-                  child: Text("立即更新"),
+                trailing: Button(
+                  text: "立即更新",
                   onPressed: () {
                     context.go("/updateData");
                   },
@@ -196,9 +196,8 @@ class _SettingsPageState extends State<SettingsPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  w.button(
-                    context: context,
-                    child: Text("View Licenses"),
+                  Button(
+                    text: "View Licenses",
                     onPressed: () async {
                       showLicensePage(
                         context: context,
@@ -214,9 +213,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     },
                   ),
                   SizedBox(width: 15), // Add space between buttons
-                  w.button(
-                    context: context,
-                    child: Text("Other Copyright Info"),
+                  Button(
+                    text: "Other Copyright Info",
                     onPressed: () {
                       showDialog(
                         context: context,

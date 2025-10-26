@@ -4,17 +4,21 @@ import 'dart:io';
 import 'package:desktop_webview_window/desktop_webview_window.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hkbusapi/kmb/classes.dart';
 import 'package:hkbusapi/universal/classes.dart';
 import 'package:hktransports/customWidgets/null_widget.dart';
 import 'package:hktransports/customWidgets/stacked_widgets.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide AppBar;
 import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:hktransports/functions/platform.dart';
 import 'package:hktransports/functions/text.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:spookyservices/widgets/widgets.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+
 import '../functions/ui.dart';
 import '../multiplat_ui.dart';
 
@@ -112,23 +116,84 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
       language = "en";
     }
     void showTimetableDialog() async {
-      final webview = await WebviewWindow.create(
-        configuration: CreateConfiguration(
-          windowHeight: 1385,
-          windowWidth: 804,
-          title: "時間表 Timetable - $route $origin → $dest",
-          titleBarTopPadding: Platform.isMacOS ? 20 : 0,
-        ),
-      );
-      // 💡 Set up the onClose handler
-      webview.onClose.whenComplete(() {
-        debugPrint("Webview window is closing, but the app stays open!");
-        // Note: We are NOT calling exit(0) here.
-        // The plugin handles the window destruction.
-      });
 
-      webview.launch(
-        "https://smd.hkemobility.gov.hk/ptheadway/getPTheadway/$gtfsId/1/$language",
+      
+      // final webview = await WebviewWindow.create(
+      //   configuration: CreateConfiguration(
+      //     windowHeight: 1385,
+      //     windowWidth: 804,
+      //     title: "時間表 Timetable - $route $origin → $dest",
+      //     titleBarTopPadding: Platform.isMacOS ? 20 : 0,
+      //   ),
+      // );
+      // // 💡 Set up the onClose handler
+      // webview.onClose.whenComplete(() {
+      //   debugPrint("Webview window is closing, but the app stays open!");
+      //   // Note: We are NOT calling exit(0) here.
+      //   // The plugin handles the window destruction.
+      // });
+
+      // webview.launch(
+      //   "https://smd.hkemobility.gov.hk/ptheadway/getPTheadway/$gtfsId/1/$language",
+      // );
+
+      WebViewController _controller = WebViewController()
+        ..enableZoom(false)
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onProgress: (int progress) {
+              // Update loading bar.
+            },
+            onPageStarted: (String url) {},
+            onPageFinished: (String url) {},
+            onHttpError: (HttpResponseError error) {},
+            onWebResourceError: (WebResourceError error) {},
+            onNavigationRequest: (NavigationRequest request) {
+              return NavigationDecision.navigate;
+            },
+          ),
+        )
+        ..loadRequest(
+          Uri.parse(
+            "https://smd.hkemobility.gov.hk/ptheadway/getPTheadway/$gtfsId/2/$language",
+          ),
+        )
+        ..setBackgroundColor(Colors.transparent)
+        ..runJavaScript("""
+          span = document.createElement("span");
+span.innerHTML = "a";
+document.body.appendChild(span);
+          """)
+        ..setHorizontalScrollBarEnabled(false)
+        ;
+        
+      print(
+        "https://smd.hkemobility.gov.hk/ptheadway/getPTheadway/$gtfsId/2/$language",
+      );
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("時間表 Timetable"),
+            content: Container(
+              width:
+                  MediaQuery.of(context).size.width, // 80% of screen width
+              child: Theme.of(context).brightness == Brightness.dark
+                  ? InvertedColorWidget(child: GrayscaleWidget(child: WebViewWidget(controller: _controller)))
+                  : GrayscaleWidget(child: WebViewWidget(controller: _controller)),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: Text("Close"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
       );
     }
 
@@ -145,10 +210,9 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                w.button(
-                  context: context,
-                  child: Text("時間表 Timetable"),
-                  onPressed: () => {print("Timetable")},
+                Button(
+                  text: "時間表 Timetable",
+                  onPressed: () => {showTimetableDialog()},
                 ),
               ],
             ),
@@ -169,26 +233,32 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
     /* End more info dialog */
 
     return Scaffold(
-      appBar: w.appBar(
-        context: context,
+      appBar: AppBar(
         title: '$route - $dest',
-        backgroundColor: uf.cLD(
-          context: context,
-          color: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.onPrimary,
-          ],
-        ), // Add background color to the app bar
-        foregroundColor: Colors.white.withValues(
-          alpha: 0.9,
-        ), // Add foreground color to the app bar
+        // backgroundColor: uf.cLD(
+        //   context: context,
+        //   color: [
+        //     Theme.of(context).colorScheme.primary,
+        //     Theme.of(context).colorScheme.onPrimary,
+        //   ],
+        // ), // Add background color to the app bar
+        // foregroundColor: Colors.white.withValues(
+        //   alpha: 0.9,
+        // ), // Add foreground color to the app bar
+        backButton: context.canPop(),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              icon: Icon(Icons.info_outline),
-              onPressed: showMoreInfoDialog,
-              tooltip: "Refresh",
+          CupertinoButton(
+            padding: EdgeInsets.only(left: 30),
+            onPressed: showMoreInfoDialog,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: Colors.white.withValues(alpha: 0.9),
+                  size: 24,
+                ),
+              ],
             ),
           ),
         ],
@@ -507,7 +577,8 @@ class EtaRow extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: etaSeq == 1
                         ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.secondaryFixedDim,
+                        : Theme.of(context).colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.85),
                   ),
                   strutStyle: StrutStyle(forceStrutHeight: true),
                 ),

@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide AppBar;
 import 'package:go_router/go_router.dart';
 import 'package:hkbusapi/universal/functions.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
 import '../multiplat_ui.dart';
 
 import 'package:hkbusapi/kmb/functions.dart' as kmb;
+import 'package:spookyservices/widgets/widgets.dart';
 
 class UpdateDataPageRoute extends StatefulWidget {
   const UpdateDataPageRoute({super.key});
@@ -43,7 +44,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     setState(() {
       updateStatus = "✅ 成功更新車站資料 Stop data update successful";
     });
-    
+
     await Future.delayed(Duration(milliseconds: 100));
     setState(() {
       updateStatus = "更新完成 Update complete!";
@@ -86,7 +87,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('更新資料 Update Data')),
+      appBar: AppBar(title: '更新資料 Update Data', backButton: false),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

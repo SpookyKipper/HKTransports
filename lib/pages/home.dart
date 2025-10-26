@@ -1,14 +1,17 @@
 import 'package:dynamik_theme/dynamik_theme.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:hkbusapi/hkbusapi.dart';
 import 'package:hktransports/customWidgets/null_widget.dart';
 import 'package:hktransports/customWidgets/stacked_widgets.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide AppBar;
 import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:hktransports/global/is_web_view.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import '../functions/ui.dart';
 import '../multiplat_ui.dart';
+import 'package:spookyservices/widgets/widgets.dart';
+
 
 import 'package:go_router/go_router.dart';
 
@@ -56,28 +59,34 @@ class _HomePageRouteState extends State<HomePageRoute> with WindowListener {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: w.appBar(
-        context: context,
+      appBar: AppBar(
         title: 'HKTransports',
-        backgroundColor: uf.cLD(
-          context: context,
-          color: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.onPrimary,
-          ],
-        ), // Add background color to the app bar
-        foregroundColor: Colors.white.withValues(
-          alpha: 0.9,
-        ), // Add foreground color to the app bar
+        // backgroundColor: uf.cLD(
+        //   context: context,
+        //   color: [
+        //     Theme.of(context).colorScheme.primary,
+        //     Theme.of(context).colorScheme.onPrimary,
+        //   ],
+        // ), // Add background color to the app bar
+        // foregroundColor: Colors.white.withValues(
+        //   alpha: 0.9,
+        // ), // Add foreground color to the app bar
+        // backButton: context.canPop(),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: w.iconButton(
-              context: context,
-              icon: Icons.settings,
-              onPressed: () {
-                context.push('/settings');
-              },
+          CupertinoButton(
+            padding: EdgeInsets.only(left: 30),
+            onPressed: () {
+              context.push('/settings');
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.settings,
+                  color: Colors.white.withValues(alpha: 0.9),
+                  size: 24,
+                ),
+              ],
             ),
           ),
         ],

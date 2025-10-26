@@ -313,3 +313,54 @@ class MultiplatWidgets {
 }
 
 final w = MultiplatWidgets(); // UI Elements based on platform
+
+
+
+
+class InvertedColorWidget extends StatelessWidget {
+  final Widget child;
+
+  const InvertedColorWidget({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    // This matrix inverts the colors.
+    // The values are arranged as a 5x5 matrix for RGBA and an offset.
+    // For inversion, we negate the R, G, B channels and add 1 (255 for 8-bit color)
+    // to shift the values to the correct range.
+    final List<double> inversionMatrix = <double>[
+      -1, 0, 0, 0, 255, // Red channel
+      0, -1, 0, 0, 255, // Green channel
+      0, 0, -1, 0, 255, // Blue channel
+      0, 0, 0, 1, 0,   // Alpha channel (remains unchanged)
+    ];
+
+    return ColorFiltered(
+      colorFilter: ColorFilter.matrix(inversionMatrix),
+      child: child,
+    );
+  }
+}
+
+class GrayscaleWidget extends StatelessWidget {
+  final Widget child;
+
+  const GrayscaleWidget({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    // This matrix converts colors to grayscale.
+    final List<double> grayscaleMatrix = <double>[
+      0.2126, 0.7152, 0.0722, 0, 0, // Red channel
+      0.2126, 0.7152, 0.0722, 0, 0, // Green channel
+      0.2126, 0.7152, 0.0722, 0, 0, // Blue channel
+      0, 0, 0, 1, 0,                // Alpha channel (remains unchanged)
+    ];
+
+    return ColorFiltered(
+      colorFilter: ColorFilter.matrix(grayscaleMatrix),
+      child: child,
+    );
+  }
+}
+

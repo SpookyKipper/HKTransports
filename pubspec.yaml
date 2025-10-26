@@ -40,6 +40,9 @@ dependencies:
   go_transitions: ^0.8.2
   desktop_webview_window: ^0.2.3
   window_manager: ^0.5.1
+  spookyservices:
+    path: /home/kipper/Documents/GitKraken/SpookyServices
+  webview_flutter: ^4.13.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

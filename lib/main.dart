@@ -17,6 +17,9 @@ import 'package:hktransports/pages/update_data.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_handler/share_handler.dart';
 import 'functions/ui.dart';
+import 'package:spookyservices/spookyservices.dart' as ss;
+import 'package:spookyservices/theme/colors.dart' as theme;
+
 import 'pages/settings_page.dart';
 
 import 'package:go_router/go_router.dart';
@@ -31,17 +34,17 @@ final _router = GoRouter(
     GoRoute(
       path: '/route',
       builder: (context, state) => const RoutePageRoute(),
-      pageBuilder: GoTransitions.cupertino.call,
+      // pageBuilder: GoTransitions.cupertino.call,
     ),
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsPageRoute(),
-      pageBuilder: GoTransitions.cupertino.call,
+      // pageBuilder: GoTransitions.cupertino.call,
     ),
     GoRoute(
       path: '/updateData',
       builder: (context, state) => const UpdateDataPageRoute(),
-      pageBuilder: GoTransitions.cupertino.call,
+      // pageBuilder: GoTransitions.cupertino.call,
     ),
   ],
 );
@@ -93,17 +96,31 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         // You can also generate color schemes from:
         // https://m3.material.io/theme-builder#/custom
-        lightScheme: ColorScheme.fromSeed(seedColor: Color(0xff6f65dc)),
-        darkScheme: ColorScheme.fromSeed(
-          seedColor: Color(0xff6f65dc),
-          brightness: Brightness.dark,
+        // lightScheme: ColorScheme.fromSeed(seedColor: Color(0xff6f65dc)),
+        // darkScheme: ColorScheme.fromSeed(
+        //   seedColor: Color(0xff6f65dc),
+        //   brightness: Brightness.dark,
+        // ),
+        lightScheme: theme.MaterialTheme.lightScheme(),
+        darkScheme: theme.MaterialTheme.darkScheme(), 
+        // defaultThemeState: SimpleThemeType.dynamik.themeState,
+        defaultThemeState: ThemeState(
+          themeMode: ThemeMode.system,
+          colorMode: ColorMode.custom,
         ),
-        defaultThemeState: SimpleThemeType.dynamik.themeState,
         builder: (themeData) {
           // Add more customization on ThemeData.
           return themeData.copyWith(
             inputDecorationTheme: const InputDecorationTheme(
               border: OutlineInputBorder(),
+            ),
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: <TargetPlatform, PageTransitionsBuilder>{
+                // Set the predictive back transitions for Android.
+                TargetPlatform.android: PredictiveBackPageTransitionsBuilder(
+                  
+                ),
+              },
             ),
           );
         },
@@ -115,18 +132,18 @@ class MyApp extends StatelessWidget {
           darkTheme: darkTheme,
           debugShowCheckedModeBanner: false,
           routerConfig: _router,
-          localizationsDelegates: [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: [
-            Locale('en'), // English
-            Locale.fromSubtags(
-              languageCode: 'zh',
-              scriptCode: 'Hant',
-            ), // Chinese Traditional
-          ],
+          // localizationsDelegates: [
+          //   GlobalMaterialLocalizations.delegate,
+          //   GlobalWidgetsLocalizations.delegate,
+          //   GlobalCupertinoLocalizations.delegate,
+          // ],
+          // supportedLocales: [
+          //   Locale('en'), // English
+          //   Locale.fromSubtags(
+          //     languageCode: 'zh',
+          //     scriptCode: 'Hant',
+          //   ), // Chinese Traditional
+          // ],
           // scaffoldMessengerKey: snackbarKey,
         );
         // MaterialApp(
@@ -173,8 +190,11 @@ class _MyHomePageState extends State<MyHomePage> {
       final int currentThemeMode = sp.getInt('themeMode') ?? 0;
       if (currentThemeMode == 1) {
         DynamikTheme.of(context).setThemeMode(ThemeMode.light);
+        ss.setDarkMode(false);
       } else if (currentThemeMode == 2) {
         DynamikTheme.of(context).setThemeMode(ThemeMode.dark);
+        ss.setDarkMode(true);
+
       }
     }
 
@@ -216,7 +236,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                           ),
                           SizedBox(height: 8),
-                          // w.button(
+                          // Button(
                           //   context: context,
                           //   onPressed: () {
                           //     Navigator.pushReplacement(
