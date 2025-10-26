@@ -115,9 +115,8 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
     } else {
       language = "en";
     }
-    void showTimetableDialog() async {
 
-      
+    void showTimetableDialog() async {
       // final webview = await WebviewWindow.create(
       //   configuration: CreateConfiguration(
       //     windowHeight: 1385,
@@ -136,7 +135,7 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
       // webview.launch(
       //   "https://smd.hkemobility.gov.hk/ptheadway/getPTheadway/$gtfsId/1/$language",
       // );
-
+      final String gtfsBound = bound == "I" ? "2" : "1";
       WebViewController _controller = WebViewController()
         ..enableZoom(false)
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -156,33 +155,34 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
         )
         ..loadRequest(
           Uri.parse(
-            "https://smd.hkemobility.gov.hk/ptheadway/getPTheadway/$gtfsId/2/$language",
+            "https://smd.hkemobility.gov.hk/ptheadway/getPTheadway/$gtfsId/$gtfsBound/$language",
           ),
         )
         ..setBackgroundColor(Colors.transparent)
-        ..runJavaScript("""
-          span = document.createElement("span");
-span.innerHTML = "a";
-document.body.appendChild(span);
-          """)
-        ..setHorizontalScrollBarEnabled(false)
-        ;
-        
-      print(
-        "https://smd.hkemobility.gov.hk/ptheadway/getPTheadway/$gtfsId/2/$language",
-      );
+        //         ..runJavaScript("""
+        //           span = document.createElement("span");
+        // span.innerHTML = "a";
+        // document.body.appendChild(span);
+        //           """)
+        ..setHorizontalScrollBarEnabled(false);
 
+    
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text("時間表 Timetable"),
-            content: Container(
-              width:
-                  MediaQuery.of(context).size.width, // 80% of screen width
+            content: SizedBox(
+              width: MediaQuery.of(context).size.width, // 80% of screen width
               child: Theme.of(context).brightness == Brightness.dark
-                  ? InvertedColorWidget(child: GrayscaleWidget(child: WebViewWidget(controller: _controller)))
-                  : GrayscaleWidget(child: WebViewWidget(controller: _controller)),
+                  ? InvertedColorWidget(
+                      child: GrayscaleWidget(
+                        child: WebViewWidget(controller: _controller),
+                      ),
+                    )
+                  : GrayscaleWidget(
+                      child: WebViewWidget(controller: _controller),
+                    ),
             ),
             actions: <Widget>[
               TextButton(
