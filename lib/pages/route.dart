@@ -67,7 +67,7 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
         servicetype: servicetype,
       );
       late final String dest;
-      final language = sp.getString("appLanguage") ?? "zh_Hant";
+      final language = sp.getString("appLanguage") ?? "zh";
       if (language == "en" && routeData.dest.length > 1) {
         dest = tf.capitalizeWords(routeData.dest[2]);
       } else {
@@ -105,8 +105,8 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
     /* End get route data */
 
     /* Timetable dialog */
-    String language = sp.getString("appLanguage") ?? "zh_Hant";
-    if (language == "zh_Hant") {
+    String language = sp.getString("appLanguage") ?? "zh";
+    if (language == "zh") {
       language = "tc";
     } else {
       language = "en";

@@ -8,6 +8,7 @@ import '../functions/ui.dart';
 import '../functions/app.dart';
 import '../multiplat_ui.dart';
 import 'package:spookyservices/widgets/widgets.dart';
+import 'package:spookyservices/helpers/language.dart';
 
 
 class SettingsPageRoute extends StatelessWidget {
@@ -122,11 +123,11 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 title: Text('界面語言 (App Language)'),
                 trailing: DropdownButton<String>(
-                  value: sp.getString("appLanguage") ?? "zh_Hant",
+                  value: LangHelper().getLang(),
                   items: ["繁體中文", "English"].map((String lang) {
                     late final String langVal;
                     if (lang == "繁體中文") {
-                      langVal = "zh_Hant";
+                      langVal = "zh";
                     } else if (lang == "English") {
                       langVal = "en";
                     }
@@ -139,7 +140,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     );
                   }).toList(),
                   onChanged: (String? newValue) async {
-                    sp.setString("appLanguage", newValue!);
+                    LangHelper().setLang(newValue!);
                     setState(() {
                       // Update the UI to reflect the language change
                     });

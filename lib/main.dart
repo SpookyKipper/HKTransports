@@ -47,36 +47,36 @@ final _router = GoRouter(
   ],
 );
 
-
-
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
-  final isWebview = args.any((arg) => arg.startsWith('--webview-window-id'));
-  if (isWebview) {
-    isWebViewChange(true);
-    if (runWebViewTitleBarWidget(args)) {
-      return;
-    }
-  } else {
-    // not webview
-    final Directory dir = await getApplicationDocumentsDirectory();
-    String path = dir.path;
-    final Directory dirAppdata = Directory(
-      "$path/hktransports/appdata",
-    ); // check if the appdata directory exists, if not create it
-    await dirAppdata.exists() ? null : await dirAppdata.create(recursive: true);
-    await initObjectBox();
+  ss.initSharedPreferencesSpookySrv();
 
-    final Directory dirBusApiData = Directory(
-      "$path/hktransports/appdata",
-    ); // check if BusAPI the directory exists, if not create it
-    await dirBusApiData.exists()
-        ? null
-        : await dirBusApiData.create(recursive: true);
-    await initBusApiObjectBox(dir: "$path/hktransports/busapi");
+  // final isWebview = args.any((arg) => arg.startsWith('--webview-window-id'));
+  // if (isWebview) {
+  //   isWebViewChange(true);
+  //   if (runWebViewTitleBarWidget(args)) {
+  //     return;
+  //   }
+  // } else {
+  // not webview
+  final Directory dir = await getApplicationDocumentsDirectory();
+  String path = dir.path;
+  final Directory dirAppdata = Directory(
+    "$path/hktransports/appdata",
+  ); // check if the appdata directory exists, if not create it
+  await dirAppdata.exists() ? null : await dirAppdata.create(recursive: true);
+  await initObjectBox();
 
-    // await FlutterDisplayMode.setHighRefreshRate();
-  }
+  final Directory dirBusApiData = Directory(
+    "$path/hktransports/busapi",
+  ); // check if BusAPI the directory exists, if not create it
+  await dirBusApiData.exists()
+      ? null
+      : await dirBusApiData.create(recursive: true);
+  await initBusApiObjectBox(dir: "$path/hktransports/busapi");
+
+  // await FlutterDisplayMode.setHighRefreshRate();
+  // }
   runApp(Phoenix(child: MyApp()));
 }
 
@@ -100,7 +100,7 @@ class MyApp extends StatelessWidget {
         //   brightness: Brightness.dark,
         // ),
         lightScheme: theme.MaterialTheme.lightScheme(),
-        darkScheme: theme.MaterialTheme.darkScheme(), 
+        darkScheme: theme.MaterialTheme.darkScheme(),
         // defaultThemeState: SimpleThemeType.dynamik.themeState,
         defaultThemeState: ThemeState(
           themeMode: ThemeMode.system,
@@ -115,9 +115,7 @@ class MyApp extends StatelessWidget {
             pageTransitionsTheme: const PageTransitionsTheme(
               builders: <TargetPlatform, PageTransitionsBuilder>{
                 // Set the predictive back transitions for Android.
-                TargetPlatform.android: PredictiveBackPageTransitionsBuilder(
-                  
-                ),
+                TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
               },
             ),
           );
@@ -192,7 +190,6 @@ class _MyHomePageState extends State<MyHomePage> {
       } else if (currentThemeMode == 2) {
         DynamikTheme.of(context).setThemeMode(ThemeMode.dark);
         ss.setDarkMode(true);
-
       }
     }
 
