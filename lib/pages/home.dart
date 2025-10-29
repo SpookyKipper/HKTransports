@@ -1,14 +1,11 @@
 import 'package:dynamik_theme/dynamik_theme.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:hkbusapi/hkbusapi.dart';
 import 'package:hktransports/customWidgets/null_widget.dart';
 import 'package:hktransports/customWidgets/stacked_widgets.dart';
 import 'package:flutter/material.dart' hide AppBar;
 import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:hktransports/global/is_web_view.dart';
-import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
-import '../functions/ui.dart';
 import '../multiplat_ui.dart';
 import 'package:spookyservices/widgets/widgets.dart';
 
@@ -141,7 +138,7 @@ class _HomePageState extends State<HomePage> {
               context,
             ).routeInformationProvider.value.uri.queryParameters['return'] ??
             'N/A';
-        if (returnPage != null && returnPage == "settings") {
+        if (/*returnPage != null && */returnPage == "settings") {
           if (context.mounted) {
             context.push('/settings');
           }

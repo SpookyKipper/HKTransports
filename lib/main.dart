@@ -3,10 +3,8 @@ import 'dart:io';
 
 import 'package:desktop_webview_window/desktop_webview_window.dart';
 import 'package:dynamik_theme/dynamik_theme.dart';
-import 'package:go_transitions/go_transitions.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:hktransports/functions/app.dart';
-import 'package:hktransports/functions/platform.dart';
 import 'package:hktransports/global/is_web_view.dart';
 import 'package:hktransports/objectBox/store.dart';
 import 'package:hktransports/pages/home.dart';
@@ -26,7 +24,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:hkbusapi/hkbusapi.dart';
 
-import 'package:flutter_localizations/flutter_localizations.dart';
+// import 'package:flutter_localizations/flutter_localizations.dart';
 
 final _router = GoRouter(
   routes: [

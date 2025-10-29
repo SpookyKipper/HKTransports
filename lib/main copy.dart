@@ -5,7 +5,6 @@ import 'package:dynamik_theme/dynamik_theme.dart';
 import 'package:go_transitions/go_transitions.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:hktransports/functions/app.dart';
-import 'package:hktransports/functions/platform.dart';
 import 'package:hktransports/objectBox/store.dart';
 import 'package:hktransports/pages/home.dart';
 import 'package:flutter/material.dart';
