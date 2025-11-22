@@ -2,6 +2,7 @@ import 'package:dynamik_theme/dynamik_theme.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:flutter/material.dart' hide AppBar;
+import 'package:one_ui/one_ui.dart';
 import '../functions/platform.dart';
 import '../functions/text.dart';
 import '../functions/ui.dart';
@@ -10,28 +11,25 @@ import '../multiplat_ui.dart';
 import 'package:spookyservices/widgets/widgets.dart';
 import 'package:spookyservices/helpers/language.dart';
 
-
 class SettingsPageRoute extends StatelessWidget {
   const SettingsPageRoute({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: 'HKTransports Settings',
-        // backgroundColor: uf.cLD(
-        //   context: context,
-        //   color: [
-        //     Theme.of(context).colorScheme.primary,
-        //     Theme.of(context).colorScheme.onPrimary,
-        //   ],
-        // ), // Add background color to the app bar
-        // foregroundColor: Colors.white.withValues(
-        //   alpha: 0.9,
-        // ), // Add foreground color to the app bar
-        backButton: context.canPop(),
-      ),
-      body: SettingsPage(), // Use the SettingsPage widget
+      body: OneUIView(
+        title: Text("Title"),
+        // actions: [
+        //   OneUIPopupMenuButton(
+        //     itemBuilder: (context) => <PopupMenuEntry>[
+        //       const OneUIPopupMenuItem(child: Text('Option 1')),
+        //       const OneUIPopupMenuItem(child: Text('Option 2')),
+        //       const OneUIPopupMenuItem(child: Text('Option 3')),
+        //     ],
+        //   ),
+        // ],
+        child: SettingsPage(),
+      ), // Use the SettingsPage widget
     );
   }
 }
@@ -119,7 +117,6 @@ class _SettingsPageState extends State<SettingsPage> {
               //     },
               //   ),
               // ),
-
               ListTile(
                 title: Text('界面語言 (App Language)'),
                 trailing: DropdownButton<String>(

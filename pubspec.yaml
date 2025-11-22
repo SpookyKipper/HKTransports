@@ -43,6 +43,8 @@ dependencies:
   spookyservices:
     path: /home/kipper/Documents/GitKraken/SpookyServices
   webview_flutter: ^4.13.0
+  one_ui: 
+    path: /home/kipper/Documents/GitKraken/one_ui_flutter
 dev_dependencies:
   flutter_test:
     sdk: flutter
