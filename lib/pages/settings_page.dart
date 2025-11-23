@@ -19,15 +19,7 @@ class SettingsPageRoute extends StatelessWidget {
     return Scaffold(
       body: OneUIView(
         title: Text("Title"),
-        // actions: [
-        //   OneUIPopupMenuButton(
-        //     itemBuilder: (context) => <PopupMenuEntry>[
-        //       const OneUIPopupMenuItem(child: Text('Option 1')),
-        //       const OneUIPopupMenuItem(child: Text('Option 2')),
-        //       const OneUIPopupMenuItem(child: Text('Option 3')),
-        //     ],
-        //   ),
-        // ],
+        initCollapsed: true,
         child: SettingsPage(),
       ), // Use the SettingsPage widget
     );

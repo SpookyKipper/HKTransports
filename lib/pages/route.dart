@@ -11,6 +11,7 @@ import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:hktransports/functions/text.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:one_ui/one_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:spookyservices/widgets/widgets.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -162,7 +163,6 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
         //           """)
         ..setHorizontalScrollBarEnabled(false);
 
-    
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -229,63 +229,68 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
     /* End more info dialog */
 
     return Scaffold(
-      appBar: AppBar(
-        title: '$route - $dest',
-        // backgroundColor: uf.cLD(
-        //   context: context,
-        //   color: [
-        //     Theme.of(context).colorScheme.primary,
-        //     Theme.of(context).colorScheme.onPrimary,
-        //   ],
-        // ), // Add background color to the app bar
-        // foregroundColor: Colors.white.withValues(
-        //   alpha: 0.9,
-        // ), // Add foreground color to the app bar
-        backButton: context.canPop(),
-        actions: [
-          CupertinoButton(
-            padding: EdgeInsets.only(left: 30),
-            onPressed: showMoreInfoDialog,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: Colors.white.withValues(alpha: 0.9),
-                  size: 24,
+      // appBar: OneUIAppBar(
+      //   title: Text('$route - $dest'),
+
+      //   // backgroundColor: uf.cLD(
+      //   //   context: context,
+      //   //   color: [
+      //   //     Theme.of(context).colorScheme.primary,
+      //   //     Theme.of(context).colorScheme.onPrimary,
+      //   //   ],
+      //   // ), // Add background color to the app bar
+      //   // foregroundColor: Colors.white.withValues(
+      //   //   alpha: 0.9,
+      //   // ), // Add foreground color to the app bar
+      //   // backButton: context.canPop(),
+      // ),
+      body: true
+          ? OneUIView(
+              title: Text('$route - $dest'),
+              initCollapsed: true,
+              actions: [
+                CupertinoButton(
+                  // padding: EdgeInsets.only(left: 30),
+                  onPressed: showMoreInfoDialog,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        size: 24,
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-      body: _showContent
-          ? FutureBuilder(
-              future: kmb.getRouteStops(
-                route: route,
-                bound: bound,
-                servicetype: servicetype,
+              child: FutureBuilder(
+                future: kmb.getRouteStops(
+                  route: route,
+                  bound: bound,
+                  servicetype: servicetype,
+                ),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: w.loadingIcon(context: context));
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(child: Text('No data available'));
+                  } else {
+                    // Data is available, build the ListView
+                    final stops = snapshot.data!;
+                    return RoutePage(
+                      routeStops: stops,
+                      route: route,
+                      servicetype: servicetype,
+                      bound: bound,
+                      fares: fares,
+                      gtfsId: gtfsId,
+                    ); // Replace with actual data handling
+                  }
+                },
               ),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: w.loadingIcon(context: context));
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No data available'));
-                } else {
-                  // Data is available, build the ListView
-                  final stops = snapshot.data!;
-                  return RoutePage(
-                    routeStops: stops,
-                    route: route,
-                    servicetype: servicetype,
-                    bound: bound,
-                    fares: fares,
-                    gtfsId: gtfsId,
-                  ); // Replace with actual data handling
-                }
-              },
             )
           : Center(
               child: w.loadingIcon(context: context),

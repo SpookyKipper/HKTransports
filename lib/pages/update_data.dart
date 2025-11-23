@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide AppBar;
 import 'package:go_router/go_router.dart';
 import 'package:hkbusapi/universal/functions.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
+import 'package:one_ui/one_ui.dart';
 import '../multiplat_ui.dart';
 
 import 'package:hkbusapi/kmb/functions.dart' as kmb;
@@ -87,7 +88,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: '更新資料 Update Data', backButton: false),
+      appBar: OneUIAppBar(title: Text('更新資料 Update Data')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
