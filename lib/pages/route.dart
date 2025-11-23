@@ -163,10 +163,10 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
         //           """)
         ..setHorizontalScrollBarEnabled(false);
 
-      showDialog(
+      showOneUIDialog(
         context: context,
         builder: (BuildContext context) {
-          return AlertDialog(
+          return OneUIAlertDialog(
             title: Text("時間表 Timetable"),
             content: SizedBox(
               width: MediaQuery.of(context).size.width, // 80% of screen width
@@ -180,8 +180,8 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
                       child: WebViewWidget(controller: _controller),
                     ),
             ),
-            actions: <Widget>[
-              TextButton(
+            actions: [
+              OneUIDialogAction(
                 child: Text("Close"),
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -197,10 +197,10 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
 
     /* More info dialog*/
     void showMoreInfoDialog() {
-      showDialog(
+      showOneUIDialog(
         context: context,
         builder: (BuildContext context) {
-          return AlertDialog(
+          return OneUIAlertDialog(
             title: Text("Route Information"),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -212,14 +212,12 @@ class _RoutePageRouteState extends State<RoutePageRoute> {
                 ),
               ],
             ),
-            actions: <Widget>[
-              Expanded(
-                child: TextButton(
-                  child: Text("Close"),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
+            actions: [
+              OneUIDialogAction(
+                child: Text("Close"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
               ),
             ],
           );
@@ -504,16 +502,16 @@ class Maptiler extends StatelessWidget {
 
 Widget copyrightInfoButton(context) {
   return ElevatedButton(
-    onPressed: () => showDialog(
+    onPressed: () => showOneUIDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return OneUIAlertDialog(
           title: Text("Map Data Copyright Information"),
           content: Text(
             "© 1992 - 2025 TomTom. All rights reserved. This material is proprietary and the subject of copyright protection, database right protection and other intellectual property rights owned by TomTom or its suppliers. The use of this material is subject to the terms of a license agreement. Any unauthorized copying or disclosure of this material will lead to criminal and civil liabilities.\n\nData Source © 2025 TomTom\n\nBased on https://www.tomtom.com/legal/en_gb/product-attributions/",
           ),
-          actions: <Widget>[
-            TextButton(
+          actions: [
+            OneUIDialogAction(
               child: Text("Close"),
               onPressed: () {
                 Navigator.of(context).pop();
