@@ -282,6 +282,7 @@ class _DropdownSettingState<T> extends State<_DropdownSetting<T>> {
           M3EDropdownMenu<T>(
             controller: _controller,
             showChipAnimation: false,
+            itemStyle: const M3EDropdownItemStyle(outerRadius: 20),
             items: [
               for (final M3EDropdownItem<T> item in widget.items)
                 item.copyWith(selected: item.value == widget.value),
