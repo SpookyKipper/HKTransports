@@ -219,14 +219,14 @@ class _RoutePageState extends State<_RoutePage> {
     final String? platform = stop?.platformCode;
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(
-          width: 28,
+          width: 40,
           child: Text(
             '${index + 1}',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
         const SizedBox(width: 12),
