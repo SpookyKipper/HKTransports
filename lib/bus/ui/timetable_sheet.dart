@@ -234,13 +234,17 @@ class _JourneyTabState extends State<_JourneyTab> {
         final int? minutes = beforeStart
             ? null
             : estimate.cumulativeMinutes[stopIndex - _startSeq];
+        final ColorScheme scheme = Theme.of(context).colorScheme;
         return ListTile(
-          enabled: !beforeStart,
           selected: isStart,
           leading: Icon(
             isStart ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+            color: beforeStart ? scheme.outline : null,
           ),
-          title: Text(stop.displayName(settings.language)),
+          title: Text(
+            stop.displayName(settings.language),
+            style: beforeStart ? TextStyle(color: scheme.outline) : null,
+          ),
           trailing: isStart
               ? Text(settings.text('起點', 'Start'))
               : minutes == null
