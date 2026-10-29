@@ -361,6 +361,19 @@ class BusRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  void reorderCustomGroups(int oldIndex, int newIndex) {
+    _customGroups ??= _readFavoriteGroups();
+    if (oldIndex < 0 || oldIndex >= _customGroups!.length) return;
+    final List<FavoriteGroup> groups = [..._customGroups!];
+    if (newIndex > oldIndex) newIndex -= 1;
+    if (newIndex < 0 || newIndex >= groups.length) return;
+    final FavoriteGroup group = groups.removeAt(oldIndex);
+    groups.insert(newIndex, group);
+    _customGroups = groups;
+    _saveFavoriteGroups();
+    notifyListeners();
+  }
+
   void deleteFavoriteGroup(String id) {
     if (id == FavoriteGroup.favoritesId) return;
     _customGroups ??= _readFavoriteGroups();

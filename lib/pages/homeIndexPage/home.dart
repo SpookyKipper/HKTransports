@@ -14,8 +14,15 @@ import 'package:intl/intl.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:provider/provider.dart';
 
-class HomeContent extends StatelessWidget {
+class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
+
+  @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  String? _selectedGroupId;
 
   @override
   Widget build(BuildContext context) {
@@ -62,60 +69,126 @@ class HomeContent extends StatelessWidget {
     }
 
     final List<FavoriteGroup> groups = repository.favoriteGroups;
+    final FavoriteGroup selected = groups.firstWhere(
+      (group) => group.id == _selectedGroupId,
+      orElse: () => groups.first,
+    );
 
-    return DefaultTabController(
-      length: groups.length,
-      child: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: NoticeBanner(),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TabBar(
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    dividerColor: Colors.transparent,
-                    dividerHeight: 0,
-                    tabs: [
-                      for (final FavoriteGroup group in groups)
-                        Tab(text: group.name),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: settings.text('新增群組', 'New group'),
-                  onPressed: () async {
-                    final String? name = await promptFavoriteGroupName(context);
-                    if (name != null) {
-                      repository.createFavoriteGroup(name);
-                    }
+    return Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: NoticeBanner(),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: _GroupTabStrip(
+                  groups: groups,
+                  selectedId: selected.id,
+                  onSelected: (String id) {
+                    setState(() => _selectedGroupId = id);
                   },
-                  icon: const Icon(Icons.add),
                 ),
-              ],
+              ),
+              IconButton(
+                tooltip: settings.text('管理群組', 'Manage groups'),
+                onPressed: () => context.push('/favoriteGroups'),
+                icon: const Icon(Icons.tune),
+              ),
+              IconButton(
+                tooltip: settings.text('新增群組', 'New group'),
+                onPressed: () async {
+                  final String? name = await promptFavoriteGroupName(context);
+                  if (name != null) {
+                    repository.createFavoriteGroup(name);
+                  }
+                },
+                icon: const Icon(Icons.add),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: _GroupRoutesView(
+              key: ValueKey<String>(selected.id),
+              group: selected,
             ),
           ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                for (final FavoriteGroup group in groups)
-                  _GroupRoutesView(group: group),
-              ],
+        ),
+      ],
+    );
+  }
+}
+
+class _GroupTabStrip extends StatelessWidget {
+  const _GroupTabStrip({
+    required this.groups,
+    required this.selectedId,
+    required this.onSelected,
+  });
+
+  final List<FavoriteGroup> groups;
+  final String selectedId;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 56,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemCount: groups.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 4),
+        itemBuilder: (context, index) {
+          final FavoriteGroup group = groups[index];
+          final bool selected = group.id == selectedId;
+          return InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => onSelected(group.id),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    group.name,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: selected
+                          ? scheme.primary
+                          : scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 3,
+                    width: selected ? 24 : 0,
+                    decoration: BoxDecoration(
+                      color: scheme.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 }
 
 class _GroupRoutesView extends StatefulWidget {
-  const _GroupRoutesView({required this.group});
+  const _GroupRoutesView({super.key, required this.group});
 
   final FavoriteGroup group;
 

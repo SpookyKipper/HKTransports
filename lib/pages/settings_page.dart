@@ -147,6 +147,13 @@ class SettingsPage extends StatelessWidget {
           ),
           const Divider(),
           ListTile(
+            leading: const Icon(Icons.tune),
+            title: Text(settings.text('管理收藏群組', 'Manage favourite groups')),
+            subtitle: Text(settings.text('排序及編輯群組', 'Reorder and edit groups')),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/favoriteGroups'),
+          ),
+          ListTile(
             leading: const Icon(Icons.storage_outlined),
             title: Text(settings.text('路線及車站資料', 'Route and stop data')),
             subtitle: Text(

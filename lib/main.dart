@@ -11,6 +11,7 @@ import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/objectBox/store.dart';
 import 'package:hktransports/pages/credits_page.dart';
+import 'package:hktransports/pages/favorite_groups_page.dart';
 import 'package:hktransports/pages/home.dart';
 import 'package:hktransports/pages/route.dart';
 import 'package:hktransports/pages/settings_page.dart';
@@ -53,6 +54,10 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const UpdateDataPageRoute(),
     ),
     GoRoute(path: '/credits', builder: (context, state) => const CreditsPage()),
+    GoRoute(
+      path: '/favoriteGroups',
+      builder: (context, state) => const FavoriteGroupsPage(),
+    ),
   ],
 );
 
