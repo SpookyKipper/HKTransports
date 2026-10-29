@@ -292,7 +292,6 @@ class _DropdownSettingState<T> extends State<_DropdownSetting<T>> {
             ],
             singleSelect: true,
             enabled: widget.enabled,
-            closeOnBackButton: true,
             onSelectionChanged: _handleSelection,
           ),
           if (widget.caption != null)
