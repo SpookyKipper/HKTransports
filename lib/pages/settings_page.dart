@@ -1,233 +1,248 @@
-import 'package:dynamik_theme/dynamik_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hktransports/dataStore/objectbox.dart';
-import 'package:flutter/material.dart' hide AppBar;
-import 'package:one_ui/one_ui.dart';
-import '../functions/platform.dart';
-import '../functions/text.dart';
-import '../functions/ui.dart';
-import '../functions/app.dart';
-import '../multiplat_ui.dart';
-import 'package:spookyservices/widgets/widgets.dart';
-import 'package:spookyservices/helpers/language.dart';
+import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:provider/provider.dart';
 
 class SettingsPageRoute extends StatelessWidget {
   const SettingsPageRoute({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: OneUIView(
-        title: Text("Title"),
-        initCollapsed: true,
-        child: SettingsPage(),
-      ), // Use the SettingsPage widget
+    return const Scaffold(
+      body: SettingsPage(),
     );
   }
 }
 
-class SettingsPage extends StatefulWidget {
-  @override
-  State<SettingsPage> createState() => _SettingsPageState();
-}
-
-class _SettingsPageState extends State<SettingsPage> {
-  bool _showContent = true;
-  bool trafficLayer = sp.getBool("trafficLayer") ?? false;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(Duration(milliseconds: 300), () {
-      setState(() {
-        _showContent = true;
-      });
-    });
-  }
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return _showContent
-        ? ListView(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12.5),
-                child: Center(
-                  child: Text("Settings", style: TextStyle(fontSize: 24)),
-                ),
-              ),
-              ListTile(
-                title: Text('Theme Mode'),
-                trailing: DropdownButton<ThemeMode>(
-                  value: uf.getCurrentThemeMode(),
-                  items: ThemeMode.values.map((ThemeMode mode) {
-                    return DropdownMenuItem<ThemeMode>(
-                      value: mode,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          tf.capitalizeFirst(mode.toString().split('.').last),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (ThemeMode? newValue) {
-                    if (newValue != null) {
-                      DynamikTheme.of(context).setThemeMode(newValue);
-                      sp.setInt(
-                        'themeMode',
-                        ThemeMode.values.indexOf(newValue),
-                      );
-                    }
+    final AppSettings settings = context.watch<AppSettings>();
+
+    return Scaffold(
+      appBar: AppBar(title: Text(settings.text('設定', 'Settings'))),
+      body: ListView(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.brightness_6_outlined),
+            title: Text(settings.text('外觀', 'Appearance')),
+            subtitle: Text(_themeModeLabel(settings)),
+            onTap: () => _pickThemeMode(context, settings),
+          ),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(settings.text('語言', 'Language')),
+            subtitle: Text(settings.isChinese ? '繁體中文' : 'English'),
+            onTap: () => _pickLanguage(context, settings),
+          ),
+          ListTile(
+            leading: const Icon(Icons.schedule),
+            title: Text(settings.text('到站時間格式', 'ETA format')),
+            subtitle: Text(_etaFormatLabel(settings)),
+            onTap: () => _pickEtaFormat(context, settings),
+          ),
+          ListTile(
+            leading: const Icon(Icons.refresh),
+            title: Text(settings.text('更新頻率', 'Refresh interval')),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Slider(
+                  min: 5,
+                  max: 60,
+                  divisions: 11,
+                  value: settings.refreshSeconds.toDouble().clamp(5, 60),
+                  label: '${settings.refreshSeconds}s',
+                  onChanged: (double value) {
+                    settings.setRefreshSeconds(value.round());
                   },
                 ),
-              ),
+                Text('${settings.refreshSeconds}s'),
+              ],
+            ),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.filter_alt_outlined),
+            title: Text(settings.text('只顯示現時服務的路線', 'Only show routes running now')),
+            value: settings.routeFilter,
+            onChanged: settings.setRouteFilter,
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.sync),
+            title: Text(settings.text('自動更新路線資料', 'Auto update route data')),
+            subtitle: Text(
+              settings.text('每七日檢查一次', 'Check every seven days'),
+            ),
+            value: settings.autoRenew,
+            onChanged: settings.setAutoRenew,
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.storage_outlined),
+            title: Text(settings.text('路線及車站資料', 'Route and stop data')),
+            subtitle: Text(
+              settings.text('下載、更新或重新整理', 'Download, update or refresh'),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/updateData'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: Text(settings.text('鳴謝', 'Credits')),
+            subtitle: Text(
+              settings.text('資料來源與開源項目', 'Data sources and open source'),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/credits'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: Text(settings.text('開源授權', 'Open source licenses')),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              showLicensePage(
+                context: context,
+                applicationName: 'HKTransports',
+                applicationLegalese: 'Data from DATA.GOV.HK and HK Bus Crawling.',
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
-              // ListTile(
-              //   title: Text('Theme Template'),
-              //   subtitle: Text("App will restart on change"),
-              //   trailing: DropdownButton<String>(
-              //     value: uf.getCurrentThemePlatform(),
-              //     items: uf.themePlatforms.map((String platform) {
-              //       return DropdownMenuItem<String>(
-              //         value: platform,
-              //         child: Padding(
-              //           padding: const EdgeInsets.all(8.0),
-              //           child: Text(tf.capitalizeFirst(platform)),
-              //         ),
-              //       );
-              //     }).toList(),
-              //     onChanged: (String? newValue) async {
-              //       if (newValue != null) {
-              //         bool res =
-              //             uf.setCurrentThemePlatform(newValue) &&
-              //             sp.setString('startingPage', 'settings');
-              //         if (res == true) {
-              //           Phoenix.rebirth(context);
-              //         }
-              //       }
-              //     },
-              //   ),
-              // ),
-              ListTile(
-                title: Text('界面語言 (App Language)'),
-                trailing: DropdownButton<String>(
-                  value: LangHelper().getLang(),
-                  items: ["繁體中文", "English"].map((String lang) {
-                    late final String langVal;
-                    if (lang == "繁體中文") {
-                      langVal = "zh";
-                    } else if (lang == "English") {
-                      langVal = "en";
-                    }
-                    return DropdownMenuItem<String>(
-                      value: langVal,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(lang),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) async {
-                    LangHelper().setLang(newValue!);
-                    setState(() {
-                      // Update the UI to reflect the language change
-                    });
-                  },
+  String _themeModeLabel(AppSettings settings) {
+    switch (settings.themeMode) {
+      case ThemeMode.light:
+        return settings.text('淺色', 'Light');
+      case ThemeMode.dark:
+        return settings.text('深色', 'Dark');
+      case ThemeMode.system:
+        return settings.text('跟隨系統', 'System');
+    }
+  }
+
+  String _etaFormatLabel(AppSettings settings) {
+    switch (settings.etaFormat) {
+      case EtaFormat.diff:
+        return settings.text('到站時差', 'Minutes remaining');
+      case EtaFormat.exact:
+        return settings.text('到站時間', 'Clock time');
+      case EtaFormat.mixed:
+        return settings.text('到站時間（到站時差）', 'Clock time (minutes remaining)');
+    }
+  }
+
+  Future<void> _pickThemeMode(
+    BuildContext context,
+    AppSettings settings,
+  ) async {
+    final ThemeMode? result = await showDialog<ThemeMode>(
+      context: context,
+      builder: (context) {
+        return SimpleDialog(
+          title: Text(settings.text('外觀', 'Appearance')),
+          children: [
+            RadioListTile<ThemeMode>(
+              value: ThemeMode.system,
+              groupValue: settings.themeMode,
+              title: Text(settings.text('跟隨系統', 'System')),
+              onChanged: (value) => Navigator.pop(context, value),
+            ),
+            RadioListTile<ThemeMode>(
+              value: ThemeMode.light,
+              groupValue: settings.themeMode,
+              title: Text(settings.text('淺色', 'Light')),
+              onChanged: (value) => Navigator.pop(context, value),
+            ),
+            RadioListTile<ThemeMode>(
+              value: ThemeMode.dark,
+              groupValue: settings.themeMode,
+              title: Text(settings.text('深色', 'Dark')),
+              onChanged: (value) => Navigator.pop(context, value),
+            ),
+          ],
+        );
+      },
+    );
+    if (result != null) {
+      settings.setThemeMode(result);
+    }
+  }
+
+  Future<void> _pickLanguage(
+    BuildContext context,
+    AppSettings settings,
+  ) async {
+    final String? result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return SimpleDialog(
+          title: Text(settings.text('語言', 'Language')),
+          children: [
+            RadioListTile<String>(
+              value: 'zh',
+              groupValue: settings.language,
+              title: const Text('繁體中文'),
+              onChanged: (value) => Navigator.pop(context, value),
+            ),
+            RadioListTile<String>(
+              value: 'en',
+              groupValue: settings.language,
+              title: const Text('English'),
+              onChanged: (value) => Navigator.pop(context, value),
+            ),
+          ],
+        );
+      },
+    );
+    if (result != null) {
+      settings.setLanguage(result);
+    }
+  }
+
+  Future<void> _pickEtaFormat(
+    BuildContext context,
+    AppSettings settings,
+  ) async {
+    final EtaFormat? result = await showDialog<EtaFormat>(
+      context: context,
+      builder: (context) {
+        return SimpleDialog(
+          title: Text(settings.text('到站時間格式', 'ETA format')),
+          children: [
+            RadioListTile<EtaFormat>(
+              value: EtaFormat.mixed,
+              groupValue: settings.etaFormat,
+              title: Text(
+                settings.text(
+                  '到站時間（到站時差）',
+                  'Clock time (minutes remaining)',
                 ),
               ),
-
-              ListTile(
-                title: Text('顯示交通狀況'),
-                subtitle: Text("在地圖上顯示即時交通狀況 (需要一定 zoom level 才會顯示)"),
-                trailing: Switch(
-                  value: trafficLayer,
-                  onChanged: (bool value) {
-                    sp.setBool("trafficLayer", value);
-                    setState(() {
-                      trafficLayer = value;
-                    });
-                  },
-                ),
-              ),
-
-              ListTile(
-                title: Text('更新路線及車站資料'),
-                trailing: Button(
-                  text: "立即更新",
-                  onPressed: () {
-                    context.go("/updateData");
-                  },
-                ),
-              ),
-
-              Divider(
-                color: Theme.of(context).colorScheme.secondary,
-                height: 50, // Increased height for more vertical spacing
-              ),
-
-              Center(child: Text("About Flow", style: TextStyle(fontSize: 24))),
-
-              ListTile(
-                title: Text('Platform'),
-                subtitle: Text(
-                  pf.getPlatformName(context).replaceAll("GNOME", ""),
-                ),
-              ),
-              ListTile(
-                title: Text("App Version"),
-                subtitle: af.getVersionBuilder(
-                  builder: (res) => Text("$res [EARLY ACCESS]"),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Button(
-                    text: "View Licenses",
-                    onPressed: () async {
-                      showLicensePage(
-                        context: context,
-                        applicationName: 'Flow by Spooky Services',
-                        applicationVersion:
-                            "${await af.getVersion()} (${await af.getBuildNumber()})",
-                        applicationIcon: ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: 100),
-                          child: Image.asset("assets/images/logo.png"),
-                        ),
-                        applicationLegalese: "© Spooky Services",
-                      );
-                    },
-                  ),
-                  SizedBox(width: 15), // Add space between buttons
-                  Button(
-                    text: "Other Copyright Info",
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Text("Other Copyright Info"),
-                            content: Text(
-                              "This app makes use of:\nHK Bus Crawling@2021, https://github.com/hkbus/hk-bus-crawling",
-                            ),
-                            actions: <Widget>[
-                              TextButton(
-                                child: Text("Close"),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
-          )
-        : Center(child: w.loadingIcon(context: context));
+              onChanged: (value) => Navigator.pop(context, value),
+            ),
+            RadioListTile<EtaFormat>(
+              value: EtaFormat.exact,
+              groupValue: settings.etaFormat,
+              title: Text(settings.text('到站時間', 'Clock time')),
+              onChanged: (value) => Navigator.pop(context, value),
+            ),
+            RadioListTile<EtaFormat>(
+              value: EtaFormat.diff,
+              groupValue: settings.etaFormat,
+              title: Text(settings.text('到站時差', 'Minutes remaining')),
+              onChanged: (value) => Navigator.pop(context, value),
+            ),
+          ],
+        );
+      },
+    );
+    if (result != null) {
+      settings.setEtaFormat(result);
+    }
   }
 }
