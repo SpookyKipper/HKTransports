@@ -72,11 +72,18 @@ class MyApp extends StatelessWidget {
       builder: (context, settings, child) {
         return DynamicColorBuilder(
           builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+            final bool purple = settings.usesPurpleTheme;
+            final ColorScheme lightScheme = purple
+                ? purpleLightScheme()
+                : lightDynamic ?? fallbackLightScheme();
+            final ColorScheme darkScheme = purple
+                ? purpleDarkScheme()
+                : darkDynamic ?? fallbackDarkScheme();
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
               themeMode: settings.themeMode,
-              theme: buildAppTheme(lightDynamic ?? fallbackLightScheme()),
-              darkTheme: buildAppTheme(darkDynamic ?? fallbackDarkScheme()),
+              theme: buildAppTheme(lightScheme),
+              darkTheme: buildAppTheme(darkScheme),
               routerConfig: _router,
               builder: (context, child) {
                 final MediaQueryData media = MediaQuery.of(context);

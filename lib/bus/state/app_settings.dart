@@ -3,8 +3,50 @@ import 'package:hktransports/dataStore/objectbox.dart';
 
 enum EtaFormat { diff, exact, mixed }
 
+enum AppThemeChoice {
+  systemDynamic,
+  lightDynamic,
+  darkDynamic,
+  lightPurple,
+  darkPurple,
+}
+
+extension AppThemeChoiceInfo on AppThemeChoice {
+  bool get isPurple =>
+      this == AppThemeChoice.lightPurple || this == AppThemeChoice.darkPurple;
+
+  ThemeMode get themeMode {
+    switch (this) {
+      case AppThemeChoice.systemDynamic:
+        return ThemeMode.system;
+      case AppThemeChoice.lightDynamic:
+      case AppThemeChoice.lightPurple:
+        return ThemeMode.light;
+      case AppThemeChoice.darkDynamic:
+      case AppThemeChoice.darkPurple:
+        return ThemeMode.dark;
+    }
+  }
+
+  String label(String language) {
+    final bool zh = language != 'en';
+    switch (this) {
+      case AppThemeChoice.systemDynamic:
+        return zh ? '跟隨系統（動態色彩）' : 'System (dynamic color)';
+      case AppThemeChoice.lightDynamic:
+        return zh ? '淺色（動態色彩）' : 'Light (dynamic color)';
+      case AppThemeChoice.darkDynamic:
+        return zh ? '深色（動態色彩）' : 'Dark (dynamic color)';
+      case AppThemeChoice.lightPurple:
+        return zh ? '淺色（紫色）' : 'Light (purple)';
+      case AppThemeChoice.darkPurple:
+        return zh ? '深色（紫色）' : 'Dark (purple)';
+    }
+  }
+}
+
 class AppSettings extends ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.system;
+  AppThemeChoice _themeChoice = AppThemeChoice.systemDynamic;
   String _language = 'zh';
   EtaFormat _etaFormat = EtaFormat.mixed;
   int _refreshSeconds = 30;
@@ -12,7 +54,9 @@ class AppSettings extends ChangeNotifier {
   bool _routeFilter = false;
   bool _autoRenew = true;
 
-  ThemeMode get themeMode => _themeMode;
+  AppThemeChoice get themeChoice => _themeChoice;
+  ThemeMode get themeMode => _themeChoice.themeMode;
+  bool get usesPurpleTheme => _themeChoice.isPurple;
   String get language => _language;
   bool get isChinese => _language == 'zh';
   EtaFormat get etaFormat => _etaFormat;
@@ -23,8 +67,20 @@ class AppSettings extends ChangeNotifier {
   bool get autoRenew => _autoRenew;
 
   AppSettings() {
-    final int mode = sp.getInt('themeMode') ?? 0;
-    _themeMode = ThemeMode.values[mode.clamp(0, 2)];
+    final String? storedChoice = sp.getString('themeChoice');
+    if (storedChoice != null) {
+      _themeChoice = AppThemeChoice.values.firstWhere(
+        (value) => value.name == storedChoice,
+        orElse: () => AppThemeChoice.systemDynamic,
+      );
+    } else {
+      final int mode = sp.getInt('themeMode') ?? 0;
+      _themeChoice = switch (mode) {
+        1 => AppThemeChoice.lightDynamic,
+        2 => AppThemeChoice.darkDynamic,
+        _ => AppThemeChoice.systemDynamic,
+      };
+    }
     final String storedLanguage = (sp.getString('appLanguage') ?? 'zh')
         .toLowerCase();
     _language = storedLanguage.startsWith('en') ? 'en' : 'zh';
@@ -39,10 +95,10 @@ class AppSettings extends ChangeNotifier {
     _autoRenew = sp.getBool('autoRenew') ?? true;
   }
 
-  void setThemeMode(ThemeMode mode) {
-    if (_themeMode == mode) return;
-    _themeMode = mode;
-    sp.setInt('themeMode', mode.index);
+  void setThemeChoice(AppThemeChoice choice) {
+    if (_themeChoice == choice) return;
+    _themeChoice = choice;
+    sp.setString('themeChoice', choice.name);
     notifyListeners();
   }
 

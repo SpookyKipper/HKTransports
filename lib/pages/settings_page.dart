@@ -27,8 +27,8 @@ class SettingsPage extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.brightness_6_outlined),
             title: Text(settings.text('外觀', 'Appearance')),
-            subtitle: Text(_themeModeLabel(settings)),
-            onTap: () => _pickThemeMode(context, settings),
+            subtitle: Text(settings.themeChoice.label(settings.language)),
+            onTap: () => _pickThemeChoice(context, settings),
           ),
           ListTile(
             leading: const Icon(Icons.format_size),
@@ -134,17 +134,6 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  String _themeModeLabel(AppSettings settings) {
-    switch (settings.themeMode) {
-      case ThemeMode.light:
-        return settings.text('淺色', 'Light');
-      case ThemeMode.dark:
-        return settings.text('深色', 'Dark');
-      case ThemeMode.system:
-        return settings.text('跟隨系統', 'System');
-    }
-  }
-
   String _etaFormatLabel(AppSettings settings) {
     switch (settings.etaFormat) {
       case EtaFormat.diff:
@@ -156,34 +145,27 @@ class SettingsPage extends StatelessWidget {
     }
   }
 
-  Future<void> _pickThemeMode(
+  Future<void> _pickThemeChoice(
     BuildContext context,
     AppSettings settings,
   ) async {
-    final ThemeMode? result = await showDialog<ThemeMode>(
+    final AppThemeChoice? result = await showDialog<AppThemeChoice>(
       context: context,
       builder: (context) {
         return SimpleDialog(
           title: Text(settings.text('外觀', 'Appearance')),
           children: [
-            RadioGroup<ThemeMode>(
-              groupValue: settings.themeMode,
+            RadioGroup<AppThemeChoice>(
+              groupValue: settings.themeChoice,
               onChanged: (value) => Navigator.pop(context, value),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  RadioListTile<ThemeMode>(
-                    value: ThemeMode.system,
-                    title: Text(settings.text('跟隨系統', 'System')),
-                  ),
-                  RadioListTile<ThemeMode>(
-                    value: ThemeMode.light,
-                    title: Text(settings.text('淺色', 'Light')),
-                  ),
-                  RadioListTile<ThemeMode>(
-                    value: ThemeMode.dark,
-                    title: Text(settings.text('深色', 'Dark')),
-                  ),
+                  for (final AppThemeChoice choice in AppThemeChoice.values)
+                    RadioListTile<AppThemeChoice>(
+                      value: choice,
+                      title: Text(choice.label(settings.language)),
+                    ),
                 ],
               ),
             ),
@@ -192,7 +174,7 @@ class SettingsPage extends StatelessWidget {
       },
     );
     if (result != null) {
-      settings.setThemeMode(result);
+      settings.setThemeChoice(result);
     }
   }
 

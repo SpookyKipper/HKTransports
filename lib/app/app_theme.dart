@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 const Color _fallbackSeed = Color(0xFF6750A4);
+const Color purpleSeed = Color(0xFF6F65DC);
 
 ColorScheme fallbackLightScheme() {
   return ColorScheme.fromSeed(seedColor: _fallbackSeed);
@@ -10,6 +11,17 @@ ColorScheme fallbackLightScheme() {
 ColorScheme fallbackDarkScheme() {
   return ColorScheme.fromSeed(
     seedColor: _fallbackSeed,
+    brightness: Brightness.dark,
+  );
+}
+
+ColorScheme purpleLightScheme() {
+  return ColorScheme.fromSeed(seedColor: purpleSeed);
+}
+
+ColorScheme purpleDarkScheme() {
+  return ColorScheme.fromSeed(
+    seedColor: purpleSeed,
     brightness: Brightness.dark,
   );
 }
