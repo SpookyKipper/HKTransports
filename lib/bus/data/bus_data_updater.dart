@@ -156,12 +156,16 @@ class BusDataUpdater {
 
   bool get _isValidSchema => storedSchema == busDataSchema;
 
-  Future<bool> shouldAutoCheck() async {
+  Future<bool> shouldAutoCheck(int intervalHours) async {
     if (!_isValidSchema) return true;
-    final int? last = lastCheckSeconds;
-    if (last == null) return true;
+    final int? lastFetch = lastUpdateSeconds;
+    if (lastFetch == null) return true;
     final int now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    return now - last > 7 * 24 * 3600;
+    final int interval = intervalHours * 3600;
+    if (now - lastFetch < interval) return false;
+    final int? lastCheck = lastCheckSeconds;
+    if (lastCheck != null && now - lastCheck < interval) return false;
+    return true;
   }
 
   static String md5Of(List<int> bytes) {

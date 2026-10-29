@@ -93,9 +93,23 @@ class SettingsPage extends StatelessWidget {
           SwitchListTile(
             secondary: const Icon(Icons.sync),
             title: Text(settings.text('自動更新路線資料', 'Auto update route data')),
-            subtitle: Text(settings.text('每七日檢查一次', 'Check every seven days')),
+            subtitle: Text(
+              settings.text(
+                '按下方間隔檢查更新',
+                'Checks for updates at the interval below',
+              ),
+            ),
             value: settings.autoRenew,
             onChanged: settings.setAutoRenew,
+          ),
+          ListTile(
+            enabled: settings.autoRenew,
+            leading: const Icon(Icons.timer_outlined),
+            title: Text(settings.text('更新間隔', 'Update interval')),
+            subtitle: Text(_autoUpdateLabel(settings)),
+            onTap: settings.autoRenew
+                ? () => _pickAutoUpdateInterval(context, settings)
+                : null,
           ),
           const Divider(),
           ListTile(
@@ -132,6 +146,11 @@ class SettingsPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _autoUpdateLabel(AppSettings settings) {
+    final int hours = settings.autoUpdateHours;
+    return settings.text('上次更新後 $hours 小時', '$hours hours after last update');
   }
 
   String _etaFormatLabel(AppSettings settings) {
@@ -175,6 +194,40 @@ class SettingsPage extends StatelessWidget {
     );
     if (result != null) {
       settings.setThemeChoice(result);
+    }
+  }
+
+  Future<void> _pickAutoUpdateInterval(
+    BuildContext context,
+    AppSettings settings,
+  ) async {
+    const List<int> options = [6, 12, 24, 48, 72, 168];
+    final int? result = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        return SimpleDialog(
+          title: Text(settings.text('更新間隔', 'Update interval')),
+          children: [
+            RadioGroup<int>(
+              groupValue: settings.autoUpdateHours,
+              onChanged: (value) => Navigator.pop(context, value),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final int hours in options)
+                    RadioListTile<int>(
+                      value: hours,
+                      title: Text(settings.text('$hours 小時', '$hours hours')),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (result != null) {
+      settings.setAutoUpdateHours(result);
     }
   }
 

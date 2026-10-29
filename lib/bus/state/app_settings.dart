@@ -53,6 +53,7 @@ class AppSettings extends ChangeNotifier {
   int _textScalePercent = 110;
   bool _routeFilter = false;
   bool _autoRenew = true;
+  int _autoUpdateHours = 24;
 
   AppThemeChoice get themeChoice => _themeChoice;
   ThemeMode get themeMode => _themeChoice.themeMode;
@@ -65,6 +66,7 @@ class AppSettings extends ChangeNotifier {
   double get textScale => _textScalePercent / 100;
   bool get routeFilter => _routeFilter;
   bool get autoRenew => _autoRenew;
+  int get autoUpdateHours => _autoUpdateHours;
 
   AppSettings() {
     final String? storedChoice = sp.getString('themeChoice');
@@ -93,6 +95,7 @@ class AppSettings extends ChangeNotifier {
     _textScalePercent = (sp.getInt('textScalePercent') ?? 110).clamp(80, 160);
     _routeFilter = sp.getBool('routeFilter') ?? false;
     _autoRenew = sp.getBool('autoRenew') ?? true;
+    _autoUpdateHours = (sp.getInt('autoUpdateHours') ?? 24).clamp(1, 168);
   }
 
   void setThemeChoice(AppThemeChoice choice) {
@@ -144,6 +147,14 @@ class AppSettings extends ChangeNotifier {
     if (_autoRenew == value) return;
     _autoRenew = value;
     sp.setBool('autoRenew', value);
+    notifyListeners();
+  }
+
+  void setAutoUpdateHours(int hours) {
+    final int next = hours.clamp(1, 168);
+    if (_autoUpdateHours == next) return;
+    _autoUpdateHours = next;
+    sp.setInt('autoUpdateHours', next);
     notifyListeners();
   }
 

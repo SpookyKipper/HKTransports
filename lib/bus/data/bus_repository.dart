@@ -36,6 +36,8 @@ class BusRepository extends ChangeNotifier {
   Map<String, Set<String>>? _physicalByCompanyStop;
   List<String>? _savedRoutes;
   List<String>? _recentRoutes;
+  Timer? _autoTimer;
+  bool _checking = false;
 
   BusDataStatus get status => _status;
   BusDatabase? get database => _database;
@@ -117,15 +119,35 @@ class BusRepository extends ChangeNotifier {
     return db;
   }
 
+  void startAutoUpdate() {
+    _autoTimer?.cancel();
+    unawaited(autoCheckIfDue());
+    _autoTimer = Timer.periodic(
+      const Duration(hours: 1),
+      (_) => unawaited(autoCheckIfDue()),
+    );
+  }
+
   Future<void> autoCheckIfDue() async {
     if (_database == null) return;
     if (!settings.autoRenew) return;
-    if (!await updater.shouldAutoCheck()) return;
-    updater.markChecked();
-    final bool needed = await checkForUpdate();
-    if (needed) {
-      await update();
+    if (_checking) return;
+    if (!await updater.shouldAutoCheck(settings.autoUpdateHours)) return;
+    _checking = true;
+    try {
+      final bool needed = await checkForUpdate();
+      if (needed) {
+        await update(force: true);
+      }
+    } finally {
+      _checking = false;
     }
+  }
+
+  @override
+  void dispose() {
+    _autoTimer?.cancel();
+    super.dispose();
   }
 
   List<RouteEntry> search(String query) {
