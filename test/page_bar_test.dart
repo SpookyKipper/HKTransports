@@ -22,7 +22,9 @@ void main() {
     expect(find.byType(AppBar), findsNothing);
   });
 
-  testWidgets('uses a material header on Android', (WidgetTester tester) async {
+  testWidgets('uses a cupertino header on Android', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(platform: TargetPlatform.android),
@@ -36,7 +38,7 @@ void main() {
         ),
       ),
     );
-    expect(find.byType(AppBar), findsOneWidget);
-    expect(find.byType(CupertinoNavigationBar), findsNothing);
+    expect(find.byType(CupertinoNavigationBar), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
   });
 }
