@@ -336,6 +336,9 @@ class _RouteHeader extends StatelessWidget {
       child: SizedBox(
         width: double.infinity,
         child: Card.filled(
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(24)),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
