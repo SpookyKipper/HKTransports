@@ -34,3 +34,24 @@ class FavoriteGroup {
     );
   }
 }
+
+class FavoriteEntry {
+  const FavoriteEntry({required this.routeKey, required this.seq});
+
+  final String routeKey;
+  final int seq;
+
+  String get storageKey => FavoriteEntry.encode(routeKey, seq);
+
+  static String encode(String routeKey, int seq) => '$routeKey|$seq';
+
+  static FavoriteEntry parse(String raw) {
+    final int separator = raw.lastIndexOf('|');
+    if (separator <= 0) {
+      return FavoriteEntry(routeKey: raw, seq: 0);
+    }
+    final String key = raw.substring(0, separator);
+    final int seq = int.tryParse(raw.substring(separator + 1)) ?? 0;
+    return FavoriteEntry(routeKey: key, seq: seq);
+  }
+}

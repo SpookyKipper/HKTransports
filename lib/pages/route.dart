@@ -139,7 +139,11 @@ class _RoutePageState extends State<_RoutePage> {
             ),
           IconButton(
             tooltip: settings.text('收藏', 'Favourites'),
-            onPressed: () => showRouteGroupSheet(context, route),
+            onPressed: () => showRouteGroupSheet(
+              context,
+              route,
+              stopSeq: _expandedIndex ?? 0,
+            ),
             icon: Icon(
               repository.isRouteInAnyGroup(route.key)
                   ? Icons.star

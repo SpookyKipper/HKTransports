@@ -32,6 +32,11 @@ class BusEta {
   bool get isScheduledMark {
     final String en = remarkEn.toLowerCase();
     final String zh = remarkZh;
-    return en.contains('scheduled') || zh.contains('預定') || zh.contains('原定');
+    return en.contains('scheduled') ||
+        zh.contains('預定') ||
+        zh.contains('原定') ||
+        zh.contains('未開出');
   }
+
+  bool get isScheduledLike => scheduled || isScheduledMark;
 }

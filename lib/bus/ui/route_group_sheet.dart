@@ -6,22 +6,27 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
 import 'package:provider/provider.dart';
 
-Future<void> showRouteGroupSheet(BuildContext context, RouteEntry route) {
+Future<void> showRouteGroupSheet(
+  BuildContext context,
+  RouteEntry route, {
+  int stopSeq = 0,
+}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
     builder: (context) {
-      return RouteGroupSheet(route: route);
+      return RouteGroupSheet(route: route, stopSeq: stopSeq);
     },
   );
 }
 
 class RouteGroupSheet extends StatelessWidget {
-  const RouteGroupSheet({super.key, required this.route});
+  const RouteGroupSheet({super.key, required this.route, this.stopSeq = 0});
 
   final RouteEntry route;
+  final int stopSeq;
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +50,12 @@ class RouteGroupSheet extends StatelessWidget {
           for (final FavoriteGroup group in groups)
             ListTile(
               leading: Checkbox(
-                value: group.routes.contains(route.key),
-                onChanged: (_) =>
-                    repository.toggleRouteInGroup(group.id, route.key),
+                value: repository.isRouteInGroup(group.id, route.key),
+                onChanged: (_) => repository.toggleRouteInGroup(
+                  group.id,
+                  route.key,
+                  seq: stopSeq,
+                ),
               ),
               title: Text(group.name),
               subtitle: Text(
@@ -82,7 +90,11 @@ class RouteGroupSheet extends StatelessWidget {
                         ),
                       ],
                     ),
-              onTap: () => repository.toggleRouteInGroup(group.id, route.key),
+              onTap: () => repository.toggleRouteInGroup(
+                group.id,
+                route.key,
+                seq: stopSeq,
+              ),
             ),
           const Divider(),
           ListTile(
@@ -92,8 +104,12 @@ class RouteGroupSheet extends StatelessWidget {
               final String? name = await promptFavoriteGroupName(context);
               if (name == null) return;
               final FavoriteGroup? group = repository.createFavoriteGroup(name);
-              if (group != null && !group.routes.contains(route.key)) {
-                repository.toggleRouteInGroup(group.id, route.key);
+              if (group != null) {
+                repository.toggleRouteInGroup(
+                  group.id,
+                  route.key,
+                  seq: stopSeq,
+                );
               }
             },
           ),

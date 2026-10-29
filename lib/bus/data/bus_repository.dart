@@ -308,20 +308,31 @@ class BusRepository extends ChangeNotifier {
     return null;
   }
 
+  List<FavoriteEntry> entriesInGroup(FavoriteGroup group) {
+    return group.routes.map(FavoriteEntry.parse).toList();
+  }
+
   List<RouteEntry> routesInGroup(FavoriteGroup group) {
-    return group.routes
-        .map((String key) => routeByKey(key))
+    return entriesInGroup(group)
+        .map((entry) => routeByKey(entry.routeKey))
         .whereType<RouteEntry>()
         .toList();
   }
 
   bool isRouteInGroup(String groupId, String routeKey) {
     final FavoriteGroup? group = favoriteGroupById(groupId);
-    return group?.routes.contains(routeKey) ?? false;
+    if (group == null) return false;
+    return group.routes.any(
+      (entry) => FavoriteEntry.parse(entry).routeKey == routeKey,
+    );
   }
 
   bool isRouteInAnyGroup(String routeKey) {
-    return favoriteGroups.any((group) => group.routes.contains(routeKey));
+    return favoriteGroups.any(
+      (group) => group.routes.any(
+        (entry) => FavoriteEntry.parse(entry).routeKey == routeKey,
+      ),
+    );
   }
 
   FavoriteGroup? createFavoriteGroup(String name) {
@@ -358,13 +369,19 @@ class BusRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleRouteInGroup(String groupId, String routeKey) {
+  void toggleRouteInGroup(String groupId, String routeKey, {int seq = 0}) {
+    final String entry = FavoriteEntry.encode(routeKey, seq);
     if (groupId == FavoriteGroup.favoritesId) {
       final List<String> list = [...savedRoutes];
-      if (list.contains(routeKey)) {
-        list.remove(routeKey);
+      final bool exists = list.any(
+        (value) => FavoriteEntry.parse(value).routeKey == routeKey,
+      );
+      if (exists) {
+        list.removeWhere(
+          (value) => FavoriteEntry.parse(value).routeKey == routeKey,
+        );
       } else {
-        list.add(routeKey);
+        list.add(entry);
       }
       _savedRoutes = list;
       sp.setString('savedRoutes', jsonEncode(list));
@@ -375,10 +392,15 @@ class BusRepository extends ChangeNotifier {
     _customGroups = _customGroups!.map((group) {
       if (group.id != groupId) return group;
       final List<String> routes = [...group.routes];
-      if (routes.contains(routeKey)) {
-        routes.remove(routeKey);
+      final bool exists = routes.any(
+        (value) => FavoriteEntry.parse(value).routeKey == routeKey,
+      );
+      if (exists) {
+        routes.removeWhere(
+          (value) => FavoriteEntry.parse(value).routeKey == routeKey,
+        );
       } else {
-        routes.add(routeKey);
+        routes.add(entry);
       }
       return group.copyWith(routes: routes);
     }).toList();
@@ -411,6 +433,24 @@ class BusRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setGroupEntries(String groupId, List<FavoriteEntry> entries) {
+    final List<String> keys = entries.map((entry) => entry.storageKey).toList();
+    if (groupId == FavoriteGroup.favoritesId) {
+      _savedRoutes = keys;
+      sp.setString('savedRoutes', jsonEncode(keys));
+      notifyListeners();
+      return;
+    }
+    _customGroups ??= _readFavoriteGroups();
+    _customGroups = _customGroups!
+        .map(
+          (group) => group.id == groupId ? group.copyWith(routes: keys) : group,
+        )
+        .toList();
+    _saveFavoriteGroups();
+    notifyListeners();
+  }
+
   void removeRouteFromGroup(String groupId, String routeKey) {
     if (!isRouteInGroup(groupId, routeKey)) return;
     toggleRouteInGroup(groupId, routeKey);
@@ -421,18 +461,10 @@ class BusRepository extends ChangeNotifier {
     return _recentRoutes!;
   }
 
-  bool isSaved(RouteEntry route) => savedRoutes.contains(route.key);
+  bool isSaved(RouteEntry route) => isRouteInAnyGroup(route.key);
 
   void toggleSaved(RouteEntry route) {
-    final List<String> list = [...savedRoutes];
-    if (list.contains(route.key)) {
-      list.remove(route.key);
-    } else {
-      list.add(route.key);
-    }
-    _savedRoutes = list;
-    sp.setString('savedRoutes', jsonEncode(list));
-    notifyListeners();
+    toggleRouteInGroup(FavoriteGroup.favoritesId, route.key);
   }
 
   void addRecent(RouteEntry route) {

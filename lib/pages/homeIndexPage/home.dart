@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/eta/eta_models.dart';
+import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
 import 'package:hktransports/bus/ui/notice_banner.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class HomeContent extends StatelessWidget {
@@ -124,8 +129,11 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
-    final List<RouteEntry> routes = repository.routesInGroup(widget.group);
-    final bool canSort = routes.length > 1;
+    final List<FavoriteEntry> entries = repository
+        .entriesInGroup(widget.group)
+        .where((entry) => repository.routeByKey(entry.routeKey) != null)
+        .toList();
+    final bool canSort = entries.length > 1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -137,8 +145,8 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
               Expanded(
                 child: Text(
                   settings.text(
-                    '${routes.length} 條路線',
-                    '${routes.length} routes',
+                    '${entries.length} 條路線',
+                    '${entries.length} routes',
                   ),
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
@@ -157,7 +165,7 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
           ),
         ),
         Expanded(
-          child: routes.isEmpty
+          child: entries.isEmpty
               ? Center(
                   child: Text(
                     settings.text(
@@ -171,19 +179,24 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
               ? ReorderableListView.builder(
                   padding: const EdgeInsets.only(bottom: 24),
                   buildDefaultDragHandles: false,
-                  itemCount: routes.length,
+                  itemCount: entries.length,
                   onReorder: (oldIndex, newIndex) {
-                    repository.reorderFavoriteGroup(
-                      widget.group.id,
-                      oldIndex,
-                      newIndex,
-                    );
+                    final List<FavoriteEntry> reordered = [...entries];
+                    if (newIndex > oldIndex) newIndex -= 1;
+                    final FavoriteEntry entry = reordered.removeAt(oldIndex);
+                    reordered.insert(newIndex, entry);
+                    repository.setGroupEntries(widget.group.id, reordered);
                   },
                   itemBuilder: (context, index) {
-                    final RouteEntry route = routes[index];
-                    return _RouteTile(
-                      key: ValueKey('${widget.group.id}-${route.key}'),
+                    final FavoriteEntry entry = entries[index];
+                    final RouteEntry route = repository.routeByKey(
+                      entry.routeKey,
+                    )!;
+                    return _FavoriteRouteTile(
+                      key: ValueKey('${widget.group.id}-${entry.storageKey}'),
                       route: route,
+                      seq: entry.seq,
+                      showEta: false,
                       trailing: ReorderableDragStartListener(
                         index: index,
                         child: const Padding(
@@ -191,19 +204,22 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
                           child: Icon(Icons.drag_handle),
                         ),
                       ),
-                      onTap: null,
                     );
                   },
                 )
               : ListView.separated(
                   padding: const EdgeInsets.only(bottom: 24),
-                  itemCount: routes.length,
+                  itemCount: entries.length,
                   separatorBuilder: (context, index) =>
                       const Divider(height: 1),
                   itemBuilder: (context, index) {
-                    final RouteEntry route = routes[index];
-                    return _RouteTile(
+                    final FavoriteEntry entry = entries[index];
+                    final RouteEntry route = repository.routeByKey(
+                      entry.routeKey,
+                    )!;
+                    return _FavoriteRouteTile(
                       route: route,
+                      seq: entry.seq,
                       onTap: () {
                         repository.addRecent(route);
                         context.push('/route/${route.slug}');
@@ -217,29 +233,175 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
   }
 }
 
-class _RouteTile extends StatelessWidget {
-  const _RouteTile({super.key, required this.route, this.onTap, this.trailing});
+class _FavoriteRouteTile extends StatefulWidget {
+  const _FavoriteRouteTile({
+    super.key,
+    required this.route,
+    required this.seq,
+    this.onTap,
+    this.trailing,
+    this.showEta = true,
+  });
 
   final RouteEntry route;
+  final int seq;
   final VoidCallback? onTap;
   final Widget? trailing;
+  final bool showEta;
+
+  @override
+  State<_FavoriteRouteTile> createState() => _FavoriteRouteTileState();
+}
+
+class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
+  late final EtaService _etaService;
+  Timer? _timer;
+  List<BusEta>? _etas;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _etaService = context.read<EtaService>();
+    final AppSettings settings = context.read<AppSettings>();
+    _etaService.setLanguage(settings.language);
+    _fetch();
+    _timer = Timer.periodic(
+      Duration(seconds: settings.refreshSeconds),
+      (_) => _fetch(),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _etaService.setLanguage(context.read<AppSettings>().language);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetch() async {
+    final List<BusEta> etas = await _etaService.fetchRouteStop(
+      widget.route,
+      widget.seq,
+    );
+    if (!mounted) return;
+    setState(() {
+      _etas = etas;
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
+    final List<BusEta> etas = (_etas ?? const []).take(3).toList();
+
+    Widget? trailing = widget.trailing;
+    if (widget.showEta) {
+      if (_loading && _etas == null) {
+        trailing = const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        );
+      } else if (etas.isEmpty) {
+        trailing = Text('--', style: Theme.of(context).textTheme.bodySmall);
+      } else {
+        trailing = ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 150),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (int index = 0; index < etas.length; index++)
+                _CompactEtaLine(eta: etas[index], first: index == 0),
+            ],
+          ),
+        );
+      }
+    }
+
     return ListTile(
       leading: SizedBox(
         width: 64,
-        child: Text(route.route, style: Theme.of(context).textTheme.titleLarge),
+        child: Text(
+          widget.route.route,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
       ),
       title: Text(
-        '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+        '${settings.text('往', 'to')} ${widget.route.dest.get(settings.language)}',
       ),
       subtitle: Text(
-        '${route.orig.get(settings.language)} · ${route.companiesLabel(settings.language)}',
+        '${widget.route.orig.get(settings.language)} · ${widget.route.companiesLabel(settings.language)}',
       ),
-      trailing: trailing ?? const Icon(Icons.chevron_right),
-      onTap: onTap,
+      trailing: trailing,
+      onTap: widget.onTap,
+    );
+  }
+}
+
+class _CompactEtaLine extends StatelessWidget {
+  const _CompactEtaLine({required this.eta, required this.first});
+
+  final BusEta eta;
+  final bool first;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final DateTime? time = eta.eta;
+    final String remark = eta.remark(settings.language);
+    if (time == null) {
+      if (remark.isEmpty) return const SizedBox.shrink();
+      return Text(
+        remark,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodySmall,
+      );
+    }
+
+    final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
+    final String clock = DateFormat('HH:mm').format(hkTime);
+    final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
+    final String wait = minutes < 1
+        ? settings.text('即將', 'Arriving')
+        : '$minutes ${settings.text('分', 'min')}';
+    final String text = switch (settings.etaFormat) {
+      EtaFormat.diff => wait,
+      EtaFormat.exact => clock,
+      EtaFormat.mixed => '$clock  $wait',
+    };
+    final Color color = first
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (eta.isScheduledLike)
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Icon(Icons.schedule, size: 14, color: color),
+          ),
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: color),
+          ),
+        ),
+      ],
     );
   }
 }

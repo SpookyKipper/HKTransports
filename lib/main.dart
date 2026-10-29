@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/app/display_geometry.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/objectBox/store.dart';
 import 'package:hktransports/pages/credits_page.dart';
@@ -75,6 +76,9 @@ void main() async {
       providers: [
         ChangeNotifierProvider<AppSettings>.value(value: settings),
         ChangeNotifierProvider<BusRepository>.value(value: repository),
+        Provider<EtaService>(
+          create: (_) => EtaService(language: settings.language),
+        ),
       ],
       child: const MyApp(),
     ),
