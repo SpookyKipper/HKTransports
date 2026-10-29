@@ -57,10 +57,6 @@ class _RoutePageState extends State<_RoutePage> {
     super.initState();
     final AppSettings settings = context.read<AppSettings>();
     _etaService = EtaService(language: settings.language);
-    _expandedIndex = 0;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startRefresh(0);
-    });
   }
 
   @override
@@ -173,7 +169,7 @@ class _RoutePageState extends State<_RoutePage> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 itemCount: stopIds.length,
                 allowMultipleExpanded: false,
-                initiallyExpanded: {_expandedIndex ?? 0},
+                initiallyExpanded: const {},
                 onExpansionChanged: _onExpansionChanged,
                 style: M3EExpandableStyle(
                   outerRadius: 24,
