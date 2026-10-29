@@ -32,7 +32,7 @@ extension AppThemeChoiceInfo on AppThemeChoice {
     final bool zh = language != 'en';
     switch (this) {
       case AppThemeChoice.systemDynamic:
-        return zh ? '跟隨系統（動態色彩）' : 'System (dynamic color)';
+        return zh ? '跟隨系統' : 'System';
       case AppThemeChoice.lightDynamic:
         return zh ? '淺色（動態色彩）' : 'Light (dynamic color)';
       case AppThemeChoice.darkDynamic:
