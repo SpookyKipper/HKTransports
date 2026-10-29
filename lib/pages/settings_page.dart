@@ -268,7 +268,10 @@ class _DropdownSettingState<T> extends State<_DropdownSetting<T>> {
         children: [
           Row(
             children: [
-              Icon(widget.icon),
+              Icon(
+                widget.icon,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -328,7 +331,7 @@ class _SliderSetting extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon),
+              Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
