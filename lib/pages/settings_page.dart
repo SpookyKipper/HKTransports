@@ -24,70 +24,91 @@ class SettingsPage extends StatelessWidget {
     return Scaffold(
       appBar: buildPageBar(context, title: settings.text('設定', 'Settings')),
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
         children: [
-          ListTile(
-            leading: const Icon(Icons.brightness_6_outlined),
-            title: Text(settings.text('外觀', 'Appearance')),
-            subtitle: Text(settings.themeChoice.label(settings.language)),
-            onTap: () => _pickThemeChoice(context, settings),
-          ),
-          ListTile(
-            leading: const Icon(Icons.animation),
-            title: Text(settings.text('頁面轉場', 'Page transition')),
-            subtitle: Text(settings.transitionStyle.label(settings.language)),
-            onTap: () => _pickTransitionStyle(context, settings),
-          ),
-          ListTile(
-            leading: const Icon(Icons.format_size),
-            title: Text(settings.text('文字大小', 'Text size')),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                M3ESlider(
-                  min: 80,
-                  max: 160,
-                  divisions: 8,
-                  value: settings.textScalePercent.toDouble(),
-                  label: '${settings.textScalePercent}%',
-                  onChanged: (double value) {
-                    settings.setTextScalePercent(value.round());
-                  },
+          _DropdownSetting<AppThemeChoice>(
+            icon: Icons.brightness_6_outlined,
+            title: settings.text('外觀', 'Appearance'),
+            value: settings.themeChoice,
+            items: [
+              for (final AppThemeChoice choice in AppThemeChoice.values)
+                M3EDropdownItem(
+                  label: choice.label(settings.language),
+                  value: choice,
                 ),
-                Text('${settings.textScalePercent}%'),
-              ],
+            ],
+            onChanged: settings.setThemeChoice,
+          ),
+          _DropdownSetting<PageTransitionStyle>(
+            icon: Icons.animation,
+            title: settings.text('頁面轉場', 'Page transition'),
+            value: settings.transitionStyle,
+            caption: settings.text(
+              '對頭線一律使用淡入。',
+              'Direction swap always uses fade.',
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: Text(settings.text('語言', 'Language')),
-            subtitle: Text(settings.isChinese ? '繁體中文' : 'English'),
-            onTap: () => _pickLanguage(context, settings),
-          ),
-          ListTile(
-            leading: const Icon(Icons.schedule),
-            title: Text(settings.text('到站時間格式', 'ETA format')),
-            subtitle: Text(_etaFormatLabel(settings)),
-            onTap: () => _pickEtaFormat(context, settings),
-          ),
-          ListTile(
-            leading: const Icon(Icons.refresh),
-            title: Text(settings.text('更新頻率', 'Refresh interval')),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                M3ESlider(
-                  min: 5,
-                  max: 60,
-                  divisions: 11,
-                  value: settings.refreshSeconds.toDouble().clamp(5, 60),
-                  label: '${settings.refreshSeconds}s',
-                  onChanged: (double value) {
-                    settings.setRefreshSeconds(value.round());
-                  },
+            items: [
+              for (final PageTransitionStyle style
+                  in PageTransitionStyle.values)
+                M3EDropdownItem(
+                  label: style.label(settings.language),
+                  value: style,
                 ),
-                Text('${settings.refreshSeconds}s'),
-              ],
+            ],
+            onChanged: settings.setTransitionStyle,
+          ),
+          _SliderSetting(
+            icon: Icons.format_size,
+            title: settings.text('文字大小', 'Text size'),
+            child: M3ESlider(
+              min: 80,
+              max: 160,
+              divisions: 8,
+              value: settings.textScalePercent.toDouble(),
+              label: '${settings.textScalePercent}%',
+              onChanged: (double value) {
+                settings.setTextScalePercent(value.round());
+              },
             ),
+            footer: '${settings.textScalePercent}%',
+          ),
+          _DropdownSetting<String>(
+            icon: Icons.language,
+            title: settings.text('語言', 'Language'),
+            value: settings.language,
+            items: const [
+              M3EDropdownItem(label: '繁體中文', value: 'zh'),
+              M3EDropdownItem(label: 'English', value: 'en'),
+            ],
+            onChanged: settings.setLanguage,
+          ),
+          _DropdownSetting<EtaFormat>(
+            icon: Icons.schedule,
+            title: settings.text('到站時間格式', 'ETA format'),
+            value: settings.etaFormat,
+            items: [
+              for (final EtaFormat format in EtaFormat.values)
+                M3EDropdownItem(
+                  label: _etaFormatLabel(format, settings),
+                  value: format,
+                ),
+            ],
+            onChanged: settings.setEtaFormat,
+          ),
+          _SliderSetting(
+            icon: Icons.refresh,
+            title: settings.text('更新頻率', 'Refresh interval'),
+            child: M3ESlider(
+              min: 5,
+              max: 60,
+              divisions: 11,
+              value: settings.refreshSeconds.toDouble().clamp(5, 60),
+              label: '${settings.refreshSeconds}s',
+              onChanged: (double value) {
+                settings.setRefreshSeconds(value.round());
+              },
+            ),
+            footer: '${settings.refreshSeconds}s',
           ),
           SwitchListTile(
             secondary: const Icon(Icons.filter_alt_outlined),
@@ -109,14 +130,20 @@ class SettingsPage extends StatelessWidget {
             value: settings.autoRenew,
             onChanged: settings.setAutoRenew,
           ),
-          ListTile(
+          _DropdownSetting<int>(
+            icon: Icons.timer_outlined,
+            title: settings.text('更新間隔', 'Update interval'),
+            value: settings.autoUpdateHours,
             enabled: settings.autoRenew,
-            leading: const Icon(Icons.timer_outlined),
-            title: Text(settings.text('更新間隔', 'Update interval')),
-            subtitle: Text(_autoUpdateLabel(settings)),
-            onTap: settings.autoRenew
-                ? () => _pickAutoUpdateInterval(context, settings)
-                : null,
+            caption: _autoUpdateLabel(settings),
+            items: [
+              for (final int hours in const [6, 12, 24, 48, 72, 168])
+                M3EDropdownItem(
+                  label: settings.text('$hours 小時', '$hours hours'),
+                  value: hours,
+                ),
+            ],
+            onChanged: settings.setAutoUpdateHours,
           ),
           const Divider(),
           ListTile(
@@ -155,13 +182,8 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  String _autoUpdateLabel(AppSettings settings) {
-    final int hours = settings.autoUpdateHours;
-    return settings.text('上次更新後 $hours 小時', '$hours hours after last update');
-  }
-
-  String _etaFormatLabel(AppSettings settings) {
-    switch (settings.etaFormat) {
+  String _etaFormatLabel(EtaFormat format, AppSettings settings) {
+    switch (format) {
       case EtaFormat.diff:
         return settings.text('到站時差', 'Minutes remaining');
       case EtaFormat.exact:
@@ -171,186 +193,123 @@ class SettingsPage extends StatelessWidget {
     }
   }
 
-  Future<void> _pickThemeChoice(
-    BuildContext context,
-    AppSettings settings,
-  ) async {
-    final AppThemeChoice? result = await showDialog<AppThemeChoice>(
-      context: context,
-      builder: (context) {
-        return SimpleDialog(
-          title: Text(settings.text('外觀', 'Appearance')),
-          children: [
-            RadioGroup<AppThemeChoice>(
-              groupValue: settings.themeChoice,
-              onChanged: (value) => Navigator.pop(context, value),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final AppThemeChoice choice in AppThemeChoice.values)
-                    RadioListTile<AppThemeChoice>(
-                      value: choice,
-                      title: Text(choice.label(settings.language)),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-    if (result != null) {
-      settings.setThemeChoice(result);
-    }
+  String _autoUpdateLabel(AppSettings settings) {
+    final int hours = settings.autoUpdateHours;
+    return settings.text('上次更新後 $hours 小時', '$hours hours after last update');
   }
+}
 
-  Future<void> _pickAutoUpdateInterval(
-    BuildContext context,
-    AppSettings settings,
-  ) async {
-    const List<int> options = [6, 12, 24, 48, 72, 168];
-    final int? result = await showDialog<int>(
-      context: context,
-      builder: (context) {
-        return SimpleDialog(
-          title: Text(settings.text('更新間隔', 'Update interval')),
-          children: [
-            RadioGroup<int>(
-              groupValue: settings.autoUpdateHours,
-              onChanged: (value) => Navigator.pop(context, value),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final int hours in options)
-                    RadioListTile<int>(
-                      value: hours,
-                      title: Text(settings.text('$hours 小時', '$hours hours')),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-    if (result != null) {
-      settings.setAutoUpdateHours(result);
-    }
-  }
+class _DropdownSetting<T> extends StatelessWidget {
+  const _DropdownSetting({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.caption,
+    this.enabled = true,
+  });
 
-  Future<void> _pickTransitionStyle(
-    BuildContext context,
-    AppSettings settings,
-  ) async {
-    final PageTransitionStyle? result = await showDialog<PageTransitionStyle>(
-      context: context,
-      builder: (context) {
-        return SimpleDialog(
-          title: Text(settings.text('頁面轉場', 'Page transition')),
-          children: [
-            RadioGroup<PageTransitionStyle>(
-              groupValue: settings.transitionStyle,
-              onChanged: (value) => Navigator.pop(context, value),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final PageTransitionStyle style
-                      in PageTransitionStyle.values)
-                    RadioListTile<PageTransitionStyle>(
-                      value: style,
-                      title: Text(style.label(settings.language)),
-                    ),
-                ],
+  final IconData icon;
+  final String title;
+  final T value;
+  final List<M3EDropdownItem<T>> items;
+  final ValueChanged<T> onChanged;
+  final String? caption;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ),
-            ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          M3EDropdownMenu<T>(
+            items: [
+              for (final M3EDropdownItem<T> item in items)
+                item.copyWith(selected: item.value == value),
+            ],
+            singleSelect: true,
+            enabled: enabled,
+            closeOnBackButton: true,
+            onSelectionChanged: (List<M3EDropdownItem<T>> selection) {
+              if (selection.isNotEmpty) {
+                onChanged(selection.first.value);
+              }
+            },
+          ),
+          if (caption != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+              padding: const EdgeInsets.only(top: 6),
               child: Text(
-                settings.text('對頭線一律使用淡入。', 'Direction swap always uses fade.'),
+                caption!,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
-          ],
-        );
-      },
+        ],
+      ),
     );
-    if (result != null) {
-      settings.setTransitionStyle(result);
-    }
   }
+}
 
-  Future<void> _pickLanguage(BuildContext context, AppSettings settings) async {
-    final String? result = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return SimpleDialog(
-          title: Text(settings.text('語言', 'Language')),
-          children: [
-            RadioGroup<String>(
-              groupValue: settings.language,
-              onChanged: (value) => Navigator.pop(context, value),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RadioListTile<String>(value: 'zh', title: const Text('繁體中文')),
-                  RadioListTile<String>(
-                    value: 'en',
-                    title: const Text('English'),
-                  ),
-                ],
+class _SliderSetting extends StatelessWidget {
+  const _SliderSetting({
+    required this.icon,
+    required this.title,
+    required this.child,
+    this.footer,
+  });
+
+  final IconData icon;
+  final String title;
+  final Widget child;
+  final String? footer;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          child,
+          if (footer != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(
+                footer!,
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
-          ],
-        );
-      },
+        ],
+      ),
     );
-    if (result != null) {
-      settings.setLanguage(result);
-    }
-  }
-
-  Future<void> _pickEtaFormat(
-    BuildContext context,
-    AppSettings settings,
-  ) async {
-    final EtaFormat? result = await showDialog<EtaFormat>(
-      context: context,
-      builder: (context) {
-        return SimpleDialog(
-          title: Text(settings.text('到站時間格式', 'ETA format')),
-          children: [
-            RadioGroup<EtaFormat>(
-              groupValue: settings.etaFormat,
-              onChanged: (value) => Navigator.pop(context, value),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RadioListTile<EtaFormat>(
-                    value: EtaFormat.mixed,
-                    title: Text(
-                      settings.text(
-                        '到站時間（到站時差）',
-                        'Clock time (minutes remaining)',
-                      ),
-                    ),
-                  ),
-                  RadioListTile<EtaFormat>(
-                    value: EtaFormat.exact,
-                    title: Text(settings.text('到站時間', 'Clock time')),
-                  ),
-                  RadioListTile<EtaFormat>(
-                    value: EtaFormat.diff,
-                    title: Text(settings.text('到站時差', 'Minutes remaining')),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-    if (result != null) {
-      settings.setEtaFormat(result);
-    }
   }
 }
