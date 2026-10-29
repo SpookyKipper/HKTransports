@@ -23,6 +23,34 @@ class HomeContent extends StatefulWidget {
 
 class _HomeContentState extends State<HomeContent> {
   String? _selectedGroupId;
+  late final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _selectGroup(List<FavoriteGroup> groups, int index) {
+    setState(() => _selectedGroupId = groups[index].id);
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  void _syncPage(int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_pageController.hasClients) return;
+      final int current = _pageController.page?.round() ?? 0;
+      if (current != index) {
+        _pageController.jumpToPage(index);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,10 +97,12 @@ class _HomeContentState extends State<HomeContent> {
     }
 
     final List<FavoriteGroup> groups = repository.favoriteGroups;
-    final FavoriteGroup selected = groups.firstWhere(
+    final int selectedIndex = groups.indexWhere(
       (group) => group.id == _selectedGroupId,
-      orElse: () => groups.first,
     );
+    final int pageIndex = selectedIndex < 0 ? 0 : selectedIndex;
+    final FavoriteGroup selected = groups[pageIndex];
+    _syncPage(pageIndex);
 
     return Column(
       children: [
@@ -89,7 +119,10 @@ class _HomeContentState extends State<HomeContent> {
                   groups: groups,
                   selectedId: selected.id,
                   onSelected: (String id) {
-                    setState(() => _selectedGroupId = id);
+                    final int index = groups.indexWhere(
+                      (group) => group.id == id,
+                    );
+                    if (index >= 0) _selectGroup(groups, index);
                   },
                 ),
               ),
@@ -112,14 +145,23 @@ class _HomeContentState extends State<HomeContent> {
           ),
         ),
         Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 180),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            child: _GroupRoutesView(
-              key: ValueKey<String>(selected.id),
-              group: selected,
-            ),
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: groups.length,
+            onPageChanged: (int index) {
+              if (index < 0 || index >= groups.length) return;
+              final String id = groups[index].id;
+              if (id != _selectedGroupId) {
+                setState(() => _selectedGroupId = id);
+              }
+            },
+            itemBuilder: (context, index) {
+              final FavoriteGroup group = groups[index];
+              return _GroupRoutesView(
+                key: PageStorageKey<String>(group.id),
+                group: group,
+              );
+            },
           ),
         ),
       ],
