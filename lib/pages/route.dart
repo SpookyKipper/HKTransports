@@ -388,24 +388,34 @@ class _EtaList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (loading && (etas == null || etas!.isEmpty)) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final List<BusEta> visible = (etas ?? const [])
+        .where(
+          (eta) => eta.eta != null || eta.remark(settings.language).isNotEmpty,
+        )
+        .toList();
+
+    if (loading && visible.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: M3ELinearProgressIndicator(),
       );
     }
-    if (etas == null || etas!.isEmpty) {
-      return Text(
-        context.watch<AppSettings>().text('暫無到站資料', 'No arrival data'),
-        style: Theme.of(context).textTheme.bodyMedium,
+    if (visible.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          settings.text('暫無到站資料', 'No arrival data'),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
       );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (int index = 0; index < etas!.length; index++)
+        for (int index = 0; index < visible.length; index++)
           _EtaLine(
-            eta: etas![index],
+            eta: visible[index],
             first: index == 0,
             showCompany: showCompany,
           ),
