@@ -206,7 +206,7 @@ class SettingsPage extends StatelessWidget {
   }
 }
 
-class _DropdownSetting<T> extends StatelessWidget {
+class _DropdownSetting<T> extends StatefulWidget {
   const _DropdownSetting({
     required this.icon,
     required this.title,
@@ -226,6 +226,40 @@ class _DropdownSetting<T> extends StatelessWidget {
   final bool enabled;
 
   @override
+  State<_DropdownSetting<T>> createState() => _DropdownSettingState<T>();
+}
+
+class _DropdownSettingState<T> extends State<_DropdownSetting<T>> {
+  late final M3EDropdownController<T> _controller;
+  bool _restoring = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = M3EDropdownController<T>();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleSelection(List<M3EDropdownItem<T>> selection) {
+    if (_restoring) return;
+    if (selection.isEmpty) {
+      _restoring = true;
+      _controller.selectWhere((item) => item.value == widget.value);
+      _restoring = false;
+      return;
+    }
+    final T next = selection.first.value;
+    if (next != widget.value) {
+      widget.onChanged(next);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -234,11 +268,11 @@ class _DropdownSetting<T> extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon),
+              Icon(widget.icon),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  title,
+                  widget.title,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -246,25 +280,22 @@ class _DropdownSetting<T> extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           M3EDropdownMenu<T>(
+            controller: _controller,
             showChipAnimation: false,
             items: [
-              for (final M3EDropdownItem<T> item in items)
-                item.copyWith(selected: item.value == value),
+              for (final M3EDropdownItem<T> item in widget.items)
+                item.copyWith(selected: item.value == widget.value),
             ],
             singleSelect: true,
-            enabled: enabled,
+            enabled: widget.enabled,
             closeOnBackButton: true,
-            onSelectionChanged: (List<M3EDropdownItem<T>> selection) {
-              if (selection.isNotEmpty) {
-                onChanged(selection.first.value);
-              }
-            },
+            onSelectionChanged: _handleSelection,
           ),
-          if (caption != null)
+          if (widget.caption != null)
             Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Text(
-                caption!,
+                widget.caption!,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
