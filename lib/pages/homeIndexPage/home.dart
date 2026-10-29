@@ -129,6 +129,9 @@ class _HomeContentState extends State<HomeContent>
     );
     final int pageIndex = selectedIndex < 0 ? 0 : selectedIndex;
     _syncSelectedTab(pageIndex);
+    final Color unselectedTabColor =
+        Theme.of(context).tabBarTheme.unselectedLabelColor ??
+        Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Column(
       children: [
@@ -156,11 +159,13 @@ class _HomeContentState extends State<HomeContent>
               ),
               IconButton(
                 tooltip: settings.text('管理群組', 'Manage groups'),
+                color: unselectedTabColor,
                 onPressed: () => context.push('/favoriteGroups'),
                 icon: const Icon(Icons.tune),
               ),
               IconButton(
                 tooltip: settings.text('新增群組', 'New group'),
+                color: unselectedTabColor,
                 onPressed: () async {
                   final String? name = await promptFavoriteGroupName(context);
                   if (name != null) {
