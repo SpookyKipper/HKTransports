@@ -170,7 +170,7 @@ class _RoutePageState extends State<_RoutePage> {
                 if (index != null) await _fetch(index);
               },
               child: M3EExpandableCardList.builder(
-                padding: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 itemCount: stopIds.length,
                 allowMultipleExpanded: false,
                 initiallyExpanded: {_expandedIndex ?? 0},
@@ -180,12 +180,10 @@ class _RoutePageState extends State<_RoutePage> {
                   innerRadius: 8,
                   hoverRadius: 10,
                   pressedRadius: 4,
-                  gap: 0,
                   expandedRadius: 8,
                   border: BorderSide.none,
                   elevation: 0,
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
                   headerPadding: const EdgeInsets.all(16),
                   bodyPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   iconPlacement: IconPlacement.right,
