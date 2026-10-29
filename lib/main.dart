@@ -22,8 +22,26 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/', builder: (context, state) => const HomeShell()),
     GoRoute(
       path: '/route/:slug',
-      builder: (context, state) =>
-          RoutePageRoute(slug: state.pathParameters['slug'] ?? ''),
+      pageBuilder: (context, state) {
+        final String slug = state.pathParameters['slug'] ?? '';
+        final bool fade = state.uri.queryParameters['fade'] == '1';
+        if (fade) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: RoutePageRoute(slug: slug),
+            transitionDuration: const Duration(milliseconds: 200),
+            reverseTransitionDuration: const Duration(milliseconds: 200),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+          );
+        }
+        return MaterialPage<void>(
+          key: state.pageKey,
+          child: RoutePageRoute(slug: slug),
+        );
+      },
     ),
     GoRoute(
       path: '/settings',

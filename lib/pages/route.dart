@@ -133,7 +133,7 @@ class _RoutePageState extends State<_RoutePage> {
             IconButton(
               tooltip: settings.text('對頭線', 'Reverse route'),
               onPressed: () =>
-                  context.pushReplacement('/route/${reverse.slug}'),
+                  context.pushReplacement('/route/${reverse.slug}?fade=1'),
               icon: const Icon(Icons.swap_horiz),
             ),
           IconButton(
