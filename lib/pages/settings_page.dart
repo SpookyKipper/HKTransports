@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:m3e_core/m3e_core.dart';
 import 'package:provider/provider.dart';
 
 class SettingsPageRoute extends StatelessWidget {
@@ -42,7 +43,7 @@ class SettingsPage extends StatelessWidget {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Slider(
+                M3ESlider(
                   min: 80,
                   max: 160,
                   divisions: 8,
@@ -74,7 +75,7 @@ class SettingsPage extends StatelessWidget {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Slider(
+                M3ESlider(
                   min: 5,
                   max: 60,
                   divisions: 11,
