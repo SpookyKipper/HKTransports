@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hkbusapi/trafficnews/trafficnews.dart';
+import 'package:m3e_core/m3e_core.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:provider/provider.dart';
 
@@ -27,7 +28,7 @@ class _TrafficNewsState extends State<TrafficNews> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: M3ELoadingIndicator());
         }
         if (snapshot.hasError) {
           return Center(

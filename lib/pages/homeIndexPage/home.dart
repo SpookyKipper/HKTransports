@@ -11,6 +11,7 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
 import 'package:hktransports/bus/ui/notice_banner.dart';
 import 'package:intl/intl.dart';
+import 'package:m3e_core/m3e_core.dart';
 import 'package:provider/provider.dart';
 
 class HomeContent extends StatelessWidget {
@@ -22,7 +23,7 @@ class HomeContent extends StatelessWidget {
     final BusRepository repository = context.watch<BusRepository>();
 
     if (repository.status == BusDataStatus.loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: M3ELoadingIndicator());
     }
 
     if (!repository.hasData) {
@@ -309,10 +310,13 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
     Widget? trailing = widget.trailing;
     if (widget.showEta) {
       if (_loading && _etas == null) {
-        trailing = const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+        trailing = const M3ELoadingIndicator(
+          constraints: BoxConstraints(
+            minWidth: 24,
+            minHeight: 24,
+            maxWidth: 24,
+            maxHeight: 24,
+          ),
         );
       } else if (etas.isEmpty) {
         trailing = Text('--', style: Theme.of(context).textTheme.bodySmall);

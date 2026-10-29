@@ -12,6 +12,7 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
 import 'package:hktransports/bus/ui/timetable_sheet.dart';
 import 'package:intl/intl.dart';
+import 'package:m3e_core/m3e_core.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -158,12 +159,13 @@ class _RoutePageState extends State<_RoutePage> {
           ),
         ],
       ),
-      body: RefreshIndicator(
+      body: M3EPullToRefreshIndicator(
         onRefresh: () async {
           final int? index = _expandedIndex;
           if (index != null) await _fetch(index);
         },
         child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
           itemCount: stopIds.length + 1,
           itemBuilder: (context, index) {
             if (index == 0) {
@@ -385,7 +387,7 @@ class _EtaList extends StatelessWidget {
     if (loading && (etas == null || etas!.isEmpty)) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
-        child: LinearProgressIndicator(),
+        child: M3ELinearProgressIndicator(),
       );
     }
     if (etas == null || etas!.isEmpty) {
