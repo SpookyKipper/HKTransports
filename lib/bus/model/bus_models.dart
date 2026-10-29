@@ -134,6 +134,7 @@ class StopEntry {
     required this.lat,
     required this.lng,
     this.stationCode,
+    this.platformCode,
   });
 
   final String id;
@@ -144,6 +145,7 @@ class StopEntry {
   final double lat;
   final double lng;
   final String? stationCode;
+  final String? platformCode;
 
   String displayName(String language) =>
       language == 'en' ? displayEn : displayZh;
@@ -168,26 +170,44 @@ class StopEntry {
       lat: (location['lat'] as num?)?.toDouble() ?? 0,
       lng: (location['lng'] as num?)?.toDouble() ?? 0,
       stationCode: parsedEn.stationCode ?? parsedZh.stationCode,
+      platformCode: parsedEn.platformCode ?? parsedZh.platformCode,
     );
   }
 }
 
 class _ParsedName {
-  const _ParsedName(this.display, this.stationCode);
+  const _ParsedName(this.display, this.stationCode, this.platformCode);
 
   final String display;
   final String? stationCode;
+  final String? platformCode;
 }
 
 final RegExp _stationCodePattern = RegExp(r'\s*\(([A-Z]{2}\d{3}[a-z]?)\)\s*$');
+final RegExp _platformCodePattern = RegExp(r'\s*\(([A-Z]\d{1,2})\)\s*$');
 
 _ParsedName _parseStopName(String raw) {
-  final RegExpMatch? match = _stationCodePattern.firstMatch(raw);
-  if (match == null) {
-    return _ParsedName(raw.trim(), null);
+  String display = raw.trim();
+  String? stationCode;
+  String? platformCode;
+
+  final RegExpMatch? stationMatch = _stationCodePattern.firstMatch(display);
+  if (stationMatch != null) {
+    stationCode = stationMatch.group(1);
+    display = display
+        .replaceRange(stationMatch.start, stationMatch.end, '')
+        .trim();
   }
-  final String display = raw.replaceRange(match.start, match.end, '').trim();
-  return _ParsedName(display, match.group(1));
+
+  final RegExpMatch? platformMatch = _platformCodePattern.firstMatch(display);
+  if (platformMatch != null) {
+    platformCode = platformMatch.group(1);
+    display = display
+        .replaceRange(platformMatch.start, platformMatch.end, '')
+        .trim();
+  }
+
+  return _ParsedName(display, stationCode, platformCode);
 }
 
 class StopRef {
