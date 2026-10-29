@@ -26,6 +26,8 @@ class TimetableSheet extends StatelessWidget {
         child: Column(
           children: [
             TabBar(
+              dividerColor: Colors.transparent,
+              dividerHeight: 0,
               tabs: [
                 Tab(text: settings.text('時間表', 'Timetable')),
                 Tab(text: settings.text('車程', 'Journey')),
