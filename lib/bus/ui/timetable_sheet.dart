@@ -3,6 +3,7 @@ import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/journey/journey_time.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/official_links.dart';
 import 'package:provider/provider.dart';
 
 class TimetableSheet extends StatelessWidget {
@@ -81,6 +82,7 @@ class _TimetableTab extends StatelessWidget {
             holiday: holiday,
             currentTime: currentTime,
           ),
+        OfficialLinks(route: route),
       ],
     );
   }
