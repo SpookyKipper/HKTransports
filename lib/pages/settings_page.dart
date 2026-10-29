@@ -239,6 +239,7 @@ class _DropdownSetting<T> extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           M3EDropdownMenu<T>(
+            showChipAnimation: false,
             items: [
               for (final M3EDropdownItem<T> item in items)
                 item.copyWith(selected: item.value == value),
