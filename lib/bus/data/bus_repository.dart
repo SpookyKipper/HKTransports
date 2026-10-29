@@ -33,6 +33,7 @@ class BusRepository extends ChangeNotifier {
   String? _error;
   double? _progress;
   Map<String, List<RouteStopRef>>? _stopIndex;
+  Map<String, Set<String>>? _physicalByCompanyStop;
   List<String>? _savedRoutes;
   List<String>? _recentRoutes;
 
@@ -164,6 +165,60 @@ class BusRepository extends ChangeNotifier {
 
   String stopIdFor(RouteEntry route, BusCompany company, int seq) {
     return route.stopIdAt(company, seq) ?? '';
+  }
+
+  RouteEntry? findReverse(RouteEntry route) {
+    final BusDatabase? db = _database;
+    if (db == null) return null;
+    final List<RouteEntry> candidates =
+        (db.routesByNumber[route.route.toUpperCase()] ?? const [])
+            .where((candidate) => candidate.key != route.key)
+            .where((candidate) {
+              final List<String> a = route.companies.map((c) => c.id).toList()
+                ..sort();
+              final List<String> b =
+                  candidate.companies.map((c) => c.id).toList()..sort();
+              if (a.join('|') != b.join('|')) return false;
+              if (route.companies.contains(BusCompany.gmb) &&
+                  route.gtfsId != null &&
+                  candidate.gtfsId != route.gtfsId) {
+                return false;
+              }
+              return true;
+            })
+            .toList();
+    if (candidates.isEmpty) return null;
+    candidates.sort((a, b) {
+      final bool aSwap =
+          a.orig.en == route.dest.en && a.dest.en == route.orig.en;
+      final bool bSwap =
+          b.orig.en == route.dest.en && b.dest.en == route.orig.en;
+      if (aSwap != bSwap) return aSwap ? -1 : 1;
+      final int serviceA = int.tryParse(a.serviceType) ?? 99;
+      final int serviceB = int.tryParse(b.serviceType) ?? 99;
+      return serviceA.compareTo(serviceB);
+    });
+    return candidates.first;
+  }
+
+  List<String> physicalStopIds(BusCompany company, String stopId) {
+    final BusDatabase? db = _database;
+    if (db == null) return const [];
+    _physicalByCompanyStop ??= _buildPhysicalStopIndex(db);
+    return (_physicalByCompanyStop!['${company.id}|$stopId'] ?? const {})
+        .toList();
+  }
+
+  Map<String, Set<String>> _buildPhysicalStopIndex(BusDatabase db) {
+    final Map<String, Set<String>> index = {};
+    for (final MapEntry<String, List<StopRef>> entry in db.stopMap.entries) {
+      for (final StopRef ref in entry.value) {
+        index
+            .putIfAbsent('${ref.company.id}|${ref.stopId}', () => {})
+            .add(entry.key);
+      }
+    }
+    return index;
   }
 
   List<RouteStopRef> routesAtStop(String physicalStopId) {

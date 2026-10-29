@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
@@ -9,6 +10,7 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/timetable_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RoutePageRoute extends StatelessWidget {
   const RoutePageRoute({super.key, required this.slug});
@@ -118,12 +120,20 @@ class _RoutePageState extends State<_RoutePage> {
       hkNow(),
     );
 
+    final RouteEntry? reverse = repository.findReverse(route);
     return Scaffold(
       appBar: AppBar(
         title: Text(
           '${route.route} ${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
         ),
         actions: [
+          if (reverse != null)
+            IconButton(
+              tooltip: settings.text('對頭線', 'Reverse route'),
+              onPressed: () =>
+                  context.pushReplacement('/route/${reverse.slug}'),
+              icon: const Icon(Icons.swap_horiz),
+            ),
           IconButton(
             tooltip: settings.text('收藏', 'Save'),
             onPressed: () => repository.toggleSaved(route),
@@ -258,6 +268,18 @@ class _StopTile extends StatelessWidget {
   final bool initiallyExpanded;
   final ValueChanged<bool> onExpansionChanged;
 
+  void _showStopInfo(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        return _StopInfoSheet(route: route, stopId: stopId);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
@@ -314,6 +336,14 @@ class _StopTile extends StatelessWidget {
             loading: loading,
             etas: etas,
             showCompany: route.companies.length > 1,
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () => _showStopInfo(context),
+            icon: const Icon(Icons.info_outline),
+            label: Text(settings.text('車站資訊', 'Stop information')),
           ),
         ),
       ],
@@ -414,6 +444,106 @@ class _EtaLine extends StatelessWidget {
       child: Text(
         suffix.isEmpty ? parts : '$parts  ·  $suffix',
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: color),
+      ),
+    );
+  }
+}
+
+class _StopInfoSheet extends StatelessWidget {
+  const _StopInfoSheet({required this.route, required this.stopId});
+
+  final RouteEntry route;
+  final String stopId;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final BusRepository repository = context.watch<BusRepository>();
+    final StopEntry? stop = repository.stopById(stopId);
+    final BusCompany? company = route.primaryCompany;
+    final List<String> physicalIds = company == null
+        ? const []
+        : repository.physicalStopIds(company, stopId);
+    final List<RouteStopRef> routes = [];
+    final Set<String> seenRoutes = {};
+    for (final String physicalId in physicalIds) {
+      for (final RouteStopRef ref in repository.routesAtStop(physicalId)) {
+        if (seenRoutes.add(ref.route.key)) routes.add(ref);
+      }
+    }
+
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.75,
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          ListTile(
+            title: Text(stop?.displayName(settings.language) ?? stopId),
+            subtitle: Text(
+              [
+                if (stop?.stationCode != null)
+                  '${settings.text('站碼', 'Code')} ${stop!.stationCode}',
+                if (stop?.platformCode != null)
+                  '${settings.text('月台', 'Platform')} ${stop!.platformCode}',
+              ].join('  '),
+            ),
+          ),
+          if (stop != null)
+            Row(
+              children: [
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: () => launchUrl(
+                    Uri.parse(
+                      'https://www.google.com/maps/?q=${stop.lat},${stop.lng}',
+                    ),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(Icons.map_outlined),
+                  label: Text(settings.text('地圖', 'Map')),
+                ),
+                TextButton.icon(
+                  onPressed: () => launchUrl(
+                    Uri.parse(
+                      'https://www.google.com/maps/dir/?api=1'
+                      '&destination=${stop.lat},${stop.lng}&travelmode=walking',
+                    ),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(Icons.directions_walk),
+                  label: Text(settings.text('步行路線', 'Walking directions')),
+                ),
+              ],
+            ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              settings.text('本站路線', 'Routes at this stop'),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
+          if (routes.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(settings.text('沒有其他路線', 'No other routes')),
+            )
+          else
+            for (final RouteStopRef ref in routes)
+              ListTile(
+                title: Text(
+                  '${ref.route.route} ${settings.text('往', 'to')} ${ref.route.dest.get(settings.language)}',
+                ),
+                subtitle: Text(
+                  '${ref.route.orig.get(settings.language)} · ${ref.route.companiesLabel(settings.language)}',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/route/${ref.route.slug}');
+                },
+              ),
+        ],
       ),
     );
   }
