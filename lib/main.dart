@@ -4,6 +4,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/app_theme.dart';
+import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/objectBox/store.dart';
 import 'package:hktransports/pages/credits_page.dart';
@@ -30,10 +31,7 @@ final GoRouter _router = GoRouter(
       path: '/updateData',
       builder: (context, state) => const UpdateDataPageRoute(),
     ),
-    GoRoute(
-      path: '/credits',
-      builder: (context, state) => const CreditsPage(),
-    ),
+    GoRoute(path: '/credits', builder: (context, state) => const CreditsPage()),
   ],
 );
 
@@ -48,9 +46,16 @@ void main() async {
   }
   await initObjectBox();
 
+  final AppSettings settings = AppSettings();
+  final BusRepository repository = BusRepository(settings);
+  await repository.initialize();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AppSettings(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AppSettings>.value(value: settings),
+        ChangeNotifierProvider<BusRepository>.value(value: repository),
+      ],
       child: const MyApp(),
     ),
   );
