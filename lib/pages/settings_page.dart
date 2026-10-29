@@ -145,23 +145,26 @@ class SettingsPage extends StatelessWidget {
         return SimpleDialog(
           title: Text(settings.text('外觀', 'Appearance')),
           children: [
-            RadioListTile<ThemeMode>(
-              value: ThemeMode.system,
+            RadioGroup<ThemeMode>(
               groupValue: settings.themeMode,
-              title: Text(settings.text('跟隨系統', 'System')),
               onChanged: (value) => Navigator.pop(context, value),
-            ),
-            RadioListTile<ThemeMode>(
-              value: ThemeMode.light,
-              groupValue: settings.themeMode,
-              title: Text(settings.text('淺色', 'Light')),
-              onChanged: (value) => Navigator.pop(context, value),
-            ),
-            RadioListTile<ThemeMode>(
-              value: ThemeMode.dark,
-              groupValue: settings.themeMode,
-              title: Text(settings.text('深色', 'Dark')),
-              onChanged: (value) => Navigator.pop(context, value),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<ThemeMode>(
+                    value: ThemeMode.system,
+                    title: Text(settings.text('跟隨系統', 'System')),
+                  ),
+                  RadioListTile<ThemeMode>(
+                    value: ThemeMode.light,
+                    title: Text(settings.text('淺色', 'Light')),
+                  ),
+                  RadioListTile<ThemeMode>(
+                    value: ThemeMode.dark,
+                    title: Text(settings.text('深色', 'Dark')),
+                  ),
+                ],
+              ),
             ),
           ],
         );
@@ -179,17 +182,19 @@ class SettingsPage extends StatelessWidget {
         return SimpleDialog(
           title: Text(settings.text('語言', 'Language')),
           children: [
-            RadioListTile<String>(
-              value: 'zh',
+            RadioGroup<String>(
               groupValue: settings.language,
-              title: const Text('繁體中文'),
               onChanged: (value) => Navigator.pop(context, value),
-            ),
-            RadioListTile<String>(
-              value: 'en',
-              groupValue: settings.language,
-              title: const Text('English'),
-              onChanged: (value) => Navigator.pop(context, value),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<String>(value: 'zh', title: const Text('繁體中文')),
+                  RadioListTile<String>(
+                    value: 'en',
+                    title: const Text('English'),
+                  ),
+                ],
+              ),
             ),
           ],
         );
@@ -210,25 +215,31 @@ class SettingsPage extends StatelessWidget {
         return SimpleDialog(
           title: Text(settings.text('到站時間格式', 'ETA format')),
           children: [
-            RadioListTile<EtaFormat>(
-              value: EtaFormat.mixed,
+            RadioGroup<EtaFormat>(
               groupValue: settings.etaFormat,
-              title: Text(
-                settings.text('到站時間（到站時差）', 'Clock time (minutes remaining)'),
+              onChanged: (value) => Navigator.pop(context, value),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<EtaFormat>(
+                    value: EtaFormat.mixed,
+                    title: Text(
+                      settings.text(
+                        '到站時間（到站時差）',
+                        'Clock time (minutes remaining)',
+                      ),
+                    ),
+                  ),
+                  RadioListTile<EtaFormat>(
+                    value: EtaFormat.exact,
+                    title: Text(settings.text('到站時間', 'Clock time')),
+                  ),
+                  RadioListTile<EtaFormat>(
+                    value: EtaFormat.diff,
+                    title: Text(settings.text('到站時差', 'Minutes remaining')),
+                  ),
+                ],
               ),
-              onChanged: (value) => Navigator.pop(context, value),
-            ),
-            RadioListTile<EtaFormat>(
-              value: EtaFormat.exact,
-              groupValue: settings.etaFormat,
-              title: Text(settings.text('到站時間', 'Clock time')),
-              onChanged: (value) => Navigator.pop(context, value),
-            ),
-            RadioListTile<EtaFormat>(
-              value: EtaFormat.diff,
-              groupValue: settings.etaFormat,
-              title: Text(settings.text('到站時差', 'Minutes remaining')),
-              onChanged: (value) => Navigator.pop(context, value),
             ),
           ],
         );
