@@ -8,9 +8,7 @@ class SettingsPageRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: SettingsPage(),
-    );
+    return const Scaffold(body: SettingsPage());
   }
 }
 
@@ -65,16 +63,16 @@ class SettingsPage extends StatelessWidget {
           ),
           SwitchListTile(
             secondary: const Icon(Icons.filter_alt_outlined),
-            title: Text(settings.text('只顯示現時服務的路線', 'Only show routes running now')),
+            title: Text(
+              settings.text('只顯示現時服務的路線', 'Only show routes running now'),
+            ),
             value: settings.routeFilter,
             onChanged: settings.setRouteFilter,
           ),
           SwitchListTile(
             secondary: const Icon(Icons.sync),
             title: Text(settings.text('自動更新路線資料', 'Auto update route data')),
-            subtitle: Text(
-              settings.text('每七日檢查一次', 'Check every seven days'),
-            ),
+            subtitle: Text(settings.text('每七日檢查一次', 'Check every seven days')),
             value: settings.autoRenew,
             onChanged: settings.setAutoRenew,
           ),
@@ -105,7 +103,8 @@ class SettingsPage extends StatelessWidget {
               showLicensePage(
                 context: context,
                 applicationName: 'HKTransports',
-                applicationLegalese: 'Data from DATA.GOV.HK and HK Bus Crawling.',
+                applicationLegalese:
+                    'Data from DATA.GOV.HK and HK Bus Crawling.',
               );
             },
           ),
@@ -173,10 +172,7 @@ class SettingsPage extends StatelessWidget {
     }
   }
 
-  Future<void> _pickLanguage(
-    BuildContext context,
-    AppSettings settings,
-  ) async {
+  Future<void> _pickLanguage(BuildContext context, AppSettings settings) async {
     final String? result = await showDialog<String>(
       context: context,
       builder: (context) {
@@ -218,10 +214,7 @@ class SettingsPage extends StatelessWidget {
               value: EtaFormat.mixed,
               groupValue: settings.etaFormat,
               title: Text(
-                settings.text(
-                  '到站時間（到站時差）',
-                  'Clock time (minutes remaining)',
-                ),
+                settings.text('到站時間（到站時差）', 'Clock time (minutes remaining)'),
               ),
               onChanged: (value) => Navigator.pop(context, value),
             ),

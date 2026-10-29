@@ -31,7 +31,9 @@ class _TrafficNewsState extends State<TrafficNews> {
         }
         if (snapshot.hasError) {
           return Center(
-            child: Text(settings.text('無法載入交通快訊', 'Unable to load traffic news')),
+            child: Text(
+              settings.text('無法載入交通快訊', 'Unable to load traffic news'),
+            ),
           );
         }
         final List<TrafficNewsItem> items = snapshot.data ?? const [];
