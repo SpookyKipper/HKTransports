@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/journey/journey_time.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:provider/provider.dart';
 
 class TimetableSheet extends StatelessWidget {
-  const TimetableSheet({super.key, required this.route});
+  const TimetableSheet({
+    super.key,
+    required this.route,
+    this.initialStopIndex = 0,
+  });
 
   final RouteEntry route;
+  final int initialStopIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +34,7 @@ class TimetableSheet extends StatelessWidget {
               child: TabBarView(
                 children: [
                   _TimetableTab(route: route),
-                  _JourneyTabPlaceholder(route: route),
+                  _JourneyTab(route: route, initialStopIndex: initialStopIndex),
                 ],
               ),
             ),
@@ -149,18 +155,96 @@ class _ServiceSection extends StatelessWidget {
   }
 }
 
-class _JourneyTabPlaceholder extends StatelessWidget {
-  const _JourneyTabPlaceholder({required this.route});
+class _JourneyTab extends StatefulWidget {
+  const _JourneyTab({required this.route, required this.initialStopIndex});
 
   final RouteEntry route;
+  final int initialStopIndex;
+
+  @override
+  State<_JourneyTab> createState() => _JourneyTabState();
+}
+
+class _JourneyTabState extends State<_JourneyTab> {
+  late int _startSeq;
+
+  @override
+  void initState() {
+    super.initState();
+    _startSeq = widget.initialStopIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
-    return Center(
-      child: Text(
-        settings.text('車程估算將於下一個版本提供', 'Journey estimates are coming next'),
-      ),
+    final BusRepository repository = context.watch<BusRepository>();
+    final List<String> stopIds = widget.route.primaryStops;
+    final List<StopEntry> stops = stopIds
+        .map(repository.stopById)
+        .whereType<StopEntry>()
+        .toList();
+    if (stops.length != stopIds.length) {
+      return Center(
+        child: Text(settings.text('車站資料不完整', 'Stop data is incomplete')),
+      );
+    }
+    if (_startSeq >= stops.length) _startSeq = 0;
+    final JourneyEstimate estimate = estimateJourney(
+      route: widget.route,
+      stops: stops,
+      startSeq: _startSeq,
+    );
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 24),
+      itemCount: stops.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${settings.text('由', 'From')} ${stops[_startSeq].displayName(settings.language)}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${estimate.estimated ? settings.text('預計', 'Estimated') : settings.text('全程約', 'About')} ${estimate.totalMinutes} ${settings.text('分鐘', 'minutes')}',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  settings.text('點選任何車站可重新計算', 'Tap any stop to recalculate'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          );
+        }
+        final int stopIndex = index - 1;
+        final StopEntry stop = stops[stopIndex];
+        final bool beforeStart = stopIndex < _startSeq;
+        final bool isStart = stopIndex == _startSeq;
+        final int? minutes = beforeStart
+            ? null
+            : estimate.cumulativeMinutes[stopIndex - _startSeq];
+        return ListTile(
+          enabled: !beforeStart,
+          selected: isStart,
+          leading: Icon(
+            isStart ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+          ),
+          title: Text(stop.displayName(settings.language)),
+          trailing: isStart
+              ? Text(settings.text('起點', 'Start'))
+              : minutes == null
+              ? null
+              : Text('$minutes ${settings.text('分鐘', 'min')}'),
+          onTap: () => setState(() => _startSeq = stopIndex),
+        );
+      },
     );
   }
 }

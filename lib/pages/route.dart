@@ -133,7 +133,8 @@ class _RoutePageState extends State<_RoutePage> {
           ),
           IconButton(
             tooltip: settings.text('時間表', 'Timetable'),
-            onPressed: () => _showTimetable(context, route),
+            onPressed: () =>
+                _showTimetable(context, route, _expandedIndex ?? 0),
             icon: const Icon(Icons.schedule),
           ),
         ],
@@ -171,14 +172,14 @@ class _RoutePageState extends State<_RoutePage> {
     );
   }
 
-  void _showTimetable(BuildContext context, RouteEntry route) {
+  void _showTimetable(BuildContext context, RouteEntry route, int stopIndex) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
       builder: (context) {
-        return TimetableSheet(route: route);
+        return TimetableSheet(route: route, initialStopIndex: stopIndex);
       },
     );
   }
