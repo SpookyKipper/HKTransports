@@ -231,10 +231,13 @@ class _RoutePageState extends State<_RoutePage> {
       children: [
         SizedBox(
           width: 40,
-          child: Text(
-            '${index + 1}',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleLarge,
+          height: 48,
+          child: Center(
+            child: Text(
+              '${index + 1}',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ),
         ),
         const SizedBox(width: 12),
