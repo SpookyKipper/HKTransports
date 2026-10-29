@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/eta/eta_models.dart';
+import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class RoutePageRoute extends StatelessWidget {
@@ -11,36 +16,420 @@ class RoutePageRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
     final RouteEntry? route = repository.routeBySlug(slug);
-
     if (route == null) {
+      final AppSettings settings = context.watch<AppSettings>();
       return Scaffold(
         appBar: AppBar(title: Text(settings.text('路線', 'Route'))),
         body: Center(child: Text(settings.text('找不到路線', 'Route not found'))),
       );
     }
+    return _RoutePage(key: ValueKey(route.key), route: route);
+  }
+}
 
+class _RoutePage extends StatefulWidget {
+  const _RoutePage({super.key, required this.route});
+
+  final RouteEntry route;
+
+  @override
+  State<_RoutePage> createState() => _RoutePageState();
+}
+
+class _RoutePageState extends State<_RoutePage> {
+  late final EtaService _etaService;
+  final Map<int, List<BusEta>?> _etas = {};
+  final Set<int> _loading = {};
+  Timer? _timer;
+  int? _expandedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    final AppSettings settings = context.read<AppSettings>();
+    _etaService = EtaService(language: settings.language);
+    _expandedIndex = 0;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startRefresh(0);
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final AppSettings settings = context.read<AppSettings>();
+    _etaService.setLanguage(settings.language);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startRefresh(int index) {
+    _timer?.cancel();
+    _fetch(index);
+    final AppSettings settings = context.read<AppSettings>();
+    _timer = Timer.periodic(
+      Duration(seconds: settings.refreshSeconds),
+      (_) => _fetch(index),
+    );
+  }
+
+  Future<void> _fetch(int index) async {
+    if (_loading.contains(index)) return;
+    setState(() => _loading.add(index));
+    final List<BusEta> etas = await _etaService.fetchRouteStop(
+      widget.route,
+      index,
+    );
+    if (!mounted) return;
+    setState(() {
+      _loading.remove(index);
+      _etas[index] = etas;
+    });
+  }
+
+  void _onExpansionChanged(int index, bool expanded) {
+    if (expanded) {
+      setState(() => _expandedIndex = index);
+      _startRefresh(index);
+    } else {
+      setState(() {
+        _expandedIndex = null;
+        _loading.remove(index);
+      });
+      _timer?.cancel();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final BusRepository repository = context.watch<BusRepository>();
+    final RouteEntry route = widget.route;
     final List<String> stopIds = route.primaryStops;
+    final bool holiday = isHoliday(
+      repository.database?.holidays ?? const [],
+      hkNow(),
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
           '${route.route} ${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
         ),
+        actions: [
+          IconButton(
+            tooltip: settings.text('收藏', 'Save'),
+            onPressed: () => repository.toggleSaved(route),
+            icon: Icon(
+              repository.isSaved(route) ? Icons.star : Icons.star_border,
+            ),
+          ),
+          IconButton(
+            tooltip: settings.text('時間表', 'Timetable'),
+            onPressed: () => _showTimetable(context, route),
+            icon: const Icon(Icons.schedule),
+          ),
+        ],
       ),
-      body: ListView.builder(
-        itemCount: stopIds.length,
-        itemBuilder: (context, index) {
-          final StopEntry? stop = repository.stopById(stopIds[index]);
-          return ListTile(
-            leading: Text('${index + 1}'),
-            title: Text(stop?.displayName(settings.language) ?? stopIds[index]),
-            subtitle: stop?.stationCode == null
-                ? null
-                : Text('${settings.text('站碼', 'Code')} ${stop!.stationCode}'),
-          );
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final int? index = _expandedIndex;
+          if (index != null) await _fetch(index);
         },
+        child: ListView.builder(
+          itemCount: stopIds.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return _RouteHeader(route: route);
+            }
+            final int stopIndex = index - 1;
+            final String stopId = stopIds[stopIndex];
+            final StopEntry? stop = repository.stopById(stopId);
+            return _StopTile(
+              key: PageStorageKey('${route.key}-$stopIndex'),
+              index: stopIndex,
+              stop: stop,
+              stopId: stopId,
+              route: route,
+              holiday: holiday,
+              loading: _loading.contains(stopIndex),
+              etas: _etas[stopIndex],
+              initiallyExpanded: _expandedIndex == stopIndex,
+              onExpansionChanged: (expanded) =>
+                  _onExpansionChanged(stopIndex, expanded),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showTimetable(BuildContext context, RouteEntry route) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        return _TimetablePlaceholder(route: route);
+      },
+    );
+  }
+}
+
+class _RouteHeader extends StatelessWidget {
+  const _RouteHeader({required this.route});
+
+  final RouteEntry route;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Card.filled(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                route.route,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Text(
+                '${settings.text('由', 'from')} ${route.orig.get(settings.language)}',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                route.companiesLabel(settings.language),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              if (route.jt != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '${settings.text('全程約', 'About')} ${route.jt} ${settings.text('分鐘', 'minutes')}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StopTile extends StatelessWidget {
+  const _StopTile({
+    super.key,
+    required this.index,
+    required this.stop,
+    required this.stopId,
+    required this.route,
+    required this.holiday,
+    required this.loading,
+    required this.etas,
+    required this.initiallyExpanded,
+    required this.onExpansionChanged,
+  });
+
+  final int index;
+  final StopEntry? stop;
+  final String stopId;
+  final RouteEntry route;
+  final bool holiday;
+  final bool loading;
+  final List<BusEta>? etas;
+  final bool initiallyExpanded;
+  final ValueChanged<bool> onExpansionChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final String name = stop?.displayName(settings.language) ?? stopId;
+    final String? fare = route.fareAt(index, holiday: holiday);
+    final String? normalFare = route.fareAt(index, holiday: false);
+    final String? code = stop?.stationCode;
+
+    return ExpansionTile(
+      initiallyExpanded: initiallyExpanded,
+      onExpansionChanged: onExpansionChanged,
+      leading: SizedBox(
+        width: 28,
+        child: Text(
+          '${index + 1}',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ),
+      title: Text(name),
+      subtitle: Row(
+        children: [
+          if (fare != null)
+            Text(
+              '${settings.text('車費', 'Fare')} \$$fare',
+              style: Theme.of(context).textTheme.bodySmall,
+            )
+          else if (normalFare != null)
+            Text(
+              '${settings.text('車費', 'Fare')} \$$normalFare',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          if (code != null)
+            Text(
+              '  ${settings.text('站碼', 'Code')} $code',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+        ],
+      ),
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: _EtaList(
+            loading: loading,
+            etas: etas,
+            showCompany: route.companies.length > 1,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EtaList extends StatelessWidget {
+  const _EtaList({
+    required this.loading,
+    required this.etas,
+    required this.showCompany,
+  });
+
+  final bool loading;
+  final List<BusEta>? etas;
+  final bool showCompany;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading && (etas == null || etas!.isEmpty)) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: LinearProgressIndicator(),
+      );
+    }
+    if (etas == null || etas!.isEmpty) {
+      return Text(
+        context.watch<AppSettings>().text('暫無到站資料', 'No arrival data'),
+        style: Theme.of(context).textTheme.bodyMedium,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (int index = 0; index < etas!.length; index++)
+          _EtaLine(
+            eta: etas![index],
+            first: index == 0,
+            showCompany: showCompany,
+          ),
+      ],
+    );
+  }
+}
+
+class _EtaLine extends StatelessWidget {
+  const _EtaLine({
+    required this.eta,
+    required this.first,
+    required this.showCompany,
+  });
+
+  final BusEta eta;
+  final bool first;
+  final bool showCompany;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final Color color = first
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+    final DateTime? time = eta.eta;
+    final String remark = eta.remark(settings.language);
+    final String company = eta.company.label(settings.language);
+
+    if (time == null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          remark,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color),
+        ),
+      );
+    }
+
+    final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
+    final String clock = DateFormat('HH:mm').format(hkTime);
+    final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
+    final String wait = minutes < 1
+        ? settings.text('即將到達', 'Arriving')
+        : '$minutes ${settings.text('分鐘', 'min')}';
+
+    final String parts = switch (settings.etaFormat) {
+      EtaFormat.diff => wait,
+      EtaFormat.exact => clock,
+      EtaFormat.mixed => '$clock  $wait',
+    };
+    final String suffix = [
+      if (showCompany) company,
+      if (remark.isNotEmpty) remark,
+      if (eta.isScheduledMark) settings.text('預定班次', 'Scheduled'),
+    ].join(' · ');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Text(
+        suffix.isEmpty ? parts : '$parts  ·  $suffix',
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: color),
+      ),
+    );
+  }
+}
+
+class _TimetablePlaceholder extends StatelessWidget {
+  const _TimetablePlaceholder({required this.route});
+
+  final RouteEntry route;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${route.route} ${settings.text('時間表', 'Timetable')}',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 16),
+          Text(settings.text('時間表將於下一個版本提供。', 'Timetable is coming next.')),
+        ],
       ),
     );
   }
