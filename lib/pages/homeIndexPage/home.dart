@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/notice_banner.dart';
 import 'package:provider/provider.dart';
 
 class HomeContent extends StatelessWidget {
@@ -61,6 +62,7 @@ class HomeContent extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        const NoticeBanner(),
         Text(
           settings.text('常用路線', 'Saved routes'),
           style: Theme.of(context).textTheme.titleMedium,
