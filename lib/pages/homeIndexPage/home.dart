@@ -28,7 +28,7 @@ class HomeContent extends StatelessWidget {
 
     if (!repository.hasData) {
       return ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
         children: [
           Card.filled(
             child: Padding(
@@ -178,7 +178,7 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
                 )
               : _sorting
               ? ReorderableListView.builder(
-                  padding: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.only(bottom: 112),
                   buildDefaultDragHandles: false,
                   itemCount: entries.length,
                   onReorder: (oldIndex, newIndex) {
@@ -209,7 +209,7 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
                   },
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.only(bottom: 112),
                   itemCount: entries.length,
                   separatorBuilder: (context, index) =>
                       const Divider(height: 1),

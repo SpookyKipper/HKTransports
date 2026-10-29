@@ -45,7 +45,7 @@ class _TrafficNewsState extends State<TrafficNews> {
         }
         final int languageIndex = settings.isChinese ? 0 : 1;
         return ListView.builder(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 112),
           itemCount: items.length,
           itemBuilder: (context, index) {
             final TrafficNewsItem item = items[index];

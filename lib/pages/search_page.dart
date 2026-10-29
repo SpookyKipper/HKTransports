@@ -29,7 +29,7 @@ class _SearchPageState extends State<SearchPage> {
 
     if (!repository.hasData) {
       return ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
         children: [
           SearchBar(
             controller: _controller,
@@ -79,6 +79,7 @@ class _SearchPageState extends State<SearchPage> {
         ),
         Expanded(
           child: ListView.separated(
+            padding: const EdgeInsets.only(bottom: 112),
             itemCount: results.length,
             separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, index) {

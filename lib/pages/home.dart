@@ -17,12 +17,35 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  late final PageController _pageController;
 
   static const List<Widget> _pages = [
     HomeContent(),
     SearchPage(),
     TrafficNews(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _selectPage(int index) {
+    if (index == _index) return;
+    setState(() => _index = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +57,7 @@ class _HomeShellState extends State<HomeShell> {
     ];
 
     return Scaffold(
+      extendBody: true,
       appBar: buildPageBar(
         context,
         title: titles[_index],
@@ -45,7 +69,16 @@ class _HomeShellState extends State<HomeShell> {
           ),
         ],
       ),
-      body: IndexedStack(index: _index, children: _pages),
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        onPageChanged: (int index) {
+          if (index != _index) setState(() => _index = index);
+        },
+        children: [
+          for (final Widget page in _pages) _KeepAlivePage(child: page),
+        ],
+      ),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
@@ -71,21 +104,21 @@ class _HomeShellState extends State<HomeShell> {
                     selectedIcon: Icons.home,
                     label: settings.text('主頁', 'Home'),
                     selected: _index == 0,
-                    onTap: () => setState(() => _index = 0),
+                    onTap: () => _selectPage(0),
                   ),
                   _ToolbarDestination(
                     icon: Icons.search,
                     selectedIcon: Icons.search,
                     label: settings.text('搜尋', 'Search'),
                     selected: _index == 1,
-                    onTap: () => setState(() => _index = 1),
+                    onTap: () => _selectPage(1),
                   ),
                   _ToolbarDestination(
                     icon: Icons.campaign_outlined,
                     selectedIcon: Icons.campaign,
                     label: settings.text('快訊', 'News'),
                     selected: _index == 2,
-                    onTap: () => setState(() => _index = 2),
+                    onTap: () => _selectPage(2),
                   ),
                 ],
               ),
@@ -115,21 +148,49 @@ class _ToolbarDestination extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    return TextButton.icon(
-      onPressed: onTap,
-      icon: Icon(selected ? selectedIcon : icon),
-      label: selected ? Text(label) : const SizedBox.shrink(),
-      style: TextButton.styleFrom(
-        foregroundColor: selected
-            ? scheme.onSecondaryContainer
-            : scheme.onSurfaceVariant,
-        backgroundColor: selected
-            ? scheme.secondaryContainer
-            : Colors.transparent,
-        minimumSize: const Size(48, 48),
-        padding: EdgeInsets.symmetric(horizontal: selected ? 12 : 10),
-        shape: const StadiumBorder(),
+    return Tooltip(
+      message: label,
+      child: TextButton.icon(
+        onPressed: onTap,
+        icon: Icon(selected ? selectedIcon : icon),
+        label: AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          child: selected ? Text(label) : const SizedBox(width: 0, height: 0),
+        ),
+        style: TextButton.styleFrom(
+          foregroundColor: selected
+              ? scheme.onSecondaryContainer
+              : scheme.onSurfaceVariant,
+          backgroundColor: selected
+              ? scheme.secondaryContainer
+              : Colors.transparent,
+          minimumSize: const Size(48, 48),
+          padding: EdgeInsets.symmetric(horizontal: selected ? 12 : 10),
+          shape: const StadiumBorder(),
+        ),
       ),
     );
+  }
+}
+
+class _KeepAlivePage extends StatefulWidget {
+  const _KeepAlivePage({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_KeepAlivePage> createState() => _KeepAlivePageState();
+}
+
+class _KeepAlivePageState extends State<_KeepAlivePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
