@@ -33,6 +33,7 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           SearchBar(
             controller: _controller,
+            elevation: const WidgetStatePropertyAll(0),
             hintText: settings.text('路線號碼或目的地', 'Route number or destination'),
             leading: const Icon(Icons.search),
             onChanged: (value) => setState(() => _query = value),
@@ -60,6 +61,7 @@ class _SearchPageState extends State<SearchPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: SearchBar(
             controller: _controller,
+            elevation: const WidgetStatePropertyAll(0),
             hintText: settings.text('路線號碼或目的地', 'Route number or destination'),
             leading: const Icon(Icons.search),
             trailing: [

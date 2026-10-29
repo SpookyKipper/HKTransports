@@ -34,8 +34,8 @@ class HomeContent extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     settings.text(
-                      '路線與車站資料會儲存在裝置上，只有到站時間需要網絡。',
-                      'Routes and stops are stored on this device. Only arrival times need the network.',
+                      '下載路線資料後即可開始使用。',
+                      'Download route data to get started.',
                     ),
                   ),
                 ],
