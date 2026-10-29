@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/pages/homeIndexPage/home.dart';
 import 'package:hktransports/pages/homeIndexPage/traffic_news.dart';
@@ -32,8 +33,9 @@ class _HomeShellState extends State<HomeShell> {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(titles[_index]),
+      appBar: buildPageBar(
+        context,
+        title: titles[_index],
         actions: [
           IconButton(
             tooltip: settings.text('設定', 'Settings'),

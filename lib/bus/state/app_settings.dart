@@ -8,6 +8,7 @@ class AppSettings extends ChangeNotifier {
   String _language = 'zh';
   EtaFormat _etaFormat = EtaFormat.mixed;
   int _refreshSeconds = 30;
+  int _textScalePercent = 110;
   bool _routeFilter = false;
   bool _autoRenew = true;
 
@@ -16,6 +17,8 @@ class AppSettings extends ChangeNotifier {
   bool get isChinese => _language == 'zh';
   EtaFormat get etaFormat => _etaFormat;
   int get refreshSeconds => _refreshSeconds;
+  int get textScalePercent => _textScalePercent;
+  double get textScale => _textScalePercent / 100;
   bool get routeFilter => _routeFilter;
   bool get autoRenew => _autoRenew;
 
@@ -31,6 +34,7 @@ class AppSettings extends ChangeNotifier {
       orElse: () => EtaFormat.mixed,
     );
     _refreshSeconds = (sp.getInt('refreshSeconds') ?? 30).clamp(5, 120);
+    _textScalePercent = (sp.getInt('textScalePercent') ?? 110).clamp(80, 160);
     _routeFilter = sp.getBool('routeFilter') ?? false;
     _autoRenew = sp.getBool('autoRenew') ?? true;
   }
@@ -62,6 +66,14 @@ class AppSettings extends ChangeNotifier {
     if (_refreshSeconds == next) return;
     _refreshSeconds = next;
     sp.setInt('refreshSeconds', next);
+    notifyListeners();
+  }
+
+  void setTextScalePercent(int percent) {
+    final int next = percent.clamp(80, 160);
+    if (_textScalePercent == next) return;
+    _textScalePercent = next;
+    sp.setInt('textScalePercent', next);
     notifyListeners();
   }
 

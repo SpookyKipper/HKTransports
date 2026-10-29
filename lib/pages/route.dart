@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:hktransports/app/page_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_data_updater.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
@@ -25,7 +26,7 @@ class RoutePageRoute extends StatelessWidget {
     if (route == null) {
       final AppSettings settings = context.watch<AppSettings>();
       return Scaffold(
-        appBar: AppBar(title: Text(settings.text('路線', 'Route'))),
+        appBar: buildPageBar(context, title: settings.text('路線', 'Route')),
         body: Center(child: Text(settings.text('找不到路線', 'Route not found'))),
       );
     }
@@ -123,10 +124,10 @@ class _RoutePageState extends State<_RoutePage> {
 
     final RouteEntry? reverse = repository.findReverse(route);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '${route.route} ${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
-        ),
+      appBar: buildPageBar(
+        context,
+        title:
+            '${route.route} ${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
         actions: [
           if (reverse != null)
             IconButton(
@@ -211,38 +212,41 @@ class _RouteHeader extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Card.filled(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                route.route,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Text(
-                '${settings.text('由', 'from')} ${route.orig.get(settings.language)}',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                route.companiesLabel(settings.language),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              if (route.jt != null) ...[
+      child: SizedBox(
+        width: double.infinity,
+        child: Card.filled(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  route.route,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
                 const SizedBox(height: 4),
                 Text(
-                  '${settings.text('全程約', 'About')} ${route.jt} ${settings.text('分鐘', 'minutes')}',
+                  '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  '${settings.text('由', 'from')} ${route.orig.get(settings.language)}',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  route.companiesLabel(settings.language),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+                if (route.jt != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '${settings.text('全程約', 'About')} ${route.jt} ${settings.text('分鐘', 'minutes')}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -307,7 +311,8 @@ class _StopTile extends StatelessWidget {
         ),
       ),
       title: Text(name),
-      subtitle: Row(
+      subtitle: Wrap(
+        spacing: 8,
         children: [
           if (fare != null)
             Text(
@@ -321,14 +326,14 @@ class _StopTile extends StatelessWidget {
             ),
           if (code != null)
             Text(
-              '  ${settings.text('站碼', 'Code')} $code',
+              '${settings.text('站碼', 'Code')} $code',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.outline,
               ),
             ),
           if (platform != null)
             Text(
-              '  ${settings.text('月台', 'Platform')} $platform',
+              '${settings.text('月台', 'Platform')} $platform',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.outline,
               ),
@@ -495,9 +500,9 @@ class _StopInfoSheet extends StatelessWidget {
             ),
           ),
           if (stop != null)
-            Row(
+            Wrap(
+              spacing: 8,
               children: [
-                const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () => launchUrl(
                     Uri.parse(

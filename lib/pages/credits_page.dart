@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,7 +11,7 @@ class CreditsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     return Scaffold(
-      appBar: AppBar(title: Text(settings.text('鳴謝', 'Credits'))),
+      appBar: buildPageBar(context, title: settings.text('鳴謝', 'Credits')),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [

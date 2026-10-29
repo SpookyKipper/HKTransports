@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:intl/intl.dart';
@@ -14,7 +15,10 @@ class UpdateDataPageRoute extends StatelessWidget {
     final bool busy = repository.status == BusDataStatus.updating;
 
     return Scaffold(
-      appBar: AppBar(title: Text(settings.text('更新資料', 'Update data'))),
+      appBar: buildPageBar(
+        context,
+        title: settings.text('更新資料', 'Update data'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

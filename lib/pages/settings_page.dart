@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:provider/provider.dart';
 
@@ -20,7 +21,7 @@ class SettingsPage extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
 
     return Scaffold(
-      appBar: AppBar(title: Text(settings.text('設定', 'Settings'))),
+      appBar: buildPageBar(context, title: settings.text('設定', 'Settings')),
       body: ListView(
         children: [
           ListTile(
@@ -28,6 +29,26 @@ class SettingsPage extends StatelessWidget {
             title: Text(settings.text('外觀', 'Appearance')),
             subtitle: Text(_themeModeLabel(settings)),
             onTap: () => _pickThemeMode(context, settings),
+          ),
+          ListTile(
+            leading: const Icon(Icons.format_size),
+            title: Text(settings.text('文字大小', 'Text size')),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Slider(
+                  min: 80,
+                  max: 160,
+                  divisions: 8,
+                  value: settings.textScalePercent.toDouble(),
+                  label: '${settings.textScalePercent}%',
+                  onChanged: (double value) {
+                    settings.setTextScalePercent(value.round());
+                  },
+                ),
+                Text('${settings.textScalePercent}%'),
+              ],
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.language),
