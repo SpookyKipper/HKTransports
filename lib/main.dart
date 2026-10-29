@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/app/display_geometry.dart';
+import 'package:hktransports/app/m3e_scope.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -111,13 +112,16 @@ class MyApp extends StatelessWidget {
               builder: (context, child) {
                 final MediaQueryData media = MediaQuery.of(context);
                 final double systemScale = media.textScaler.scale(1);
-                return MediaQuery(
-                  data: media.copyWith(
-                    textScaler: TextScaler.linear(
-                      systemScale * settings.textScale,
+                return M3EScope(
+                  scheme: Theme.of(context).colorScheme,
+                  child: MediaQuery(
+                    data: media.copyWith(
+                      textScaler: TextScaler.linear(
+                        systemScale * settings.textScale,
+                      ),
                     ),
+                    child: child ?? const SizedBox.shrink(),
                   ),
-                  child: child ?? const SizedBox.shrink(),
                 );
               },
             );
