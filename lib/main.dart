@@ -105,8 +105,8 @@ class MyApp extends StatelessWidget {
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
               themeMode: settings.themeMode,
-              theme: buildAppTheme(lightScheme),
-              darkTheme: buildAppTheme(darkScheme),
+              theme: buildAppTheme(lightScheme, settings.transitionStyle),
+              darkTheme: buildAppTheme(darkScheme, settings.transitionStyle),
               routerConfig: _router,
               builder: (context, child) {
                 final MediaQueryData media = MediaQuery.of(context);

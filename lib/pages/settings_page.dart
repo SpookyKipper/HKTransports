@@ -31,6 +31,12 @@ class SettingsPage extends StatelessWidget {
             onTap: () => _pickThemeChoice(context, settings),
           ),
           ListTile(
+            leading: const Icon(Icons.animation),
+            title: Text(settings.text('頁面轉場', 'Page transition')),
+            subtitle: Text(settings.transitionStyle.label(settings.language)),
+            onTap: () => _pickTransitionStyle(context, settings),
+          ),
+          ListTile(
             leading: const Icon(Icons.format_size),
             title: Text(settings.text('文字大小', 'Text size')),
             subtitle: Column(
@@ -228,6 +234,47 @@ class SettingsPage extends StatelessWidget {
     );
     if (result != null) {
       settings.setAutoUpdateHours(result);
+    }
+  }
+
+  Future<void> _pickTransitionStyle(
+    BuildContext context,
+    AppSettings settings,
+  ) async {
+    final PageTransitionStyle? result = await showDialog<PageTransitionStyle>(
+      context: context,
+      builder: (context) {
+        return SimpleDialog(
+          title: Text(settings.text('頁面轉場', 'Page transition')),
+          children: [
+            RadioGroup<PageTransitionStyle>(
+              groupValue: settings.transitionStyle,
+              onChanged: (value) => Navigator.pop(context, value),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final PageTransitionStyle style
+                      in PageTransitionStyle.values)
+                    RadioListTile<PageTransitionStyle>(
+                      value: style,
+                      title: Text(style.label(settings.language)),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+              child: Text(
+                settings.text('對頭線一律使用淡入。', 'Direction swap always uses fade.'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (result != null) {
+      settings.setTransitionStyle(result);
     }
   }
 

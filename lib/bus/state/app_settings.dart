@@ -3,6 +3,38 @@ import 'package:hktransports/dataStore/objectbox.dart';
 
 enum EtaFormat { diff, exact, mixed }
 
+enum PageTransitionStyle {
+  fade,
+  predictiveBack,
+  predictiveBackFullscreen,
+  cupertino,
+  zoom,
+  fadeUpwards,
+  openUpwards,
+}
+
+extension PageTransitionStyleInfo on PageTransitionStyle {
+  String label(String language) {
+    final bool zh = language != 'en';
+    switch (this) {
+      case PageTransitionStyle.fade:
+        return zh ? '淡入（預設）' : 'Fade (default)';
+      case PageTransitionStyle.predictiveBack:
+        return zh ? '預測返回' : 'Predictive back';
+      case PageTransitionStyle.predictiveBackFullscreen:
+        return zh ? '預測返回（全螢幕）' : 'Predictive back (fullscreen)';
+      case PageTransitionStyle.cupertino:
+        return zh ? 'Cupertino（圓角）' : 'Cupertino (rounded)';
+      case PageTransitionStyle.zoom:
+        return zh ? '縮放' : 'Zoom';
+      case PageTransitionStyle.fadeUpwards:
+        return zh ? '向上淡入' : 'Fade upwards';
+      case PageTransitionStyle.openUpwards:
+        return zh ? '向上展開' : 'Open upwards';
+    }
+  }
+}
+
 enum AppThemeChoice {
   systemDynamic,
   lightDynamic,
@@ -47,6 +79,7 @@ extension AppThemeChoiceInfo on AppThemeChoice {
 
 class AppSettings extends ChangeNotifier {
   AppThemeChoice _themeChoice = AppThemeChoice.systemDynamic;
+  PageTransitionStyle _transitionStyle = PageTransitionStyle.fade;
   String _language = 'zh';
   EtaFormat _etaFormat = EtaFormat.mixed;
   int _refreshSeconds = 30;
@@ -58,6 +91,7 @@ class AppSettings extends ChangeNotifier {
   AppThemeChoice get themeChoice => _themeChoice;
   ThemeMode get themeMode => _themeChoice.themeMode;
   bool get usesPurpleTheme => _themeChoice.isPurple;
+  PageTransitionStyle get transitionStyle => _transitionStyle;
   String get language => _language;
   bool get isChinese => _language == 'zh';
   EtaFormat get etaFormat => _etaFormat;
@@ -83,6 +117,11 @@ class AppSettings extends ChangeNotifier {
         _ => AppThemeChoice.systemDynamic,
       };
     }
+    final String storedTransition = sp.getString('pageTransition') ?? 'fade';
+    _transitionStyle = PageTransitionStyle.values.firstWhere(
+      (style) => style.name == storedTransition,
+      orElse: () => PageTransitionStyle.fade,
+    );
     final String storedLanguage = (sp.getString('appLanguage') ?? 'zh')
         .toLowerCase();
     _language = storedLanguage.startsWith('en') ? 'en' : 'zh';
@@ -102,6 +141,13 @@ class AppSettings extends ChangeNotifier {
     if (_themeChoice == choice) return;
     _themeChoice = choice;
     sp.setString('themeChoice', choice.name);
+    notifyListeners();
+  }
+
+  void setTransitionStyle(PageTransitionStyle style) {
+    if (_transitionStyle == style) return;
+    _transitionStyle = style;
+    sp.setString('pageTransition', style.name);
     notifyListeners();
   }
 
