@@ -176,7 +176,6 @@ class _RoutePageState extends State<_RoutePage> {
                   innerRadius: 8,
                   hoverRadius: 10,
                   pressedRadius: 4,
-                  expandedRadius: 8,
                   border: BorderSide.none,
                   elevation: 0,
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
