@@ -161,6 +161,14 @@ class _RoutePageState extends State<_RoutePage> {
           _RouteUpdateNotice(route: route),
           Expanded(
             child: M3EPullToRefreshIndicator(
+              indicatorIcon: const M3ELoadingIndicator(
+                constraints: BoxConstraints(
+                  minWidth: 56,
+                  minHeight: 56,
+                  maxWidth: 56,
+                  maxHeight: 56,
+                ),
+              ),
               onRefresh: () async {
                 final int? index = _expandedIndex;
                 if (index != null) await _fetch(index);
