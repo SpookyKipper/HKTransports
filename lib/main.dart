@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dynamic_color/dynamic_color.dart';
@@ -59,6 +60,7 @@ void main() async {
       child: const MyApp(),
     ),
   );
+  unawaited(repository.autoCheckIfDue());
 }
 
 class MyApp extends StatelessWidget {
