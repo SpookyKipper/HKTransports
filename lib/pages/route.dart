@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hktransports/bus/data/bus_data_updater.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
@@ -158,7 +159,12 @@ class _RoutePageState extends State<_RoutePage> {
           itemCount: stopIds.length + 1,
           itemBuilder: (context, index) {
             if (index == 0) {
-              return _RouteHeader(route: route);
+              return Column(
+                children: [
+                  _RouteHeader(route: route),
+                  _RouteUpdateNotice(route: route),
+                ],
+              );
             }
             final int stopIndex = index - 1;
             final String stopId = stopIds[stopIndex];
@@ -544,6 +550,72 @@ class _StopInfoSheet extends StatelessWidget {
                 },
               ),
         ],
+      ),
+    );
+  }
+}
+
+class _RouteUpdateNotice extends StatefulWidget {
+  const _RouteUpdateNotice({required this.route});
+
+  final RouteEntry route;
+
+  @override
+  State<_RouteUpdateNotice> createState() => _RouteUpdateNoticeState();
+}
+
+class _RouteUpdateNoticeState extends State<_RouteUpdateNotice> {
+  DateTime? _updatedAt;
+  bool _checked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _check();
+  }
+
+  Future<void> _check() async {
+    final BusRepository repository = context.read<BusRepository>();
+    final DateTime? updated = await repository.updater.fetchRouteUpdatedAt(
+      widget.route,
+    );
+    if (!mounted) return;
+    setState(() {
+      _updatedAt = updated;
+      _checked = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_checked || _updatedAt == null) return const SizedBox.shrink();
+    final BusRepository repository = context.watch<BusRepository>();
+    final AppSettings settings = context.watch<AppSettings>();
+    final DateTime? local = repository.lastUpdate;
+    if (local != null && !_updatedAt!.isAfter(local)) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Card.filled(
+        child: ListTile(
+          leading: const Icon(Icons.sync),
+          title: Text(settings.text('有較新的路線資料', 'Newer route data available')),
+          subtitle: Text(settings.text('點按更新', 'Tap to update')),
+          onTap: () async {
+            final bool updated = await repository.update(force: true);
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  updated
+                      ? settings.text('資料已更新', 'Data updated')
+                      : settings.text('更新失敗', 'Update failed'),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

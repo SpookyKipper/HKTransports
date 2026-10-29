@@ -184,3 +184,26 @@ bool _isValid(BusDatabase db) {
       db.holidays.isNotEmpty &&
       db.serviceDayMap.isNotEmpty;
 }
+
+extension RouteUpdateCheck on BusDataUpdater {
+  Future<DateTime?> fetchRouteUpdatedAt(RouteEntry route) async {
+    final String name =
+        '${route.route}+${route.serviceType}+${route.orig.en}+${route.dest.en}'
+            .toUpperCase()
+            .replaceAll(RegExp(r'''[\\/:*?"<>|\]']'''), '');
+    final Uri uri = Uri.parse(
+      '$busDataBaseUrl/route-ts/${Uri.encodeComponent(name)}',
+    );
+    try {
+      final http.Response response = await http
+          .get(uri)
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) return null;
+      final int? seconds = int.tryParse(response.body.trim());
+      if (seconds == null) return null;
+      return DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
+    } catch (_) {
+      return null;
+    }
+  }
+}
