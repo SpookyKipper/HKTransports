@@ -22,7 +22,9 @@ class AppSettings extends ChangeNotifier {
   AppSettings() {
     final int mode = sp.getInt('themeMode') ?? 0;
     _themeMode = ThemeMode.values[mode.clamp(0, 2)];
-    _language = sp.getString('appLanguage') ?? 'zh';
+    final String storedLanguage = (sp.getString('appLanguage') ?? 'zh')
+        .toLowerCase();
+    _language = storedLanguage.startsWith('en') ? 'en' : 'zh';
     final String format = sp.getString('etaFormat') ?? 'mixed';
     _etaFormat = EtaFormat.values.firstWhere(
       (value) => value.name == format,
