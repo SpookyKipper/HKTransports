@@ -159,42 +159,164 @@ class _RoutePageState extends State<_RoutePage> {
           ),
         ],
       ),
-      body: M3EPullToRefreshIndicator(
-        onRefresh: () async {
-          final int? index = _expandedIndex;
-          if (index != null) await _fetch(index);
-        },
-        child: ListView.builder(
-          physics: const AlwaysScrollableScrollPhysics(),
-          itemCount: stopIds.length + 1,
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              return Column(
-                children: [
-                  _RouteHeader(route: route),
-                  _RouteUpdateNotice(route: route),
-                ],
-              );
-            }
-            final int stopIndex = index - 1;
-            final String stopId = stopIds[stopIndex];
-            final StopEntry? stop = repository.stopById(stopId);
-            return _StopTile(
-              key: PageStorageKey('${route.key}-$stopIndex'),
-              index: stopIndex,
-              stop: stop,
-              stopId: stopId,
-              route: route,
-              holiday: holiday,
-              loading: _loading.contains(stopIndex),
-              etas: _etas[stopIndex],
-              initiallyExpanded: _expandedIndex == stopIndex,
-              onExpansionChanged: (expanded) =>
-                  _onExpansionChanged(stopIndex, expanded),
-            );
-          },
-        ),
+      body: Column(
+        children: [
+          _RouteHeader(route: route),
+          _RouteUpdateNotice(route: route),
+          Expanded(
+            child: M3EPullToRefreshIndicator(
+              onRefresh: () async {
+                final int? index = _expandedIndex;
+                if (index != null) await _fetch(index);
+              },
+              child: M3EExpandableCardList.builder(
+                padding: const EdgeInsets.only(bottom: 24),
+                itemCount: stopIds.length,
+                allowMultipleExpanded: false,
+                initiallyExpanded: {_expandedIndex ?? 0},
+                onExpansionChanged: _onExpansionChanged,
+                style: const M3EExpandableStyle(
+                  outerRadius: 0,
+                  innerRadius: 0,
+                  hoverRadius: 0,
+                  pressedRadius: 0,
+                  gap: 0,
+                  expandedRadius: 0,
+                  border: BorderSide.none,
+                  elevation: 0,
+                  color: Colors.transparent,
+                  margin: EdgeInsets.zero,
+                  headerPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  bodyPadding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  iconPlacement: IconPlacement.right,
+                ),
+                headerBuilder: (context, index, progress) => _buildStopHeader(
+                  context,
+                  repository,
+                  route,
+                  stopIds,
+                  index,
+                  holiday,
+                ),
+                bodyBuilder: (context, index, progress) =>
+                    _buildStopBody(context, route, stopIds, index),
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildStopHeader(
+    BuildContext context,
+    BusRepository repository,
+    RouteEntry route,
+    List<String> stopIds,
+    int index,
+    bool holiday,
+  ) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final String stopId = stopIds[index];
+    final StopEntry? stop = repository.stopById(stopId);
+    final String name = stop?.displayName(settings.language) ?? stopId;
+    final String? fare = route.fareAt(index, holiday: holiday);
+    final String? normalFare = route.fareAt(index, holiday: false);
+    final String? code = stop?.stationCode;
+    final String? platform = stop?.platformCode;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 28,
+          child: Text(
+            '${index + 1}',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name),
+              Wrap(
+                spacing: 8,
+                children: [
+                  if (fare != null)
+                    Text(
+                      '${settings.text('車費', 'Fare')} \$$fare',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    )
+                  else if (normalFare != null)
+                    Text(
+                      '${settings.text('車費', 'Fare')} \$$normalFare',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  if (code != null)
+                    Text(
+                      '${settings.text('站碼', 'Code')} $code',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                  if (platform != null)
+                    Text(
+                      '${settings.text('月台', 'Platform')} $platform',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStopBody(
+    BuildContext context,
+    RouteEntry route,
+    List<String> stopIds,
+    int index,
+  ) {
+    final AppSettings settings = context.watch<AppSettings>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _EtaList(
+          loading: _loading.contains(index),
+          etas: _etas[index],
+          showCompany: route.companies.length > 1,
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () => _showStopInfo(context, route, stopIds[index]),
+            icon: const Icon(Icons.info_outline),
+            label: Text(settings.text('車站資訊', 'Stop information')),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showStopInfo(BuildContext context, RouteEntry route, String stopId) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        return _StopInfoSheet(route: route, stopId: stopId);
+      },
     );
   }
 
@@ -259,114 +381,6 @@ class _RouteHeader extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _StopTile extends StatelessWidget {
-  const _StopTile({
-    super.key,
-    required this.index,
-    required this.stop,
-    required this.stopId,
-    required this.route,
-    required this.holiday,
-    required this.loading,
-    required this.etas,
-    required this.initiallyExpanded,
-    required this.onExpansionChanged,
-  });
-
-  final int index;
-  final StopEntry? stop;
-  final String stopId;
-  final RouteEntry route;
-  final bool holiday;
-  final bool loading;
-  final List<BusEta>? etas;
-  final bool initiallyExpanded;
-  final ValueChanged<bool> onExpansionChanged;
-
-  void _showStopInfo(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) {
-        return _StopInfoSheet(route: route, stopId: stopId);
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppSettings settings = context.watch<AppSettings>();
-    final String name = stop?.displayName(settings.language) ?? stopId;
-    final String? fare = route.fareAt(index, holiday: holiday);
-    final String? normalFare = route.fareAt(index, holiday: false);
-    final String? code = stop?.stationCode;
-    final String? platform = stop?.platformCode;
-
-    return ExpansionTile(
-      initiallyExpanded: initiallyExpanded,
-      onExpansionChanged: onExpansionChanged,
-      leading: SizedBox(
-        width: 28,
-        child: Text(
-          '${index + 1}',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ),
-      title: Text(name),
-      subtitle: Wrap(
-        spacing: 8,
-        children: [
-          if (fare != null)
-            Text(
-              '${settings.text('車費', 'Fare')} \$$fare',
-              style: Theme.of(context).textTheme.bodySmall,
-            )
-          else if (normalFare != null)
-            Text(
-              '${settings.text('車費', 'Fare')} \$$normalFare',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          if (code != null)
-            Text(
-              '${settings.text('站碼', 'Code')} $code',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            ),
-          if (platform != null)
-            Text(
-              '${settings.text('月台', 'Platform')} $platform',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            ),
-        ],
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: _EtaList(
-            loading: loading,
-            etas: etas,
-            showCompany: route.companies.length > 1,
-          ),
-        ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: () => _showStopInfo(context),
-            icon: const Icon(Icons.info_outline),
-            label: Text(settings.text('車站資訊', 'Stop information')),
-          ),
-        ),
-      ],
     );
   }
 }
