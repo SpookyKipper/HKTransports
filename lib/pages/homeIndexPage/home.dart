@@ -73,6 +73,8 @@ class HomeContent extends StatelessWidget {
                   child: TabBar(
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
+                    dividerColor: Colors.transparent,
+                    dividerHeight: 0,
                     tabs: [
                       for (final FavoriteGroup group in groups)
                         Tab(text: group.name),
