@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
+import 'package:hktransports/app/rounded_cupertino_page_transitions_builder.dart';
 import 'package:flutter/material.dart';
 
 const Color _fallbackSeed = Color(0xFF6750A4);
@@ -32,12 +32,12 @@ ThemeData buildAppTheme(ColorScheme scheme) {
     useMaterial3: true,
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
-        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.fuchsia: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.android: RoundedCupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS: RoundedCupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: RoundedCupertinoPageTransitionsBuilder(),
+        TargetPlatform.linux: RoundedCupertinoPageTransitionsBuilder(),
+        TargetPlatform.windows: RoundedCupertinoPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: RoundedCupertinoPageTransitionsBuilder(),
       },
     ),
   );

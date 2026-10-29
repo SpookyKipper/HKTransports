@@ -5,6 +5,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/app_theme.dart';
+import 'package:hktransports/app/display_geometry.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/objectBox/store.dart';
@@ -46,6 +47,7 @@ void main() async {
     await dirAppdata.create(recursive: true);
   }
   await initObjectBox();
+  await DisplayGeometry.load();
 
   final AppSettings settings = AppSettings();
   final BusRepository repository = BusRepository(settings);
