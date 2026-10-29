@@ -7,9 +7,7 @@ Future<String?> promptFavoriteGroupName(
   String? initial,
 }) async {
   final AppSettings settings = context.read<AppSettings>();
-  final TextEditingController controller = TextEditingController(
-    text: initial ?? '',
-  );
+  String value = initial ?? '';
   final String? result = await showDialog<String>(
     context: context,
     builder: (context) {
@@ -19,14 +17,15 @@ Future<String?> promptFavoriteGroupName(
               ? settings.text('新增群組', 'New group')
               : settings.text('重新命名群組', 'Rename group'),
         ),
-        content: TextField(
-          controller: controller,
+        content: TextFormField(
+          initialValue: initial ?? '',
           autofocus: true,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
             hintText: settings.text('群組名稱', 'Group name'),
           ),
-          onSubmitted: (value) => Navigator.pop(context, value),
+          onChanged: (text) => value = text,
+          onFieldSubmitted: (text) => Navigator.pop(context, text),
         ),
         actions: [
           TextButton(
@@ -34,13 +33,12 @@ Future<String?> promptFavoriteGroupName(
             child: Text(settings.text('取消', 'Cancel')),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
+            onPressed: () => Navigator.pop(context, value),
             child: Text(settings.text('確定', 'OK')),
           ),
         ],
       );
     },
   );
-  controller.dispose();
   return result;
 }
