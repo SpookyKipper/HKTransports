@@ -299,7 +299,12 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
-    final List<BusEta> etas = (_etas ?? const []).take(3).toList();
+    final List<BusEta> etas = (_etas ?? const [])
+        .where(
+          (eta) => eta.eta != null || eta.remark(settings.language).isNotEmpty,
+        )
+        .take(3)
+        .toList();
 
     Widget? trailing = widget.trailing;
     if (widget.showEta) {
@@ -326,22 +331,41 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
       }
     }
 
-    return ListTile(
-      leading: SizedBox(
-        width: 64,
-        child: Text(
-          widget.route.route,
-          style: Theme.of(context).textTheme.titleLarge,
+    return InkWell(
+      onTap: widget.onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 64,
+              child: Text(
+                widget.route.route,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${settings.text('往', 'to')} ${widget.route.dest.get(settings.language)}',
+                  ),
+                  Text(
+                    '${widget.route.orig.get(settings.language)} · ${widget.route.companiesLabel(settings.language)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (trailing != null) ...[const SizedBox(width: 8), trailing],
+          ],
         ),
       ),
-      title: Text(
-        '${settings.text('往', 'to')} ${widget.route.dest.get(settings.language)}',
-      ),
-      subtitle: Text(
-        '${widget.route.orig.get(settings.language)} · ${widget.route.companiesLabel(settings.language)}',
-      ),
-      trailing: trailing,
-      onTap: widget.onTap,
     );
   }
 }
