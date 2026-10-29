@@ -225,6 +225,7 @@ class _RoutePageState extends State<_RoutePage> {
     final String? normalFare = route.fareAt(index, holiday: false);
     final String? code = stop?.stationCode;
     final String? platform = stop?.platformCode;
+    final bool isTerminus = index == stopIds.length - 1;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -248,7 +249,27 @@ class _RoutePageState extends State<_RoutePage> {
               Text(name),
               Wrap(
                 spacing: 8,
+                runSpacing: 4,
                 children: [
+                  if (isTerminus)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        settings.text('總站', 'Terminus'),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
                   if (fare != null)
                     Text(
                       '${settings.text('車費', 'Fare')} \$$fare',
