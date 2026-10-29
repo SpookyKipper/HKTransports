@@ -17,7 +17,6 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
-  late final PageController _pageController;
 
   static const List<Widget> _pages = [
     HomeContent(),
@@ -25,26 +24,9 @@ class _HomeShellState extends State<HomeShell> {
     TrafficNews(),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
   void _selectPage(int index) {
     if (index == _index) return;
     setState(() => _index = index);
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
-    );
   }
 
   @override
@@ -69,15 +51,14 @@ class _HomeShellState extends State<HomeShell> {
           ),
         ],
       ),
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        onPageChanged: (int index) {
-          if (index != _index) setState(() => _index = index);
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(opacity: animation, child: child);
         },
-        children: [
-          for (final Widget page in _pages) _KeepAlivePage(child: page),
-        ],
+        child: KeyedSubtree(key: ValueKey<int>(_index), child: _pages[_index]),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -171,26 +152,5 @@ class _ToolbarDestination extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _KeepAlivePage extends StatefulWidget {
-  const _KeepAlivePage({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_KeepAlivePage> createState() => _KeepAlivePageState();
-}
-
-class _KeepAlivePageState extends State<_KeepAlivePage>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return widget.child;
   }
 }
