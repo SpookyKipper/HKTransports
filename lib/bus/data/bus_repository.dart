@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:hktransports/bus/data/bus_data_updater.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
 
@@ -36,6 +37,7 @@ class BusRepository extends ChangeNotifier {
   Map<String, Set<String>>? _physicalByCompanyStop;
   List<String>? _savedRoutes;
   List<String>? _recentRoutes;
+  List<FavoriteGroup>? _customGroups;
   Timer? _autoTimer;
   bool _checking = false;
 
@@ -287,6 +289,133 @@ class BusRepository extends ChangeNotifier {
     return _savedRoutes!;
   }
 
+  List<FavoriteGroup> get favoriteGroups {
+    _customGroups ??= _readFavoriteGroups();
+    return [
+      FavoriteGroup(
+        id: FavoriteGroup.favoritesId,
+        name: settings.text('常用', 'Favourites'),
+        routes: [...savedRoutes],
+      ),
+      ..._customGroups!,
+    ];
+  }
+
+  FavoriteGroup? favoriteGroupById(String id) {
+    for (final FavoriteGroup group in favoriteGroups) {
+      if (group.id == id) return group;
+    }
+    return null;
+  }
+
+  List<RouteEntry> routesInGroup(FavoriteGroup group) {
+    return group.routes
+        .map((String key) => routeByKey(key))
+        .whereType<RouteEntry>()
+        .toList();
+  }
+
+  bool isRouteInGroup(String groupId, String routeKey) {
+    final FavoriteGroup? group = favoriteGroupById(groupId);
+    return group?.routes.contains(routeKey) ?? false;
+  }
+
+  bool isRouteInAnyGroup(String routeKey) {
+    return favoriteGroups.any((group) => group.routes.contains(routeKey));
+  }
+
+  FavoriteGroup? createFavoriteGroup(String name) {
+    final String trimmed = name.trim();
+    if (trimmed.isEmpty) return null;
+    _customGroups ??= _readFavoriteGroups();
+    final FavoriteGroup group = FavoriteGroup(
+      id: 'group_${DateTime.now().microsecondsSinceEpoch}',
+      name: trimmed,
+      routes: [],
+    );
+    _customGroups = [..._customGroups!, group];
+    _saveFavoriteGroups();
+    notifyListeners();
+    return group;
+  }
+
+  void renameFavoriteGroup(String id, String name) {
+    final String trimmed = name.trim();
+    if (trimmed.isEmpty || id == FavoriteGroup.favoritesId) return;
+    _customGroups ??= _readFavoriteGroups();
+    _customGroups = _customGroups!
+        .map((group) => group.id == id ? group.copyWith(name: trimmed) : group)
+        .toList();
+    _saveFavoriteGroups();
+    notifyListeners();
+  }
+
+  void deleteFavoriteGroup(String id) {
+    if (id == FavoriteGroup.favoritesId) return;
+    _customGroups ??= _readFavoriteGroups();
+    _customGroups = _customGroups!.where((group) => group.id != id).toList();
+    _saveFavoriteGroups();
+    notifyListeners();
+  }
+
+  void toggleRouteInGroup(String groupId, String routeKey) {
+    if (groupId == FavoriteGroup.favoritesId) {
+      final List<String> list = [...savedRoutes];
+      if (list.contains(routeKey)) {
+        list.remove(routeKey);
+      } else {
+        list.add(routeKey);
+      }
+      _savedRoutes = list;
+      sp.setString('savedRoutes', jsonEncode(list));
+      notifyListeners();
+      return;
+    }
+    _customGroups ??= _readFavoriteGroups();
+    _customGroups = _customGroups!.map((group) {
+      if (group.id != groupId) return group;
+      final List<String> routes = [...group.routes];
+      if (routes.contains(routeKey)) {
+        routes.remove(routeKey);
+      } else {
+        routes.add(routeKey);
+      }
+      return group.copyWith(routes: routes);
+    }).toList();
+    _saveFavoriteGroups();
+    notifyListeners();
+  }
+
+  void reorderFavoriteGroup(String groupId, int oldIndex, int newIndex) {
+    final FavoriteGroup? group = favoriteGroupById(groupId);
+    if (group == null) return;
+    final List<String> routes = [...group.routes];
+    if (oldIndex < 0 || oldIndex >= routes.length) return;
+    if (newIndex > oldIndex) newIndex -= 1;
+    if (newIndex < 0 || newIndex >= routes.length) return;
+    final String item = routes.removeAt(oldIndex);
+    routes.insert(newIndex, item);
+    if (groupId == FavoriteGroup.favoritesId) {
+      _savedRoutes = routes;
+      sp.setString('savedRoutes', jsonEncode(routes));
+    } else {
+      _customGroups ??= _readFavoriteGroups();
+      _customGroups = _customGroups!
+          .map(
+            (group) =>
+                group.id == groupId ? group.copyWith(routes: routes) : group,
+          )
+          .toList();
+      _saveFavoriteGroups();
+    }
+    notifyListeners();
+  }
+
+  void removeRouteFromGroup(String groupId, String routeKey) {
+    if (!isRouteInGroup(groupId, routeKey)) return;
+    toggleRouteInGroup(groupId, routeKey);
+  }
+
   List<String> get recentRoutes {
     _recentRoutes ??= _readStringList('recentRoutes');
     return _recentRoutes!;
@@ -317,6 +446,28 @@ class BusRepository extends ChangeNotifier {
   }
 
   RouteEntry? routeByKey(String key) => _database?.routesByKey[key];
+
+  List<FavoriteGroup> _readFavoriteGroups() {
+    final String? raw = sp.getString('favoriteGroups');
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final dynamic decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return decoded
+            .whereType<Map<String, dynamic>>()
+            .map(FavoriteGroup.fromJson)
+            .toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  void _saveFavoriteGroups() {
+    sp.setString(
+      'favoriteGroups',
+      jsonEncode((_customGroups ?? []).map((group) => group.toJson()).toList()),
+    );
+  }
 
   List<String> _readStringList(String key) {
     final String? raw = sp.getString(key);

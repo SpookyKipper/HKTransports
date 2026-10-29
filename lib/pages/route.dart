@@ -9,6 +9,7 @@ import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/route_group_sheet.dart';
 import 'package:hktransports/bus/ui/timetable_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -137,10 +138,12 @@ class _RoutePageState extends State<_RoutePage> {
               icon: const Icon(Icons.swap_horiz),
             ),
           IconButton(
-            tooltip: settings.text('收藏', 'Save'),
-            onPressed: () => repository.toggleSaved(route),
+            tooltip: settings.text('收藏', 'Favourites'),
+            onPressed: () => showRouteGroupSheet(context, route),
             icon: Icon(
-              repository.isSaved(route) ? Icons.star : Icons.star_border,
+              repository.isRouteInAnyGroup(route.key)
+                  ? Icons.star
+                  : Icons.star_border,
             ),
           ),
           IconButton(
