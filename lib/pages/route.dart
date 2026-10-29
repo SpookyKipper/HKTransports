@@ -6,6 +6,7 @@ import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/timetable_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -177,7 +178,7 @@ class _RoutePageState extends State<_RoutePage> {
       useSafeArea: true,
       showDragHandle: true,
       builder: (context) {
-        return _TimetablePlaceholder(route: route);
+        return TimetableSheet(route: route);
       },
     );
   }
@@ -263,6 +264,7 @@ class _StopTile extends StatelessWidget {
     final String? fare = route.fareAt(index, holiday: holiday);
     final String? normalFare = route.fareAt(index, holiday: false);
     final String? code = stop?.stationCode;
+    final String? platform = stop?.platformCode;
 
     return ExpansionTile(
       initiallyExpanded: initiallyExpanded,
@@ -291,6 +293,13 @@ class _StopTile extends StatelessWidget {
           if (code != null)
             Text(
               '  ${settings.text('站碼', 'Code')} $code',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+          if (platform != null)
+            Text(
+              '  ${settings.text('月台', 'Platform')} $platform',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.outline,
               ),
@@ -404,32 +413,6 @@ class _EtaLine extends StatelessWidget {
       child: Text(
         suffix.isEmpty ? parts : '$parts  ·  $suffix',
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: color),
-      ),
-    );
-  }
-}
-
-class _TimetablePlaceholder extends StatelessWidget {
-  const _TimetablePlaceholder({required this.route});
-
-  final RouteEntry route;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppSettings settings = context.watch<AppSettings>();
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${route.route} ${settings.text('時間表', 'Timetable')}',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 16),
-          Text(settings.text('時間表將於下一個版本提供。', 'Timetable is coming next.')),
-        ],
       ),
     );
   }
