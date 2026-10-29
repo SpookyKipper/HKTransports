@@ -21,33 +21,58 @@ class HomeContent extends StatefulWidget {
   State<HomeContent> createState() => _HomeContentState();
 }
 
-class _HomeContentState extends State<HomeContent> {
+class _HomeContentState extends State<HomeContent>
+    with TickerProviderStateMixin {
   String? _selectedGroupId;
-  late final PageController _pageController = PageController();
+  TabController? _tabController;
+  List<String> _groupIds = const [];
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
-  void _selectGroup(List<FavoriteGroup> groups, int index) {
-    setState(() => _selectedGroupId = groups[index].id);
-    if (_pageController.hasClients) {
-      _pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOutCubic,
-      );
+  void _ensureTabController(List<FavoriteGroup> groups) {
+    if (_tabController != null && _tabController!.length == groups.length) {
+      return;
+    }
+    final TabController? old = _tabController;
+    final int selectedIndex = groups.indexWhere(
+      (group) => group.id == _selectedGroupId,
+    );
+    final int initialIndex = selectedIndex < 0 ? 0 : selectedIndex;
+    _tabController = TabController(
+      length: groups.length,
+      vsync: this,
+      initialIndex: initialIndex.clamp(0, groups.length - 1),
+    )..addListener(_handleTabChanged);
+    if (old != null) {
+      old.removeListener(_handleTabChanged);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        old.dispose();
+      });
     }
   }
 
-  void _syncPage(int index) {
+  void _handleTabChanged() {
+    final TabController? controller = _tabController;
+    if (controller == null) return;
+    final int index = controller.index;
+    if (index < 0 || index >= _groupIds.length) return;
+    final String id = _groupIds[index];
+    if (id != _selectedGroupId) {
+      setState(() => _selectedGroupId = id);
+    }
+  }
+
+  void _syncSelectedTab(int selectedIndex) {
+    final TabController? controller = _tabController;
+    if (controller == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_pageController.hasClients) return;
-      final int current = _pageController.page?.round() ?? 0;
-      if (current != index) {
-        _pageController.jumpToPage(index);
+      if (!mounted || controller != _tabController) return;
+      if (controller.index != selectedIndex) {
+        controller.animateTo(selectedIndex);
       }
     });
   }
@@ -97,12 +122,13 @@ class _HomeContentState extends State<HomeContent> {
     }
 
     final List<FavoriteGroup> groups = repository.favoriteGroups;
+    _groupIds = groups.map((group) => group.id).toList();
+    _ensureTabController(groups);
     final int selectedIndex = groups.indexWhere(
       (group) => group.id == _selectedGroupId,
     );
     final int pageIndex = selectedIndex < 0 ? 0 : selectedIndex;
-    final FavoriteGroup selected = groups[pageIndex];
-    _syncPage(pageIndex);
+    _syncSelectedTab(pageIndex);
 
     return Column(
       children: [
@@ -111,19 +137,21 @@ class _HomeContentState extends State<HomeContent> {
           child: NoticeBanner(),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: _GroupTabStrip(
-                  groups: groups,
-                  selectedId: selected.id,
-                  onSelected: (String id) {
-                    final int index = groups.indexWhere(
-                      (group) => group.id == id,
-                    );
-                    if (index >= 0) _selectGroup(groups, index);
-                  },
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  dividerColor: Colors.transparent,
+                  dividerHeight: 0,
+                  tabs: [
+                    for (final FavoriteGroup group in groups)
+                      Tab(text: group.name),
+                  ],
                 ),
               ),
               IconButton(
@@ -145,86 +173,18 @@ class _HomeContentState extends State<HomeContent> {
           ),
         ),
         Expanded(
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: groups.length,
-            onPageChanged: (int index) {
-              if (index < 0 || index >= groups.length) return;
-              final String id = groups[index].id;
-              if (id != _selectedGroupId) {
-                setState(() => _selectedGroupId = id);
-              }
-            },
-            itemBuilder: (context, index) {
-              final FavoriteGroup group = groups[index];
-              return _GroupRoutesView(
-                key: PageStorageKey<String>(group.id),
-                group: group,
-              );
-            },
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              for (final FavoriteGroup group in groups)
+                _GroupRoutesView(
+                  key: PageStorageKey<String>(group.id),
+                  group: group,
+                ),
+            ],
           ),
         ),
       ],
-    );
-  }
-}
-
-class _GroupTabStrip extends StatelessWidget {
-  const _GroupTabStrip({
-    required this.groups,
-    required this.selectedId,
-    required this.onSelected,
-  });
-
-  final List<FavoriteGroup> groups;
-  final String selectedId;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      height: 56,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        itemCount: groups.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 4),
-        itemBuilder: (context, index) {
-          final FavoriteGroup group = groups[index];
-          final bool selected = group.id == selectedId;
-          return InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => onSelected(group.id),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    group.name,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: selected
-                          ? scheme.primary
-                          : scheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    height: 3,
-                    width: selected ? 24 : 0,
-                    decoration: BoxDecoration(
-                      color: scheme.primary,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 }
