@@ -447,7 +447,7 @@ class _EtaLine extends StatelessWidget {
     final String suffix = [
       if (showCompany) company,
       if (remark.isNotEmpty) remark,
-      if (eta.isScheduledMark) settings.text('預定班次', 'Scheduled'),
+      if (eta.scheduled && remark.isEmpty) settings.text('預定班次', 'Scheduled'),
     ].join(' · ');
 
     return Padding(
