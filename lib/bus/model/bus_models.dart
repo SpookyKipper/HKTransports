@@ -1,3 +1,5 @@
+import 'package:hktransports/functions/title_case.dart';
+
 enum BusCompany {
   kmb,
   ctb,
@@ -161,10 +163,11 @@ class StopEntry {
     final String nameZh = (name['zh'] ?? '').toString();
     final _ParsedName parsedEn = _parseStopName(nameEn);
     final _ParsedName parsedZh = _parseStopName(nameZh);
+    final bool isKmb = _kmbStopIdPattern.hasMatch(id);
     return StopEntry(
       id: id,
       nameEn: nameEn,
-      displayEn: parsedEn.display,
+      displayEn: isKmb ? toProperCase(parsedEn.display) : parsedEn.display,
       nameZh: nameZh,
       displayZh: parsedZh.display,
       lat: (location['lat'] as num?)?.toDouble() ?? 0,
@@ -184,6 +187,7 @@ class _ParsedName {
 }
 
 final RegExp _stationCodePattern = RegExp(r'\s*\(([A-Z]{2}\d{3}[a-z]?)\)\s*$');
+final RegExp _kmbStopIdPattern = RegExp(r'^[0-9A-Fa-f]{16}$');
 final RegExp _platformCodePattern = RegExp(r'\s*\(([A-Z]\d{1,2})\)\s*$');
 
 _ParsedName _parseStopName(String raw) {
@@ -409,18 +413,24 @@ class BusDatabase {
       final Map<String, Map<String, List<String>?>>? freq = _parseFreq(
         value['freq'],
       );
+      Terminal orig = Terminal.fromJson(
+        (value['orig'] as Map<String, dynamic>?) ?? const {},
+      );
+      Terminal dest = Terminal.fromJson(
+        (value['dest'] as Map<String, dynamic>?) ?? const {},
+      );
+      if (companies.contains(BusCompany.kmb)) {
+        orig = Terminal(en: toProperCase(orig.en), zh: orig.zh);
+        dest = Terminal(en: toProperCase(dest.en), zh: dest.zh);
+      }
       rawRoutes.add(
         _RawRoute(
           key: entry.key,
           route: (value['route'] ?? '').toString(),
           serviceType: (value['serviceType'] ?? '1').toString(),
           companies: companies,
-          orig: Terminal.fromJson(
-            (value['orig'] as Map<String, dynamic>?) ?? const {},
-          ),
-          dest: Terminal.fromJson(
-            (value['dest'] as Map<String, dynamic>?) ?? const {},
-          ),
+          orig: orig,
+          dest: dest,
           stops: routeStops,
           bound: bound,
           seq: (value['seq'] as num?)?.toInt() ?? 0,
