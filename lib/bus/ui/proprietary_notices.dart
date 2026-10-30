@@ -66,6 +66,7 @@ class CitybusStopNotices extends StatelessWidget {
     return _AsyncNoticeSection(
       key: ValueKey<String>('ctb-stop-$stopId-${settings.language}'),
       title: settings.text('城巴站務通告', 'Citybus stop notices'),
+      titleStyle: Theme.of(context).textTheme.titleSmall,
       creditHost: ProprietaryNoticeService.citybusHost,
       showTopDivider: true,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -146,6 +147,7 @@ class _AsyncNoticeSection extends StatefulWidget {
     required this.errorText,
     required this.loader,
     this.creditHost,
+    this.titleStyle,
     this.showTopDivider = false,
     this.padding,
     this.onHasDataChanged,
@@ -153,6 +155,7 @@ class _AsyncNoticeSection extends StatefulWidget {
 
   final String title;
   final String errorText;
+  final TextStyle? titleStyle;
   final Future<List<ProprietaryNotice>> Function() loader;
   final String? creditHost;
   final bool showTopDivider;
@@ -211,7 +214,10 @@ class _AsyncNoticeSectionState extends State<_AsyncNoticeSection> {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 16, bottom: 8),
-          child: Text(widget.title, style: theme.textTheme.titleMedium),
+          child: Text(
+            widget.title,
+            style: widget.titleStyle ?? theme.textTheme.titleMedium,
+          ),
         ),
         if (_failed)
           Row(
