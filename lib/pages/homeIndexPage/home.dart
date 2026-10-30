@@ -413,9 +413,7 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final List<BusEta> etas = (_etas ?? const [])
-        .where(
-          (eta) => eta.eta != null || eta.remark(settings.language).isNotEmpty,
-        )
+        .where((eta) => eta.eta != null)
         .take(3)
         .toList();
 
