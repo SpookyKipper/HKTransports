@@ -31,36 +31,30 @@ class RouteNumberPad extends StatelessWidget {
             .toList()
           ..sort();
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: Material(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        child: SizedBox(
-          height: 248,
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 62,
-                  child: _NumberPad(
-                    chars: chars,
-                    hasQuery: hasQuery,
-                    onCharacter: onCharacter,
-                    onBackspace: onBackspace,
-                    onClear: onClear,
-                    clearTooltip: clearTooltip,
-                    backspaceTooltip: backspaceTooltip,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 35,
-                  child: _LetterPad(letters: letters, onCharacter: onCharacter),
-                ),
-              ],
+    return SizedBox(
+      height: 248,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 62,
+              child: _NumberPad(
+                chars: chars,
+                hasQuery: hasQuery,
+                onCharacter: onCharacter,
+                onBackspace: onBackspace,
+                onClear: onClear,
+                clearTooltip: clearTooltip,
+                backspaceTooltip: backspaceTooltip,
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 35,
+              child: _LetterPad(letters: letters, onCharacter: onCharacter),
+            ),
+          ],
         ),
       ),
     );
