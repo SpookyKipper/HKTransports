@@ -6,8 +6,6 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/route_number_pad.dart';
 import 'package:provider/provider.dart';
 
-enum _SearchMode { number, text }
-
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -16,51 +14,20 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
-  final TextEditingController _textController = TextEditingController();
-  final FocusNode _textFocus = FocusNode();
-  _SearchMode _mode = _SearchMode.number;
-  String _numberQuery = '';
-  String _textQuery = '';
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    _textFocus.dispose();
-    super.dispose();
-  }
+  String _query = '';
 
   void _appendNumber(String value) {
-    setState(() => _numberQuery += value);
+    setState(() => _query += value);
   }
 
   void _backspaceNumber() {
-    if (_numberQuery.isEmpty) return;
-    setState(
-      () => _numberQuery = _numberQuery.substring(0, _numberQuery.length - 1),
-    );
+    if (_query.isEmpty) return;
+    setState(() => _query = _query.substring(0, _query.length - 1));
   }
 
   void _clearNumber() {
-    if (_numberQuery.isEmpty) return;
-    setState(() => _numberQuery = '');
-  }
-
-  void _clearText() {
-    _textController.clear();
-    setState(() => _textQuery = '');
-  }
-
-  void _switchToText() {
-    FocusScope.of(context).unfocus();
-    setState(() => _mode = _SearchMode.text);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _textFocus.requestFocus();
-    });
-  }
-
-  void _switchToNumber() {
-    FocusScope.of(context).unfocus();
-    setState(() => _mode = _SearchMode.number);
+    if (_query.isEmpty) return;
+    setState(() => _query = '');
   }
 
   @override
@@ -72,14 +39,6 @@ class _SearchPageState extends State<SearchPage> {
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
         children: [
-          SearchBar(
-            controller: _textController,
-            elevation: const WidgetStatePropertyAll(0),
-            hintText: settings.text('路線號碼或目的地', 'Route number or destination'),
-            leading: const Icon(Icons.search),
-            onChanged: (value) => setState(() => _textQuery = value),
-          ),
-          const SizedBox(height: 48),
           Center(
             child: Text(settings.text('請先下載路線資料', 'Download route data first')),
           ),
@@ -94,35 +53,27 @@ class _SearchPageState extends State<SearchPage> {
       );
     }
 
-    final bool numberMode = _mode == _SearchMode.number;
-    final List<RouteEntry> results = numberMode
-        ? repository.searchRouteNumbers(_numberQuery)
-        : repository.search(_textQuery);
-    final Set<String> possibleChars = numberMode
-        ? repository.possibleRouteChars(_numberQuery)
-        : const {};
+    final List<RouteEntry> results = repository.searchRouteNumbers(_query);
+    final Set<String> possibleChars = repository.possibleRouteChars(_query);
 
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: numberMode
-              ? _buildNumberBar(context, settings)
-              : _buildTextBar(context, settings),
+          child: _buildNumberBar(context, settings),
         ),
-        if (numberMode)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: RouteNumberPad(
-              possibleChars: possibleChars,
-              hasQuery: _numberQuery.isNotEmpty,
-              onCharacter: _appendNumber,
-              onBackspace: _backspaceNumber,
-              onClear: _clearNumber,
-              clearTooltip: settings.text('清除', 'Clear'),
-              backspaceTooltip: settings.text('刪除', 'Backspace'),
-            ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: RouteNumberPad(
+            possibleChars: possibleChars,
+            hasQuery: _query.isNotEmpty,
+            onCharacter: _appendNumber,
+            onBackspace: _backspaceNumber,
+            onClear: _clearNumber,
+            clearTooltip: settings.text('清除', 'Clear'),
+            backspaceTooltip: settings.text('刪除', 'Backspace'),
           ),
+        ),
         Expanded(
           child: results.isEmpty
               ? Center(
@@ -189,56 +140,27 @@ class _SearchPageState extends State<SearchPage> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                _numberQuery.isEmpty
+                _query.isEmpty
                     ? settings.text('路線號碼', 'Route number')
-                    : _numberQuery,
+                    : _query,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: _numberQuery.isEmpty
+                  color: _query.isEmpty
                       ? scheme.onSurfaceVariant
                       : scheme.onSurface,
-                  letterSpacing: _numberQuery.isEmpty ? null : 2,
+                  letterSpacing: _query.isEmpty ? null : 2,
                 ),
               ),
             ),
-            if (_numberQuery.isNotEmpty)
+            if (_query.isNotEmpty)
               IconButton(
                 tooltip: settings.text('清除', 'Clear'),
                 onPressed: _clearNumber,
                 icon: const Icon(Icons.close),
               ),
-            IconButton(
-              tooltip: settings.text('文字搜尋', 'Text search'),
-              onPressed: _switchToText,
-              icon: const Icon(Icons.keyboard_outlined),
-            ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildTextBar(BuildContext context, AppSettings settings) {
-    return SearchBar(
-      controller: _textController,
-      focusNode: _textFocus,
-      elevation: const WidgetStatePropertyAll(0),
-      hintText: settings.text('路線號碼或目的地', 'Route number or destination'),
-      leading: const Icon(Icons.search),
-      trailing: [
-        if (_textQuery.isNotEmpty)
-          IconButton(
-            tooltip: settings.text('清除', 'Clear'),
-            onPressed: _clearText,
-            icon: const Icon(Icons.close),
-          ),
-        IconButton(
-          tooltip: settings.text('數字鍵盤', 'Number pad'),
-          onPressed: _switchToNumber,
-          icon: const Icon(Icons.dialpad),
-        ),
-      ],
-      onChanged: (value) => setState(() => _textQuery = value),
     );
   }
 }
