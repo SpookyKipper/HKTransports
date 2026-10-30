@@ -188,7 +188,6 @@ class _RoutePageState extends State<_RoutePage> {
                       hoverRadius: 10,
                       pressedRadius: 4,
                       gap: 3,
-                      border: BorderSide.none,
                       elevation: 0,
                       color: Theme.of(
                         context,
