@@ -22,7 +22,7 @@ extension ProprietaryDataSourceInfo on ProprietaryDataSource {
   String description(AppSettings settings) {
     switch (this) {
       case ProprietaryDataSource.notice:
-        return settings.text('HK Bus ETA 通知服務', 'HK Bus ETA notices');
+        return settings.text('HK Bus ETA 通告服務', 'HK Bus ETA notices');
       case ProprietaryDataSource.kmb:
         return settings.text('預留項目，尚未連線。', 'Dummy option; not connected yet.');
       case ProprietaryDataSource.citybus:
