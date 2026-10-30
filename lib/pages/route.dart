@@ -187,8 +187,8 @@ class _RoutePageState extends State<_RoutePage> {
                     decoration: M3EExpandableStyle(
                       outerRadius: 24,
                       innerRadius: 8,
-                      hoverRadius: 10,
-                      pressedRadius: 4,
+                      hoverRadius: 24,
+                      pressedRadius: 24,
                       gap: 3,
                       elevation: 0,
                       color: Theme.of(
