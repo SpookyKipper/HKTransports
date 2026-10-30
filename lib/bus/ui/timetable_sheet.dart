@@ -136,6 +136,7 @@ class _ServiceSection extends StatelessWidget {
                 ? null
                 : Text(
                     '${(int.tryParse(entry.value![1]) ?? 0) ~/ 60} ${settings.text('分鐘', 'min')}',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
           ),
       ],
