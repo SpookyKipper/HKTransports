@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:hktransports/bus/data/bus_data_updater.dart';
+import 'package:hktransports/bus/data/route_search.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -173,6 +174,26 @@ class BusRepository extends ChangeNotifier {
           }).toList();
     filtered.sort(compareRoutes);
     return filtered;
+  }
+
+  List<RouteEntry> searchRouteNumbers(String query) {
+    final BusDatabase? db = _database;
+    if (db == null) return const [];
+    final String prefix = query.trim().toUpperCase();
+    final List<RouteEntry> routes = db.routesByKey.values
+        .where((route) => route.route.toUpperCase().startsWith(prefix))
+        .toList();
+    routes.sort(compareRoutes);
+    return routes;
+  }
+
+  Set<String> possibleRouteChars(String query) {
+    final BusDatabase? db = _database;
+    if (db == null) return const {};
+    return possibleRouteCharsFor(
+      db.routesByKey.values.map((route) => route.route),
+      query,
+    );
   }
 
   List<RouteEntry> routesForNumber(String number) {
