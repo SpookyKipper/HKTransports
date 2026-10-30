@@ -314,6 +314,7 @@ class _RoutePageState extends State<_RoutePage> {
           loading: _loading.contains(index),
           etas: _etas[index],
           showCompany: route.companies.length > 1,
+          atOrigin: index == 0,
         ),
         Align(
           alignment: Alignment.centerRight,
@@ -412,11 +413,13 @@ class _EtaList extends StatelessWidget {
     required this.loading,
     required this.etas,
     required this.showCompany,
+    required this.atOrigin,
   });
 
   final bool loading;
   final List<BusEta>? etas;
   final bool showCompany;
+  final bool atOrigin;
 
   @override
   Widget build(BuildContext context) {
@@ -450,6 +453,7 @@ class _EtaList extends StatelessWidget {
             eta: visible[index],
             first: index == 0,
             showCompany: showCompany,
+            atOrigin: atOrigin,
           ),
       ],
     );
@@ -461,11 +465,13 @@ class _EtaLine extends StatelessWidget {
     required this.eta,
     required this.first,
     required this.showCompany,
+    required this.atOrigin,
   });
 
   final BusEta eta;
   final bool first;
   final bool showCompany;
+  final bool atOrigin;
 
   @override
   Widget build(BuildContext context) {
@@ -491,7 +497,9 @@ class _EtaLine extends StatelessWidget {
     final String clock = DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
     final String wait = minutes < 1
-        ? settings.text('即將到達', 'Arriving')
+        ? atOrigin
+              ? settings.text('即場開出', 'Departing now')
+              : settings.text('即將到達', 'Arriving')
         : '$minutes ${settings.text('分鐘', 'min')}';
 
     final String parts = switch (settings.etaFormat) {

@@ -440,7 +440,11 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               for (int index = 0; index < etas.length; index++)
-                _CompactEtaLine(eta: etas[index], first: index == 0),
+                _CompactEtaLine(
+                  eta: etas[index],
+                  first: index == 0,
+                  atOrigin: widget.seq == 0,
+                ),
             ],
           ),
         );
@@ -487,10 +491,15 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
 }
 
 class _CompactEtaLine extends StatelessWidget {
-  const _CompactEtaLine({required this.eta, required this.first});
+  const _CompactEtaLine({
+    required this.eta,
+    required this.first,
+    required this.atOrigin,
+  });
 
   final BusEta eta;
   final bool first;
+  final bool atOrigin;
 
   @override
   Widget build(BuildContext context) {
@@ -511,7 +520,9 @@ class _CompactEtaLine extends StatelessWidget {
     final String clock = DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
     final String wait = minutes < 1
-        ? settings.text('即將到達', 'Arriving')
+        ? atOrigin
+              ? settings.text('即場開出', 'Departing now')
+              : settings.text('即將到達', 'Arriving')
         : '$minutes ${settings.text('分', 'min')}';
     final String text = switch (settings.etaFormat) {
       EtaFormat.diff => wait,
