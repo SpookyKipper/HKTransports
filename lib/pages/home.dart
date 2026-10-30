@@ -2,31 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
-import 'package:hktransports/pages/homeIndexPage/home.dart';
-import 'package:hktransports/pages/homeIndexPage/traffic_news.dart';
-import 'package:hktransports/pages/search_page.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key});
+  const HomeShell({super.key, required this.navigationShell});
+
+  final StatefulNavigationShell navigationShell;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
 }
 
 class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
-
-  static const List<Widget> _pages = [
-    HomeContent(),
-    SearchPage(),
-    TrafficNews(),
-  ];
+  int get _index => widget.navigationShell.currentIndex;
 
   void _selectPage(int index) {
-    if (index == _index) return;
-    setState(() => _index = index);
+    widget.navigationShell.goBranch(index, initialLocation: index == _index);
   }
 
   @override
@@ -51,15 +43,7 @@ class _HomeShellState extends State<HomeShell> {
           ),
         ],
       ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        child: KeyedSubtree(key: ValueKey<int>(_index), child: _pages[_index]),
-      ),
+      body: widget.navigationShell,
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(

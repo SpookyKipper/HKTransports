@@ -14,6 +14,9 @@ import 'package:hktransports/objectBox/store.dart';
 import 'package:hktransports/pages/credits_page.dart';
 import 'package:hktransports/pages/favorite_groups_page.dart';
 import 'package:hktransports/pages/home.dart';
+import 'package:hktransports/pages/homeIndexPage/home.dart';
+import 'package:hktransports/pages/homeIndexPage/traffic_news.dart';
+import 'package:hktransports/pages/search_page.dart';
 import 'package:hktransports/pages/licenses_page.dart';
 import 'package:hktransports/pages/route.dart';
 import 'package:hktransports/pages/settings_page.dart';
@@ -23,7 +26,36 @@ import 'package:provider/provider.dart';
 
 final GoRouter _router = GoRouter(
   routes: [
-    GoRoute(path: '/', builder: (context, state) => const HomeShell()),
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) =>
+          HomeShell(navigationShell: navigationShell),
+      branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (context, state) => const HomeContent(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/search',
+              builder: (context, state) => const SearchPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/news',
+              builder: (context, state) => const TrafficNews(),
+            ),
+          ],
+        ),
+      ],
+    ),
     GoRoute(
       path: '/route/:slug',
       pageBuilder: (context, state) {
