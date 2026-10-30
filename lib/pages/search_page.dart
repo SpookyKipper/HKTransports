@@ -62,27 +62,13 @@ class _SearchPageState extends State<SearchPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: _buildNumberBar(context, settings),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: RouteNumberPad(
-            possibleChars: possibleChars,
-            hasQuery: _query.isNotEmpty,
-            onCharacter: _appendNumber,
-            onBackspace: _backspaceNumber,
-            onClear: _clearNumber,
-            clearTooltip: settings.text('清除', 'Clear'),
-            backspaceTooltip: settings.text('刪除', 'Backspace'),
-          ),
-        ),
         Expanded(
           child: results.isEmpty
               ? Center(
-                  child: Text(
-                    settings.text('沒有符合的路線', 'No matching routes'),
-                  ),
+                  child: Text(settings.text('沒有符合的路線', 'No matching routes')),
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 112),
+                  padding: const EdgeInsets.only(bottom: 8),
                   itemCount: results.length,
                   separatorBuilder: (context, index) =>
                       const Divider(height: 1),
@@ -121,6 +107,18 @@ class _SearchPageState extends State<SearchPage> {
                   },
                 ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
+          child: RouteNumberPad(
+            possibleChars: possibleChars,
+            hasQuery: _query.isNotEmpty,
+            onCharacter: _appendNumber,
+            onBackspace: _backspaceNumber,
+            onClear: _clearNumber,
+            clearTooltip: settings.text('清除', 'Clear'),
+            backspaceTooltip: settings.text('刪除', 'Backspace'),
+          ),
+        ),
       ],
     );
   }
@@ -140,9 +138,7 @@ class _SearchPageState extends State<SearchPage> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                _query.isEmpty
-                    ? settings.text('路線號碼', 'Route number')
-                    : _query,
+                _query.isEmpty ? settings.text('路線號碼', 'Route number') : _query,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: _query.isEmpty
                       ? scheme.onSurfaceVariant
