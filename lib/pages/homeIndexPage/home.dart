@@ -511,7 +511,7 @@ class _CompactEtaLine extends StatelessWidget {
     final String clock = DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
     final String wait = minutes < 1
-        ? settings.text('即將', 'Arriving')
+        ? settings.text('即將到達', 'Arriving')
         : '$minutes ${settings.text('分', 'min')}';
     final String text = switch (settings.etaFormat) {
       EtaFormat.diff => wait,
