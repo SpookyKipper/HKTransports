@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -157,7 +158,7 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
             ),
             if (_webViewController != null) ...[
               const SizedBox(height: 12),
-              TextButton(
+              M3EButton.text(
                 onPressed: () {
                   setState(() {
                     _loading = true;

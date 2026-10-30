@@ -4,6 +4,7 @@ import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 class FavoriteGroupsPage extends StatelessWidget {
@@ -22,8 +23,9 @@ class FavoriteGroupsPage extends StatelessWidget {
         context,
         title: settings.text('管理收藏群組', 'Manage favourite groups'),
         actions: [
-          IconButton(
+          M3EIconButton(
             tooltip: settings.text('新增群組', 'New group'),
+            variant: M3EIconButtonVariant.standard,
             onPressed: () async {
               final String? name = await promptFavoriteGroupName(context);
               if (name != null) {
@@ -43,7 +45,7 @@ class FavoriteGroupsPage extends StatelessWidget {
                   children: [
                     Text(settings.text('尚未建立群組', 'No custom groups yet')),
                     const SizedBox(height: 12),
-                    FilledButton.icon(
+                    M3EButton.icon(
                       onPressed: () async {
                         final String? name = await promptFavoriteGroupName(
                           context,
@@ -101,8 +103,9 @@ class FavoriteGroupsPage extends StatelessWidget {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
+                            M3EIconButton(
                               tooltip: settings.text('刪除群組', 'Delete group'),
+                              variant: M3EIconButtonVariant.standard,
                               onPressed: () =>
                                   _deleteGroup(context, repository, group),
                               icon: const Icon(Icons.delete_outline),
@@ -140,11 +143,11 @@ class FavoriteGroupsPage extends StatelessWidget {
             settings.text('確定刪除「${group.name}」？', 'Delete "${group.name}"?'),
           ),
           actions: [
-            TextButton(
+            M3EButton.text(
               onPressed: () => Navigator.pop(context, false),
               child: Text(settings.text('取消', 'Cancel')),
             ),
-            TextButton(
+            M3EButton.text(
               onPressed: () => Navigator.pop(context, true),
               child: Text(settings.text('刪除', 'Delete')),
             ),

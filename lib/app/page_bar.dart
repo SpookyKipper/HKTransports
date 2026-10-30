@@ -30,7 +30,14 @@ PreferredSizeWidget buildPageBar(
             style: subtitleStyle,
           ),
     actions: actions,
-    leading: Navigator.of(context).canPop() ? const BackButton() : null,
+    leading: Navigator.of(context).canPop()
+        ? M3EIconButton(
+            icon: const BackButtonIcon(),
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            variant: M3EIconButtonVariant.standard,
+            onPressed: () => Navigator.of(context).maybePop(),
+          )
+        : null,
     automaticallyImplyLeading: false,
     centerTitle: false,
     variant: M3EAppBarVariant.small,

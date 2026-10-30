@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hktransports/app/notice_link.dart';
 import 'package:hktransports/bus/notice/notice_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 class NoticeBanner extends StatefulWidget {
@@ -50,9 +51,10 @@ class _NoticeBannerState extends State<NoticeBanner> {
         ),
         title: Text(content.first),
         subtitle: content.length > 1 ? Text(content.skip(1).join('\n')) : null,
-        trailing: IconButton(
+        trailing: M3EIconButton(
           tooltip: settings.text('關閉通知', 'Dismiss notice'),
           icon: const Icon(Icons.close),
+          variant: M3EIconButtonVariant.standard,
           onPressed: () {
             _service.dismiss(notice.id);
             setState(() => _notices = _notices.skip(1).toList());

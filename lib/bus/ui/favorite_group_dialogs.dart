@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 Future<String?> promptFavoriteGroupName(
@@ -28,11 +29,11 @@ Future<String?> promptFavoriteGroupName(
           onFieldSubmitted: (text) => Navigator.pop(context, text),
         ),
         actions: [
-          TextButton(
+          M3EButton.text(
             onPressed: () => Navigator.pop(context),
             child: Text(settings.text('取消', 'Cancel')),
           ),
-          TextButton(
+          M3EButton.text(
             onPressed: () => Navigator.pop(context, value),
             child: Text(settings.text('確定', 'OK')),
           ),

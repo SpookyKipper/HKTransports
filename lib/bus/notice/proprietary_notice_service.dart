@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 import 'package:hktransports/bus/model/bus_models.dart';
-import 'package:hktransports/functions/title_case.dart';
 import 'package:http/http.dart' as http;
 
 class ProprietaryNotice {
@@ -18,21 +17,6 @@ class ProprietaryNotice {
   final String? date;
   final String? detail;
   final Uri? url;
-}
-
-class KmbBbiEntry {
-  const KmbBbiEntry({
-    required this.route,
-    required this.destinationZh,
-    required this.destinationEn,
-  });
-
-  final String route;
-  final String destinationZh;
-  final String destinationEn;
-
-  String destination(String language) =>
-      language == 'en' ? destinationEn : destinationZh;
 }
 
 class ProprietaryNoticeException implements Exception {
@@ -84,36 +68,6 @@ class ProprietaryNoticeService {
       );
     }
     return notices;
-  }
-
-  Future<List<KmbBbiEntry>> fetchKmbBbi(RouteEntry route) async {
-    final Uri uri = Uri.https(
-      kmbHost,
-      '/kmbwebsite/Function/FunctionRequest.ashx',
-      {
-        'action': 'getbbiforroute',
-        'route': route.route,
-        'bound': _kmbBound(route),
-      },
-    );
-    final Map<String, dynamic> json = await _getJson(uri);
-    final dynamic data = json['data'];
-    final dynamic rawEntries = data is Map ? data['BBIs'] : null;
-    if (rawEntries is! List) return const [];
-    final List<KmbBbiEntry> entries = [];
-    for (final dynamic value in rawEntries) {
-      if (value is! Map) continue;
-      final String routeNumber = _string(value['Route2']);
-      if (routeNumber.isEmpty) continue;
-      entries.add(
-        KmbBbiEntry(
-          route: routeNumber,
-          destinationZh: _string(value['Destination_CHI']),
-          destinationEn: toProperCase(_string(value['Destination_ENG'])),
-        ),
-      );
-    }
-    return entries;
   }
 
   Future<List<ProprietaryNotice>> fetchCitybusSpecialNotices(

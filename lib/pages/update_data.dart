@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:intl/intl.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -50,6 +51,23 @@ class UpdateDataPageRoute extends StatelessWidget {
                       'MD5: ${repository.md5}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
+                  FutureBuilder<List<int>>(
+                    future: Future.wait([
+                      repository.updater.dataSizeBytes(),
+                      const BbiService().storedBytes(),
+                    ]),
+                    builder: (context, snapshot) {
+                      final List<int>? sizes = snapshot.data;
+                      if (sizes == null) return const SizedBox.shrink();
+                      final int total = sizes[0] + sizes[1];
+                      return Text(
+                        settings.text(
+                          '資料大小: ${_formatBytes(total)}',
+                          'Data size: ${_formatBytes(total)}',
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -70,7 +88,7 @@ class UpdateDataPageRoute extends StatelessWidget {
             ),
             const SizedBox(height: 16),
           ],
-          FilledButton.icon(
+          M3EButton.icon(
             onPressed: busy
                 ? null
                 : () async {
@@ -96,7 +114,8 @@ class UpdateDataPageRoute extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          TextButton.icon(
+          M3EButton.icon(
+            style: M3EButtonStyle.text,
             onPressed: busy
                 ? null
                 : () async {
@@ -126,4 +145,14 @@ class UpdateDataPageRoute extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatBytes(int bytes) {
+  if (bytes >= 1024 * 1024) {
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+  if (bytes >= 1024) {
+    return '${(bytes / 1024).toStringAsFixed(0)} KB';
+  }
+  return '$bytes B';
 }

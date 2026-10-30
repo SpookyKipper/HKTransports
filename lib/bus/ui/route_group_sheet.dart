@@ -4,6 +4,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 Future<void> showRouteGroupSheet(
@@ -69,8 +70,9 @@ class RouteGroupSheet extends StatelessWidget {
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
+                        M3EIconButton(
                           tooltip: settings.text('重新命名', 'Rename'),
+                          variant: M3EIconButtonVariant.standard,
                           onPressed: () async {
                             final String? name = await promptFavoriteGroupName(
                               context,
@@ -82,8 +84,9 @@ class RouteGroupSheet extends StatelessWidget {
                           },
                           icon: const Icon(Icons.edit_outlined),
                         ),
-                        IconButton(
+                        M3EIconButton(
                           tooltip: settings.text('刪除群組', 'Delete group'),
+                          variant: M3EIconButtonVariant.standard,
                           onPressed: () =>
                               _deleteGroup(context, repository, group),
                           icon: const Icon(Icons.delete_outline),
@@ -133,11 +136,11 @@ class RouteGroupSheet extends StatelessWidget {
             settings.text('確定刪除「${group.name}」？', 'Delete "${group.name}"?'),
           ),
           actions: [
-            TextButton(
+            M3EButton.text(
               onPressed: () => Navigator.pop(context, false),
               child: Text(settings.text('取消', 'Cancel')),
             ),
-            TextButton(
+            M3EButton.text(
               onPressed: () => Navigator.pop(context, true),
               child: Text(settings.text('刪除', 'Delete')),
             ),
