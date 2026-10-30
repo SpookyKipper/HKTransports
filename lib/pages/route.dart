@@ -504,7 +504,7 @@ class _EtaLine extends StatelessWidget {
     final String company = eta.company.label(settings.language);
 
     if (time == null) {
-      final String message = eta.isDelayedJourney && remark.isNotEmpty
+      final String message = showCompany && eta.isDelayedJourney
           ? '$company · $remark'
           : remark;
       return Padding(
@@ -545,34 +545,25 @@ class _EtaLine extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                '$company · $message',
+                showCompany ? '$company · $message' : message,
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: color),
               ),
             ),
-            const SizedBox(width: 8),
-            Tooltip(
-              message: settings.text(
+            const SizedBox(width: 4),
+            IconButton(
+              tooltip: settings.text(
                 '預計時間不準確',
                 'Estimated time may be inaccurate',
               ),
-              child: TextButton.icon(
-                onPressed: () =>
-                    _showDelayedEtaDialog(context, settings, parts, message),
-                icon: const Icon(Icons.info_outline, size: 18),
-                label: Text(parts),
-                style: TextButton.styleFrom(
-                  foregroundColor: color,
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
+              onPressed: () =>
+                  _showDelayedEtaDialog(context, settings, parts, message),
+              icon: const Icon(Icons.info_outline, size: 18),
+              color: color,
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.all(4),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
           ],
         ),
@@ -582,7 +573,7 @@ class _EtaLine extends StatelessWidget {
         ? eta.dest(settings.language).trim()
         : '';
     final String suffix = [
-      if (showCompany || eta.isDelayedJourney) company,
+      if (showCompany) company,
       if (remark.isNotEmpty) remark,
       if (eta.scheduled && remark.isEmpty) settings.text('預定班次', 'Scheduled'),
       if (via.isNotEmpty) via,
