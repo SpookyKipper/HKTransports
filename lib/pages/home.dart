@@ -74,14 +74,14 @@ class _HomeShellState extends State<HomeShell> {
                         _ToolbarDestination(
                           icon: Icons.search,
                           selectedIcon: Icons.search,
-                          label: settings.text('搜尋', 'Search'),
+                          label: settings.text('路線搜尋', 'Search'),
                           selected: _index == 1,
                           onTap: () => _selectPage(1),
                         ),
                         _ToolbarDestination(
                           icon: Icons.campaign_outlined,
                           selectedIcon: Icons.campaign,
-                          label: settings.text('快訊', 'News'),
+                          label: settings.text('交通快訊', 'News'),
                           selected: _index == 2,
                           onTap: () => _selectPage(2),
                         ),
