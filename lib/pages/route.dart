@@ -489,7 +489,7 @@ class _EtaList extends StatelessWidget {
     if (loading && visible.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
-        child: M3EProgressIndicator.linear(),
+        child: M3EProgressIndicator.linear(strokeWidth: 4, trackStrokeWidth: 4),
       );
     }
     if (visible.isEmpty) {

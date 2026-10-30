@@ -56,7 +56,11 @@ class UpdateDataPageRoute extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           if (busy) ...[
-            M3EProgressIndicator.linear(value: repository.progress),
+            M3EProgressIndicator.linear(
+              value: repository.progress,
+              strokeWidth: 4,
+              trackStrokeWidth: 4,
+            ),
             const SizedBox(height: 8),
             Text(
               repository.progress == null
