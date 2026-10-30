@@ -57,5 +57,6 @@ void main() {
 
     expect(find.text('A'), findsNothing);
     expect(find.text('E'), findsNothing);
+    expect(find.byType(GridView), findsOneWidget);
   });
 }
