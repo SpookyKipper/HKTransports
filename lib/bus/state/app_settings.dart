@@ -3,6 +3,45 @@ import 'package:hktransports/dataStore/objectbox.dart';
 
 enum EtaFormat { diff, exact, mixed }
 
+enum ProprietaryDataSource { notice, kmb, citybus }
+
+extension ProprietaryDataSourceInfo on ProprietaryDataSource {
+  String get storageKey => 'proprietary.${name}';
+
+  String label(AppSettings settings) {
+    switch (this) {
+      case ProprietaryDataSource.notice:
+        return 'notice.hkbus.app';
+      case ProprietaryDataSource.kmb:
+        return settings.text('九巴專有 API', 'KMB Proprietary API');
+      case ProprietaryDataSource.citybus:
+        return settings.text('城巴專有 API', 'Citybus Proprietary API');
+    }
+  }
+
+  String description(AppSettings settings) {
+    switch (this) {
+      case ProprietaryDataSource.notice:
+        return settings.text('HK Bus ETA 通知服務', 'HK Bus ETA notices');
+      case ProprietaryDataSource.kmb:
+        return settings.text('預留項目，尚未連線。', 'Dummy option; not connected yet.');
+      case ProprietaryDataSource.citybus:
+        return settings.text('預留項目，尚未連線。', 'Dummy option; not connected yet.');
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case ProprietaryDataSource.notice:
+        return Icons.campaign_outlined;
+      case ProprietaryDataSource.kmb:
+        return Icons.directions_bus_outlined;
+      case ProprietaryDataSource.citybus:
+        return Icons.commute_outlined;
+    }
+  }
+}
+
 enum PageTransitionStyle {
   fade,
   predictiveBack,
@@ -87,6 +126,7 @@ class AppSettings extends ChangeNotifier {
   bool _routeFilter = false;
   bool _autoRenew = true;
   int _autoUpdateHours = 24;
+  final Set<ProprietaryDataSource> _proprietarySources = {};
 
   AppThemeChoice get themeChoice => _themeChoice;
   ThemeMode get themeMode => _themeChoice.themeMode;
@@ -101,6 +141,12 @@ class AppSettings extends ChangeNotifier {
   bool get routeFilter => _routeFilter;
   bool get autoRenew => _autoRenew;
   int get autoUpdateHours => _autoUpdateHours;
+  Set<ProprietaryDataSource> get proprietarySources =>
+      Set.unmodifiable(_proprietarySources);
+  bool isProprietaryEnabled(ProprietaryDataSource source) =>
+      _proprietarySources.contains(source);
+  bool get useProprietaryNotice =>
+      isProprietaryEnabled(ProprietaryDataSource.notice);
 
   AppSettings() {
     final String? storedChoice = sp.getString('themeChoice');
@@ -135,6 +181,11 @@ class AppSettings extends ChangeNotifier {
     _routeFilter = sp.getBool('routeFilter') ?? false;
     _autoRenew = sp.getBool('autoRenew') ?? true;
     _autoUpdateHours = (sp.getInt('autoUpdateHours') ?? 24).clamp(1, 168);
+    for (final ProprietaryDataSource source in ProprietaryDataSource.values) {
+      if (sp.getBool(source.storageKey) ?? false) {
+        _proprietarySources.add(source);
+      }
+    }
   }
 
   void setThemeChoice(AppThemeChoice choice) {
@@ -201,6 +252,15 @@ class AppSettings extends ChangeNotifier {
     if (_autoUpdateHours == next) return;
     _autoUpdateHours = next;
     sp.setInt('autoUpdateHours', next);
+    notifyListeners();
+  }
+
+  void setProprietarySource(ProprietaryDataSource source, bool enabled) {
+    final bool changed = enabled
+        ? _proprietarySources.add(source)
+        : _proprietarySources.remove(source);
+    if (!changed) return;
+    sp.setBool(source.storageKey, enabled);
     notifyListeners();
   }
 

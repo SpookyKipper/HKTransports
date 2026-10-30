@@ -145,6 +145,13 @@ class SettingsPage extends StatelessWidget {
             ],
             onChanged: settings.setAutoUpdateHours,
           ),
+          ListTile(
+            leading: const Icon(Icons.hub_outlined),
+            title: Text(settings.text('專有資料', 'Proprietary data')),
+            subtitle: Text(_proprietarySummary(settings)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/proprietaryData'),
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.tune),
@@ -190,6 +197,14 @@ class SettingsPage extends StatelessWidget {
   String _autoUpdateLabel(AppSettings settings) {
     final int hours = settings.autoUpdateHours;
     return settings.text('上次更新後 $hours 小時', '$hours hours after last update');
+  }
+
+  String _proprietarySummary(AppSettings settings) {
+    final int count = settings.proprietarySources.length;
+    if (count == 0) {
+      return settings.text('未啟用任何來源', 'No sources enabled');
+    }
+    return settings.text('已啟用 $count 個來源', '$count sources enabled');
   }
 }
 

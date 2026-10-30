@@ -168,10 +168,11 @@ class _HomeContentState extends State<HomeContent>
 
     return Column(
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: NoticeBanner(),
-        ),
+        if (settings.useProprietaryNotice)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: NoticeBanner(),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
           child: Row(
