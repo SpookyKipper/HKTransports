@@ -88,7 +88,6 @@ class ProprietaryDataPage extends StatelessWidget {
                       if (value == null) return;
                       settings.setProprietarySource(source, value);
                     },
-                    secondary: Icon(source.icon),
                     title: Text(source.label(settings)),
                     subtitle: Text(source.description(settings)),
                     controlAffinity: ListTileControlAffinity.trailing,
