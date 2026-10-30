@@ -532,6 +532,12 @@ class _CompactEtaLine extends StatelessWidget {
     final Color color = first
         ? Theme.of(context).colorScheme.primary
         : Theme.of(context).colorScheme.onSurfaceVariant;
+    final TextStyle? style = first
+        ? Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          )
+        : Theme.of(context).textTheme.bodySmall?.copyWith(color: color);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -539,7 +545,7 @@ class _CompactEtaLine extends StatelessWidget {
         if (eta.isScheduledLike)
           Padding(
             padding: const EdgeInsets.only(right: 4),
-            child: Icon(Icons.schedule, size: 14, color: color),
+            child: Icon(Icons.schedule, size: first ? 16 : 14, color: color),
           ),
         Flexible(
           child: Text(
@@ -547,9 +553,7 @@ class _CompactEtaLine extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.end,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: color),
+            style: style,
           ),
         ),
       ],
