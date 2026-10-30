@@ -543,6 +543,25 @@ class _EtaLine extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           children: [
+            Tooltip(
+              message: settings.text(
+                '預計時間不準確',
+                'Estimated time may be inaccurate',
+              ),
+              child: TextButton(
+                onPressed: () =>
+                    _showDelayedEtaDialog(context, settings, parts, message),
+                style: TextButton.styleFrom(
+                  foregroundColor: color,
+                  minimumSize: const Size(28, 20),
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: const Icon(Icons.info_outline, size: 16),
+              ),
+            ),
+            const SizedBox(width: 4),
             Expanded(
               child: Text(
                 showCompany ? '$company · $message' : message,
@@ -550,20 +569,6 @@ class _EtaLine extends StatelessWidget {
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: color),
               ),
-            ),
-            const SizedBox(width: 4),
-            IconButton(
-              tooltip: settings.text(
-                '預計時間不準確',
-                'Estimated time may be inaccurate',
-              ),
-              onPressed: () =>
-                  _showDelayedEtaDialog(context, settings, parts, message),
-              icon: const Icon(Icons.info_outline, size: 18),
-              color: color,
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.all(4),
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
           ],
         ),
