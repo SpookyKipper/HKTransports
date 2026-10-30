@@ -205,6 +205,12 @@ class _GroupRoutesView extends StatefulWidget {
 
 class _GroupRoutesViewState extends State<_GroupRoutesView> {
   bool _sorting = false;
+  int _refreshVersion = 0;
+
+  Future<void> _refresh() async {
+    setState(() => _refreshVersion++);
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -246,68 +252,84 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
           ),
         ),
         Expanded(
-          child: entries.isEmpty
-              ? Center(
-                  child: Text(
-                    settings.text(
-                      '尚未收藏路線\n在路線頁面按星號即可加入。',
-                      'No saved routes yet.\nTap the star on a route to add it.',
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              : _sorting
-              ? ReorderableListView.builder(
-                  padding: const EdgeInsets.only(bottom: 112),
-                  buildDefaultDragHandles: false,
-                  itemCount: entries.length,
-                  onReorder: (oldIndex, newIndex) {
-                    final List<FavoriteEntry> reordered = [...entries];
-                    if (newIndex > oldIndex) newIndex -= 1;
-                    final FavoriteEntry entry = reordered.removeAt(oldIndex);
-                    reordered.insert(newIndex, entry);
-                    repository.setGroupEntries(widget.group.id, reordered);
-                  },
-                  itemBuilder: (context, index) {
-                    final FavoriteEntry entry = entries[index];
-                    final RouteEntry route = repository.routeByKey(
-                      entry.routeKey,
-                    )!;
-                    return _FavoriteRouteTile(
-                      key: ValueKey('${widget.group.id}-${entry.storageKey}'),
-                      route: route,
-                      seq: entry.seq,
-                      showEta: false,
-                      trailing: ReorderableDragStartListener(
-                        index: index,
-                        child: const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: Icon(Icons.drag_handle),
+          child: M3EPullToRefreshIndicator(
+            indicatorIcon: const M3EContainedLoadingIndicator(
+              width: 48,
+              height: 48,
+              padding: EdgeInsets.all(4),
+            ),
+            onRefresh: _refresh,
+            child: entries.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(24, 72, 24, 112),
+                    children: [
+                      Text(
+                        settings.text(
+                          '尚未收藏路線\n在路線頁面按星號即可加入。',
+                          'No saved routes yet.\nTap the star on a route to add it.',
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                    );
-                  },
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 112),
-                  itemCount: entries.length,
-                  separatorBuilder: (context, index) =>
-                      const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final FavoriteEntry entry = entries[index];
-                    final RouteEntry route = repository.routeByKey(
-                      entry.routeKey,
-                    )!;
-                    return _FavoriteRouteTile(
-                      route: route,
-                      seq: entry.seq,
-                      onTap: () {
-                        repository.addRecent(route);
-                        context.push('/route/${route.slug}');
-                      },
-                    );
-                  },
-                ),
+                    ],
+                  )
+                : _sorting
+                ? ReorderableListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 112),
+                    buildDefaultDragHandles: false,
+                    itemCount: entries.length,
+                    onReorder: (oldIndex, newIndex) {
+                      final List<FavoriteEntry> reordered = [...entries];
+                      if (newIndex > oldIndex) newIndex -= 1;
+                      final FavoriteEntry entry = reordered.removeAt(oldIndex);
+                      reordered.insert(newIndex, entry);
+                      repository.setGroupEntries(widget.group.id, reordered);
+                    },
+                    itemBuilder: (context, index) {
+                      final FavoriteEntry entry = entries[index];
+                      final RouteEntry route = repository.routeByKey(
+                        entry.routeKey,
+                      )!;
+                      return _FavoriteRouteTile(
+                        key: ValueKey('${widget.group.id}-${entry.storageKey}'),
+                        route: route,
+                        seq: entry.seq,
+                        showEta: false,
+                        refreshVersion: _refreshVersion,
+                        trailing: ReorderableDragStartListener(
+                          index: index,
+                          child: const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Icon(Icons.drag_handle),
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 112),
+                    itemCount: entries.length,
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final FavoriteEntry entry = entries[index];
+                      final RouteEntry route = repository.routeByKey(
+                        entry.routeKey,
+                      )!;
+                      return _FavoriteRouteTile(
+                        route: route,
+                        seq: entry.seq,
+                        refreshVersion: _refreshVersion,
+                        onTap: () {
+                          repository.addRecent(route);
+                          context.push('/route/${route.slug}');
+                        },
+                      );
+                    },
+                  ),
+          ),
         ),
       ],
     );
@@ -322,6 +344,7 @@ class _FavoriteRouteTile extends StatefulWidget {
     this.onTap,
     this.trailing,
     this.showEta = true,
+    this.refreshVersion = 0,
   });
 
   final RouteEntry route;
@@ -329,6 +352,7 @@ class _FavoriteRouteTile extends StatefulWidget {
   final VoidCallback? onTap;
   final Widget? trailing;
   final bool showEta;
+  final int refreshVersion;
 
   @override
   State<_FavoriteRouteTile> createState() => _FavoriteRouteTileState();
@@ -351,6 +375,14 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
       Duration(seconds: settings.refreshSeconds),
       (_) => _fetch(),
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant _FavoriteRouteTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshVersion != widget.refreshVersion) {
+      _fetch();
+    }
   }
 
   @override
