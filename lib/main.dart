@@ -96,10 +96,17 @@ final GoRouter _router = GoRouter(
       pageBuilder: (context, state) {
         return CustomTransitionPage<void>(
           key: state.pageKey,
-          transitionDuration: const Duration(milliseconds: 200),
-          reverseTransitionDuration: const Duration(milliseconds: 160),
+          transitionDuration: const Duration(milliseconds: 300),
+          reverseTransitionDuration: const Duration(milliseconds: 300),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
+            return const OpenUpwardsPageTransitionsBuilder()
+                .buildTransitions<void>(
+                  null,
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                );
           },
           child: NoticeViewerPage(
             url: state.uri.queryParameters['url'] ?? '',
