@@ -70,7 +70,7 @@ class CreditsPage extends StatelessWidget {
             title: settings.text('公共交通營運商', 'Public transport operators'),
             subtitle: 'KMB, Citybus, NLB, GMB, MTR',
             url:
-                'https://data.gov.hk/en-data/dataset/hk-td-tis_18-transport-routes-and-fares',
+                'https://data.gov.hk/en-data/dataset/hk-td-tis_3-routes-and-fares-of-public-transport',
           ),
           const Divider(),
           _SectionTitle(settings.text('地圖', 'Map')),
