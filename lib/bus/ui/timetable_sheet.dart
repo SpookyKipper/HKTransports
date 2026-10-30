@@ -4,6 +4,7 @@ import 'package:hktransports/bus/journey/journey_time.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/official_links.dart';
+import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:provider/provider.dart';
 
 class TimetableSheet extends StatelessWidget {
@@ -19,8 +20,11 @@ class TimetableSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
+    final bool showNotices =
+        route.companies.contains(BusCompany.kmb) ||
+        route.companies.contains(BusCompany.ctb);
     return DefaultTabController(
-      length: 2,
+      length: showNotices ? 3 : 2,
       child: SizedBox(
         height: MediaQuery.sizeOf(context).height * 0.85,
         child: Column(
@@ -31,6 +35,7 @@ class TimetableSheet extends StatelessWidget {
               tabs: [
                 Tab(text: settings.text('時間表', 'Timetable')),
                 Tab(text: settings.text('車程', 'Journey')),
+                if (showNotices) Tab(text: settings.text('通告', 'Notices')),
               ],
             ),
             Expanded(
@@ -38,6 +43,7 @@ class TimetableSheet extends StatelessWidget {
                 children: [
                   _TimetableTab(route: route),
                   _JourneyTab(route: route, initialStopIndex: initialStopIndex),
+                  if (showNotices) ProprietaryNoticesTab(route: route),
                 ],
               ),
             ),

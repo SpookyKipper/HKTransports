@@ -18,6 +18,7 @@ import 'package:hktransports/pages/homeIndexPage/home.dart';
 import 'package:hktransports/pages/homeIndexPage/traffic_news.dart';
 import 'package:hktransports/pages/search_page.dart';
 import 'package:hktransports/pages/licenses_page.dart';
+import 'package:hktransports/pages/notice_viewer_page.dart';
 import 'package:hktransports/pages/proprietary_data_page.dart';
 import 'package:hktransports/pages/route.dart';
 import 'package:hktransports/pages/settings_page.dart';
@@ -89,6 +90,15 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/proprietaryData',
       builder: (context, state) => const ProprietaryDataPage(),
+    ),
+    GoRoute(
+      path: '/notice',
+      builder: (context, state) {
+        return NoticeViewerPage(
+          url: state.uri.queryParameters['url'] ?? '',
+          title: state.uri.queryParameters['title'],
+        );
+      },
     ),
     GoRoute(path: '/credits', builder: (context, state) => const CreditsPage()),
     GoRoute(

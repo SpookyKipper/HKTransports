@@ -24,9 +24,12 @@ extension ProprietaryDataSourceInfo on ProprietaryDataSource {
       case ProprietaryDataSource.notice:
         return settings.text('HK Bus ETA 通告服務', 'HK Bus ETA notices');
       case ProprietaryDataSource.kmb:
-        return settings.text('預留項目，尚未連線。', 'Dummy option; not connected yet.');
+        return settings.text(
+          '路線最新消息及轉乘優惠',
+          'Route news and transfer discounts',
+        );
       case ProprietaryDataSource.citybus:
-        return settings.text('預留項目，尚未連線。', 'Dummy option; not connected yet.');
+        return settings.text('特別、路線及站務通告', 'Special, route and stop notices');
     }
   }
 }
