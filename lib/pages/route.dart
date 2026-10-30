@@ -187,6 +187,7 @@ class _RoutePageState extends State<_RoutePage> {
                       innerRadius: 8,
                       hoverRadius: 10,
                       pressedRadius: 4,
+                      gap: 3,
                       border: BorderSide.none,
                       elevation: 0,
                       color: Theme.of(
@@ -246,95 +247,99 @@ class _RoutePageState extends State<_RoutePage> {
     final String? platform = stop?.platformCode;
     final bool isTerminus = index == stopIds.length - 1;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 40,
-          height: 48,
-          child: Center(
-            child: Text(
-              '${index + 1}',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 40,
+            height: 48,
+            child: Center(
+              child: Text(
+                '${index + 1}',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(name),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  if (isTerminus)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        settings.text('總站', 'Terminus'),
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    if (isTerminus)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          settings.text('總站', 'Terminus'),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimaryContainer,
+                              ),
                         ),
                       ),
-                    ),
-                  if (fare != null)
-                    Text(
-                      '${settings.text('車費', 'Fare')} \$$fare',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    )
-                  else if (normalFare != null)
-                    Text(
-                      '${settings.text('車費', 'Fare')} \$$normalFare',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  if (code != null)
-                    Text(
-                      '${settings.text('站碼', 'Code')} $code',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
+                    if (fare != null)
+                      Text(
+                        '${settings.text('車費', 'Fare')} \$$fare',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      )
+                    else if (normalFare != null)
+                      Text(
+                        '${settings.text('車費', 'Fare')} \$$normalFare',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
-                    ),
-                  if (platform != null)
-                    Text(
-                      '${settings.text('月台', 'Platform')} $platform',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
+                    if (code != null)
+                      Text(
+                        '${settings.text('站碼', 'Code')} $code',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
                       ),
-                    ),
-                ],
-              ),
-            ],
+                    if (platform != null)
+                      Text(
+                        '${settings.text('月台', 'Platform')} $platform',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          tooltip: settings.text(
-            expanded ? '收起' : '展開',
-            expanded ? 'Collapse' : 'Expand',
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: settings.text(
+              expanded ? '收起' : '展開',
+              expanded ? 'Collapse' : 'Expand',
+            ),
+            onPressed: onToggle,
+            icon: AnimatedRotation(
+              turns: expanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: const Icon(Icons.expand_more),
+            ),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
-          onPressed: onToggle,
-          icon: AnimatedRotation(
-            turns: expanded ? 0.5 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: const Icon(Icons.expand_more),
-          ),
-          visualDensity: VisualDensity.compact,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
