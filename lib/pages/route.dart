@@ -198,6 +198,7 @@ class _RoutePageState extends State<_RoutePage> {
                       iconPlacement: M3EExpandableIconPlacement.right,
                       expandIcon: null,
                       collapseIcon: null,
+                      useInkWell: false,
                     ),
                     expandMotion: expandableTheme.expandMotion,
                     collapseMotion: expandableTheme.collapseMotion,
