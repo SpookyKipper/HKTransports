@@ -577,12 +577,13 @@ class _EtaLine extends StatelessWidget {
     final String via = eta.company == BusCompany.nlb
         ? eta.dest(settings.language).trim()
         : '';
-    final String suffix = [
+    final List<String> segments = [
+      parts,
       if (showCompany) company,
       if (remark.isNotEmpty) remark,
       if (eta.scheduled && remark.isEmpty) settings.text('預定班次', 'Scheduled'),
       if (via.isNotEmpty) via,
-    ].join(' · ');
+    ];
 
     final TextStyle? style = first
         ? Theme.of(context).textTheme.titleMedium?.copyWith(color: color)
@@ -590,7 +591,7 @@ class _EtaLine extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(suffix.isEmpty ? parts : '$parts  ·  $suffix', style: style),
+      child: Text(segments.join(' · '), style: style),
     );
   }
 
