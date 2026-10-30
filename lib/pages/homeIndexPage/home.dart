@@ -86,6 +86,39 @@ class _HomeContentState extends State<HomeContent>
       return const Center(child: M3ELoadingIndicator());
     }
 
+    if (!repository.hasData && repository.status == BusDataStatus.updating) {
+      final double? progress = repository.progress;
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const M3ELoadingIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                settings.text('正在下載路線資料', 'Downloading route data'),
+                textAlign: TextAlign.center,
+              ),
+              if (progress != null) ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 220,
+                  child: M3EProgressIndicator.linear(
+                    value: progress,
+                    strokeWidth: 4,
+                    trackStrokeWidth: 4,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text('${(progress * 100).round()}%'),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
     if (!repository.hasData) {
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),

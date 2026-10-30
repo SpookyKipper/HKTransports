@@ -124,11 +124,28 @@ class BusRepository extends ChangeNotifier {
 
   void startAutoUpdate() {
     _autoTimer?.cancel();
-    unawaited(autoCheckIfDue());
+    unawaited(_initialDataCheck());
     _autoTimer = Timer.periodic(
       const Duration(hours: 1),
-      (_) => unawaited(autoCheckIfDue()),
+      (_) => unawaited(_periodicDataCheck()),
     );
+  }
+
+  Future<void> _initialDataCheck() async {
+    await ensureDataAvailable();
+    await autoCheckIfDue();
+  }
+
+  Future<void> _periodicDataCheck() async {
+    await ensureDataAvailable();
+    await autoCheckIfDue();
+  }
+
+  Future<void> ensureDataAvailable() async {
+    if (_status == BusDataStatus.updating) return;
+    if (_database == null || updater.isCompletelyOutdated) {
+      await update();
+    }
   }
 
   Future<void> autoCheckIfDue() async {
