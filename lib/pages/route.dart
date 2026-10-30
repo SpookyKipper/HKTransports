@@ -504,26 +504,8 @@ class _EtaLine extends StatelessWidget {
     final String company = eta.company.label(settings.language);
 
     if (time == null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text(
-          remark,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color),
-        ),
-      );
-    }
-
-    final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
-    final String clock = DateFormat('HH:mm').format(hkTime);
-    final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
-    final bool showDelayedEta = eta.canShowDelayedEta(
-      stopIndex: stopIndex,
-      stopIndexByCode: stopIndexByCode,
-      minutes: minutes,
-    );
-    if (!showDelayedEta) {
-      final String message = remark.isEmpty
-          ? settings.text('延誤', 'Delayed')
+      final String message = eta.isDelayedJourney && remark.isNotEmpty
+          ? '$company · $remark'
           : remark;
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -533,6 +515,10 @@ class _EtaLine extends StatelessWidget {
         ),
       );
     }
+
+    final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
+    final String clock = DateFormat('HH:mm').format(hkTime);
+    final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
     final String wait = minutes < 1
         ? atOrigin
               ? settings.text('即場開出', 'Departing now')
@@ -544,11 +530,59 @@ class _EtaLine extends StatelessWidget {
       EtaFormat.exact => clock,
       EtaFormat.mixed => '$clock  $wait',
     };
+    final bool showDelayedEta = eta.canShowDelayedEta(
+      stopIndex: stopIndex,
+      stopIndexByCode: stopIndexByCode,
+      minutes: minutes,
+    );
+    if (!showDelayedEta) {
+      final String message = remark.isEmpty
+          ? settings.text('延誤', 'Delayed')
+          : remark;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                '$company · $message',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: color),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Tooltip(
+              message: settings.text(
+                '預計時間不準確',
+                'Estimated time may be inaccurate',
+              ),
+              child: TextButton.icon(
+                onPressed: () =>
+                    _showDelayedEtaDialog(context, settings, parts, message),
+                icon: const Icon(Icons.info_outline, size: 18),
+                label: Text(parts),
+                style: TextButton.styleFrom(
+                  foregroundColor: color,
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     final String via = eta.company == BusCompany.nlb
         ? eta.dest(settings.language).trim()
         : '';
     final String suffix = [
-      if (showCompany) company,
+      if (showCompany || eta.isDelayedJourney) company,
       if (remark.isNotEmpty) remark,
       if (eta.scheduled && remark.isEmpty) settings.text('預定班次', 'Scheduled'),
       if (via.isNotEmpty) via,
@@ -564,6 +598,52 @@ class _EtaLine extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Text(suffix.isEmpty ? parts : '$parts  ·  $suffix', style: style),
+    );
+  }
+
+  void _showDelayedEtaDialog(
+    BuildContext context,
+    AppSettings settings,
+    String etaText,
+    String message,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        final ThemeData theme = Theme.of(dialogContext);
+        return AlertDialog(
+          title: Text(settings.text('預計到站時間', 'Estimated arrival')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(etaText, style: theme.textTheme.headlineSmall),
+              const SizedBox(height: 12),
+              Text(
+                settings.text(
+                  '此預計時間未必準確。',
+                  'This estimated time may not be accurate.',
+                ),
+              ),
+              if (message.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(settings.text('關閉', 'Close')),
+            ),
+          ],
+        );
+      },
     );
   }
 }
