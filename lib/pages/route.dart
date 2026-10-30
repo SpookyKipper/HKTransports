@@ -126,8 +126,7 @@ class _RoutePageState extends State<_RoutePage> {
         context,
         title: route.route,
         subtitle:
-            '${settings.text('往', 'to')} ${route.dest.get(settings.language)}'
-            ' · ${settings.text('由', 'from')} ${route.orig.get(settings.language)}',
+            '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
         actions: [
           if (reverse != null)
             IconButton(
