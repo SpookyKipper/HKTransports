@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/app/display_geometry.dart';
+import 'package:hktransports/app/fade_forward_page.dart';
 import 'package:hktransports/app/m3e_scope.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
@@ -28,15 +29,13 @@ final GoRouter _router = GoRouter(
         final String slug = state.pathParameters['slug'] ?? '';
         final bool fade = state.uri.queryParameters['fade'] == '1';
         if (fade) {
-          return CustomTransitionPage<void>(
+          final PageTransitionsBuilder reverseBuilder = transitionBuilderFor(
+            context.read<AppSettings>().transitionStyle,
+          );
+          return FadeForwardPage<void>(
             key: state.pageKey,
+            reverseBuilder: reverseBuilder,
             child: RoutePageRoute(slug: slug),
-            transitionDuration: const Duration(milliseconds: 200),
-            reverseTransitionDuration: const Duration(milliseconds: 200),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
           );
         }
         return MaterialPage<void>(
