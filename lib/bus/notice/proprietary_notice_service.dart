@@ -78,11 +78,9 @@ class ProprietaryNoticeService {
           ? (titleZh.isNotEmpty ? titleZh : titleEn)
           : (titleEn.isNotEmpty ? titleEn : titleZh);
       if (title.isEmpty) continue;
-      final String reference = _string(value['kpi_referenceno']);
       notices.add(
         ProprietaryNotice(
           title: title,
-          detail: reference.isEmpty ? null : reference,
           url: _kmbAnnouncementUri(_string(value['kpi_noticeimageurl'])),
         ),
       );
