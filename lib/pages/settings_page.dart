@@ -171,19 +171,6 @@ class SettingsPage extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/credits'),
           ),
-          ListTile(
-            leading: const Icon(Icons.description_outlined),
-            title: Text(settings.text('開源授權', 'Open source licenses')),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              showLicensePage(
-                context: context,
-                applicationName: 'HKTransports',
-                applicationLegalese:
-                    'Data from DATA.GOV.HK and HK Bus Crawling.',
-              );
-            },
-          ),
         ],
       ),
     );
