@@ -513,12 +513,16 @@ class _EtaLine extends StatelessWidget {
       if (eta.scheduled && remark.isEmpty) settings.text('預定班次', 'Scheduled'),
     ].join(' · ');
 
+    final TextStyle? style = first
+        ? Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          )
+        : Theme.of(context).textTheme.bodyMedium?.copyWith(color: color);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(
-        suffix.isEmpty ? parts : '$parts  ·  $suffix',
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: color),
-      ),
+      child: Text(suffix.isEmpty ? parts : '$parts  ·  $suffix', style: style),
     );
   }
 }
