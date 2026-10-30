@@ -11,7 +11,7 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
 import 'package:hktransports/bus/ui/notice_banner.dart';
 import 'package:intl/intl.dart';
-import 'package:m3e_core/m3e_core.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 class HomeContent extends StatefulWidget {
@@ -252,12 +252,7 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
           ),
         ),
         Expanded(
-          child: M3EPullToRefreshIndicator(
-            indicatorIcon: const M3EContainedLoadingIndicator(
-              width: 48,
-              height: 48,
-              padding: EdgeInsets.all(4),
-            ),
+          child: M3ERefreshIndicator.contained(
             onRefresh: _refresh,
             child: entries.isEmpty
                 ? ListView(
@@ -420,14 +415,7 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
     Widget? trailing = widget.trailing;
     if (widget.showEta) {
       if (_loading && _etas == null) {
-        trailing = const M3ELoadingIndicator(
-          constraints: BoxConstraints(
-            minWidth: 24,
-            minHeight: 24,
-            maxWidth: 24,
-            maxHeight: 24,
-          ),
-        );
+        trailing = const M3ELoadingIndicator(size: 24);
       } else if (etas.isEmpty) {
         trailing = Text('--', style: Theme.of(context).textTheme.bodySmall);
       } else {

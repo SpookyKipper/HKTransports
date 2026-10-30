@@ -5,7 +5,7 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/pages/homeIndexPage/home.dart';
 import 'package:hktransports/pages/homeIndexPage/traffic_news.dart';
 import 'package:hktransports/pages/search_page.dart';
-import 'package:m3e_core/m3e_core.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 class HomeShell extends StatefulWidget {
@@ -66,40 +66,43 @@ class _HomeShellState extends State<HomeShell> {
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
           child: Center(
             heightFactor: 1,
-            child: M3EHorizontalFloatingToolbar(
-              expanded: true,
-              decoration: const M3EFloatingToolbarDecoration(
-                shape: StadiumBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 4,
-                ),
-                expandedShadowElevation: 0,
-                collapsedShadowElevation: 0,
-              ),
-              content: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _ToolbarDestination(
-                    icon: Icons.home_outlined,
-                    selectedIcon: Icons.home,
-                    label: settings.text('主頁', 'Home'),
-                    selected: _index == 0,
-                    onTap: () => _selectPage(0),
-                  ),
-                  _ToolbarDestination(
-                    icon: Icons.search,
-                    selectedIcon: Icons.search,
-                    label: settings.text('搜尋', 'Search'),
-                    selected: _index == 1,
-                    onTap: () => _selectPage(1),
-                  ),
-                  _ToolbarDestination(
-                    icon: Icons.campaign_outlined,
-                    selectedIcon: Icons.campaign,
-                    label: settings.text('快訊', 'News'),
-                    selected: _index == 2,
-                    onTap: () => _selectPage(2),
+            child: SizedBox(
+              height: 64,
+              child: M3EToolbar(
+                expanded: true,
+                size: M3EToolbarSize.medium,
+                elevation: 0,
+                screenOffset: 0,
+                safeArea: false,
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                actions: [
+                  M3EToolbarWidget(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _ToolbarDestination(
+                          icon: Icons.home_outlined,
+                          selectedIcon: Icons.home,
+                          label: settings.text('主頁', 'Home'),
+                          selected: _index == 0,
+                          onTap: () => _selectPage(0),
+                        ),
+                        _ToolbarDestination(
+                          icon: Icons.search,
+                          selectedIcon: Icons.search,
+                          label: settings.text('搜尋', 'Search'),
+                          selected: _index == 1,
+                          onTap: () => _selectPage(1),
+                        ),
+                        _ToolbarDestination(
+                          icon: Icons.campaign_outlined,
+                          selectedIcon: Icons.campaign,
+                          label: settings.text('快訊', 'News'),
+                          selected: _index == 2,
+                          onTap: () => _selectPage(2),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

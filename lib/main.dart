@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart' as mui;
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/app/display_geometry.dart';
@@ -99,37 +100,45 @@ class MyApp extends StatelessWidget {
     return Consumer<AppSettings>(
       builder: (context, settings, child) {
         return DynamicColorBuilder(
-          builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-            final bool purple = settings.usesPurpleTheme;
-            final ColorScheme lightScheme = purple
-                ? purpleLightScheme()
-                : lightDynamic ?? fallbackLightScheme();
-            final ColorScheme darkScheme = purple
-                ? purpleDarkScheme()
-                : darkDynamic ?? fallbackDarkScheme();
-            return MaterialApp.router(
-              debugShowCheckedModeBanner: false,
-              themeMode: settings.themeMode,
-              theme: buildAppTheme(lightScheme, settings.transitionStyle),
-              darkTheme: buildAppTheme(darkScheme, settings.transitionStyle),
-              routerConfig: _router,
-              builder: (context, child) {
-                final MediaQueryData media = MediaQuery.of(context);
-                final double systemScale = media.textScaler.scale(1);
-                return M3EScope(
-                  scheme: Theme.of(context).colorScheme,
-                  child: MediaQuery(
-                    data: media.copyWith(
-                      textScaler: TextScaler.linear(
-                        systemScale * settings.textScale,
-                      ),
-                    ),
-                    child: child ?? const SizedBox.shrink(),
+          builder:
+              (mui.ColorScheme? lightDynamic, mui.ColorScheme? darkDynamic) {
+                final bool purple = settings.usesPurpleTheme;
+                final ColorScheme lightScheme = purple
+                    ? purpleLightScheme()
+                    : lightDynamic == null
+                    ? fallbackLightScheme()
+                    : flutterSchemeFromMaterialUi(lightDynamic);
+                final ColorScheme darkScheme = purple
+                    ? purpleDarkScheme()
+                    : darkDynamic == null
+                    ? fallbackDarkScheme()
+                    : flutterSchemeFromMaterialUi(darkDynamic);
+                return MaterialApp.router(
+                  debugShowCheckedModeBanner: false,
+                  themeMode: settings.themeMode,
+                  theme: buildAppTheme(lightScheme, settings.transitionStyle),
+                  darkTheme: buildAppTheme(
+                    darkScheme,
+                    settings.transitionStyle,
                   ),
+                  routerConfig: _router,
+                  builder: (context, child) {
+                    final MediaQueryData media = MediaQuery.of(context);
+                    final double systemScale = media.textScaler.scale(1);
+                    return M3EScope(
+                      scheme: Theme.of(context).colorScheme,
+                      child: MediaQuery(
+                        data: media.copyWith(
+                          textScaler: TextScaler.linear(
+                            systemScale * settings.textScale,
+                          ),
+                        ),
+                        child: child ?? const SizedBox.shrink(),
+                      ),
+                    );
+                  },
                 );
               },
-            );
-          },
         );
       },
     );

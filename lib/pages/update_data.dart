@@ -3,7 +3,7 @@ import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:intl/intl.dart';
-import 'package:m3e_core/m3e_core.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 class UpdateDataPageRoute extends StatelessWidget {
@@ -56,7 +56,7 @@ class UpdateDataPageRoute extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           if (busy) ...[
-            M3ELinearProgressIndicator(value: repository.progress),
+            M3EProgressIndicator.linear(value: repository.progress),
             const SizedBox(height: 8),
             Text(
               repository.progress == null
