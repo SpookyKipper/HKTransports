@@ -25,13 +25,11 @@ class KmbBbiEntry {
     required this.route,
     required this.destinationZh,
     required this.destinationEn,
-    required this.discount,
   });
 
   final String route;
   final String destinationZh;
   final String destinationEn;
-  final String discount;
 
   String destination(String language) =>
       language == 'en' ? destinationEn : destinationZh;
@@ -112,7 +110,6 @@ class ProprietaryNoticeService {
           route: routeNumber,
           destinationZh: _string(value['Destination_CHI']),
           destinationEn: toProperCase(_string(value['Destination_ENG'])),
-          discount: _string(value['Discount']),
         ),
       );
     }

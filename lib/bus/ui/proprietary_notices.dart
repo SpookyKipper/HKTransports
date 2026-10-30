@@ -493,16 +493,6 @@ class _KmbBbiDialogState extends State<_KmbBbiDialog> {
                   ),
                 ),
               ),
-              SizedBox(
-                width: 64,
-                child: Text(
-                  settings.text('優惠', 'Discount'),
-                  textAlign: TextAlign.right,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
             ],
           ),
         ),
@@ -523,13 +513,6 @@ class _KmbBbiDialogState extends State<_KmbBbiDialog> {
                   children: [
                     SizedBox(width: 76, child: Text(entry.route)),
                     Expanded(child: Text(entry.destination(settings.language))),
-                    SizedBox(
-                      width: 64,
-                      child: Text(
-                        _discountLabel(entry.discount),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
                   ],
                 ),
               );
@@ -538,16 +521,6 @@ class _KmbBbiDialogState extends State<_KmbBbiDialog> {
         ),
       ],
     );
-  }
-
-  String _discountLabel(String value) {
-    final double? discount = double.tryParse(value);
-    if (discount == null) return value.isEmpty ? '—' : value;
-    if (discount <= 0) return '—';
-    final String amount = discount == discount.truncateToDouble()
-        ? discount.toStringAsFixed(0)
-        : discount.toStringAsFixed(1);
-    return '\$$amount';
   }
 }
 
