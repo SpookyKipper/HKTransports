@@ -9,6 +9,7 @@ import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
 import 'package:hktransports/bus/ui/timetable_sheet.dart';
 import 'package:intl/intl.dart';
@@ -373,7 +374,8 @@ class _RoutePageState extends State<_RoutePage> {
         Align(
           alignment: Alignment.centerRight,
           child: TextButton.icon(
-            onPressed: () => _showStopInfo(context, route, stopIds[index]),
+            onPressed: () =>
+                _showStopInfo(context, route, stopIds[index], index),
             icon: const Icon(Icons.info_outline),
             label: Text(settings.text('車站資訊', 'Stop information')),
           ),
@@ -382,14 +384,23 @@ class _RoutePageState extends State<_RoutePage> {
     );
   }
 
-  void _showStopInfo(BuildContext context, RouteEntry route, String stopId) {
+  void _showStopInfo(
+    BuildContext context,
+    RouteEntry route,
+    String stopId,
+    int stopIndex,
+  ) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
       builder: (context) {
-        return _StopInfoSheet(route: route, stopId: stopId);
+        return _StopInfoSheet(
+          route: route,
+          stopId: stopId,
+          stopIndex: stopIndex,
+        );
       },
     );
   }
@@ -686,11 +697,27 @@ class _EtaLine extends StatelessWidget {
   }
 }
 
+String? _citybusStopId(RouteEntry route, String stopId, int stopIndex) {
+  if (!route.companies.contains(BusCompany.ctb)) return null;
+  final String? citybusId = route.stopIdAt(BusCompany.ctb, stopIndex);
+  if (citybusId != null && citybusId.isNotEmpty) return citybusId;
+  final List<String>? citybusStops = route.stops[BusCompany.ctb];
+  if (citybusStops != null && citybusStops.contains(stopId)) {
+    return stopId;
+  }
+  return null;
+}
+
 class _StopInfoSheet extends StatelessWidget {
-  const _StopInfoSheet({required this.route, required this.stopId});
+  const _StopInfoSheet({
+    required this.route,
+    required this.stopId,
+    required this.stopIndex,
+  });
 
   final RouteEntry route;
   final String stopId;
+  final int stopIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -701,6 +728,7 @@ class _StopInfoSheet extends StatelessWidget {
     final List<String> physicalIds = company == null
         ? const []
         : repository.physicalStopIds(company, stopId);
+    final String? citybusStopId = _citybusStopId(route, stopId, stopIndex);
     final List<RouteStopRef> routes = [];
     final Set<String> seenRoutes = {};
     for (final String physicalId in physicalIds) {
@@ -752,6 +780,7 @@ class _StopInfoSheet extends StatelessWidget {
                 ),
               ],
             ),
+          if (citybusStopId != null) CitybusStopNotices(stopId: citybusStopId),
           const Divider(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),

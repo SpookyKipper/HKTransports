@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:hktransports/app/notice_link.dart';
 import 'package:hktransports/bus/notice/notice_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class NoticeBanner extends StatefulWidget {
   const NoticeBanner({super.key});
@@ -60,10 +60,7 @@ class _NoticeBannerState extends State<NoticeBanner> {
         ),
         onTap: link.isEmpty
             ? null
-            : () => launchUrl(
-                Uri.parse(link),
-                mode: LaunchMode.externalApplication,
-              ),
+            : () => openNotice(context, url: link, title: content.first),
       ),
     );
   }
