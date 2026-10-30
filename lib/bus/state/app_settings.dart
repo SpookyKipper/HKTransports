@@ -29,17 +29,6 @@ extension ProprietaryDataSourceInfo on ProprietaryDataSource {
         return settings.text('預留項目，尚未連線。', 'Dummy option; not connected yet.');
     }
   }
-
-  IconData get icon {
-    switch (this) {
-      case ProprietaryDataSource.notice:
-        return Icons.campaign_outlined;
-      case ProprietaryDataSource.kmb:
-        return Icons.directions_bus_outlined;
-      case ProprietaryDataSource.citybus:
-        return Icons.commute_outlined;
-    }
-  }
 }
 
 enum PageTransitionStyle {
