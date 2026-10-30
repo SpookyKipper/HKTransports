@@ -93,10 +93,18 @@ final GoRouter _router = GoRouter(
     ),
     GoRoute(
       path: '/notice',
-      builder: (context, state) {
-        return NoticeViewerPage(
-          url: state.uri.queryParameters['url'] ?? '',
-          title: state.uri.queryParameters['title'],
+      pageBuilder: (context, state) {
+        return CustomTransitionPage<void>(
+          key: state.pageKey,
+          transitionDuration: const Duration(milliseconds: 200),
+          reverseTransitionDuration: const Duration(milliseconds: 160),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          child: NoticeViewerPage(
+            url: state.uri.queryParameters['url'] ?? '',
+            title: state.uri.queryParameters['title'],
+          ),
         );
       },
     ),
