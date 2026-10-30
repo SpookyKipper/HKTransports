@@ -9,11 +9,10 @@ PreferredSizeWidget buildPageBar(
 }) {
   final ColorScheme scheme = Theme.of(context).colorScheme;
   final TextStyle titleStyle =
-      Theme.of(context).textTheme.headlineSmall?.copyWith(
-        color: scheme.onSurface,
-        fontSize: 26,
-      ) ??
-      TextStyle(color: scheme.onSurface, fontSize: 26);
+      Theme.of(
+        context,
+      ).textTheme.headlineSmall?.copyWith(color: scheme.onSurface) ??
+      TextStyle(color: scheme.onSurface, fontSize: 24);
   final TextStyle subtitleStyle =
       Theme.of(
         context,

@@ -43,6 +43,6 @@ void main() {
     expect(find.text('Test'), findsOneWidget);
     expect(find.text('Subtitle'), findsOneWidget);
     final Text title = tester.widget<Text>(find.text('Test'));
-    expect(title.style?.fontSize, 26);
+    expect(title.style?.fontSize, 24);
   });
 }
