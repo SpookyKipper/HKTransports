@@ -585,10 +585,7 @@ class _EtaLine extends StatelessWidget {
     ].join(' · ');
 
     final TextStyle? style = first
-        ? Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: color,
-            fontWeight: FontWeight.w600,
-          )
+        ? Theme.of(context).textTheme.titleMedium?.copyWith(color: color)
         : Theme.of(context).textTheme.bodyMedium?.copyWith(color: color);
 
     return Padding(
