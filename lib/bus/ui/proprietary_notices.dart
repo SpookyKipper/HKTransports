@@ -319,16 +319,48 @@ class _DisabledSourceNotice extends StatelessWidget {
   }
 }
 
-class _KmbBbiSection extends StatefulWidget {
+class _KmbBbiSection extends StatelessWidget {
   const _KmbBbiSection({required this.route});
 
   final RouteEntry route;
 
   @override
-  State<_KmbBbiSection> createState() => _KmbBbiSectionState();
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final bool jointlyOperated = route.companies.length > 1;
+    final String title = jointlyOperated
+        ? settings.text('九巴第二程路線轉乘計劃', 'KMB second-leg transfer scheme')
+        : settings.text('第二程路線轉乘計劃', 'Second-leg transfer scheme');
+
+    return Card.filled(
+      margin: const EdgeInsets.only(top: 12, bottom: 8),
+      child: ListTile(
+        leading: const Icon(Icons.alt_route),
+        title: Text(title),
+        subtitle: Text(
+          settings.text('點按查看轉乘優惠', 'Tap to view transfer discounts'),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => showDialog<void>(
+          context: context,
+          builder: (context) => _KmbBbiDialog(route: route, title: title),
+        ),
+      ),
+    );
+  }
 }
 
-class _KmbBbiSectionState extends State<_KmbBbiSection> {
+class _KmbBbiDialog extends StatefulWidget {
+  const _KmbBbiDialog({required this.route, required this.title});
+
+  final RouteEntry route;
+  final String title;
+
+  @override
+  State<_KmbBbiDialog> createState() => _KmbBbiDialogState();
+}
+
+class _KmbBbiDialogState extends State<_KmbBbiDialog> {
   List<KmbBbiEntry>? _entries;
   bool _failed = false;
 
@@ -366,139 +398,145 @@ class _KmbBbiSectionState extends State<_KmbBbiSection> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_failed && (_entries == null || _entries!.isEmpty)) {
-      return const SizedBox.shrink();
-    }
     final AppSettings settings = context.watch<AppSettings>();
-    final int count = _entries?.length ?? 0;
-    final String subtitle = _failed
-        ? settings.text('載入失敗，點按重試', 'Could not load; tap to retry')
-        : settings.text(
-            '點按查看 $count 項轉乘優惠',
-            'Tap to view $count transfer discounts',
-          );
-
-    return Card.filled(
-      margin: const EdgeInsets.only(top: 12, bottom: 8),
-      child: ListTile(
-        leading: const Icon(Icons.alt_route),
-        title: Text(settings.text('第二程路線轉乘計劃', 'Second-leg transfer scheme')),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: _entries != null && _entries!.isNotEmpty
-            ? () => _showDialog(context, _entries!)
-            : _failed
-            ? _retry
-            : null,
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      child: SizedBox(
+        width: double.maxFinite,
+        height: MediaQuery.sizeOf(context).height * 0.8,
+        child: Column(
+          children: [
+            ListTile(
+              title: Text(widget.title),
+              subtitle: Text('Data from: ${ProprietaryNoticeService.kmbHost}'),
+              trailing: IconButton(
+                tooltip: settings.text('關閉', 'Close'),
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(child: _content(context, settings)),
+          ],
+        ),
       ),
     );
   }
 
-  Future<void> _showDialog(
-    BuildContext context,
-    List<KmbBbiEntry> entries,
-  ) async {
-    final AppSettings settings = context.read<AppSettings>();
-    await showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        final ThemeData theme = Theme.of(dialogContext);
-        return Dialog(
-          insetPadding: const EdgeInsets.all(16),
-          child: SizedBox(
-            width: double.maxFinite,
-            height: MediaQuery.sizeOf(dialogContext).height * 0.8,
-            child: Column(
-              children: [
-                ListTile(
-                  title: Text(
-                    settings.text('第二程路線轉乘計劃', 'Second-leg transfer scheme'),
-                  ),
-                  subtitle: Text(
-                    settings.text(
-                      'Data from: search.kmb.hk',
-                      'Data from: search.kmb.hk',
-                    ),
-                  ),
-                  trailing: IconButton(
-                    tooltip: settings.text('關閉', 'Close'),
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ),
-                const Divider(height: 1),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 76,
-                        child: Text(
-                          settings.text('第二程路線', 'Second route'),
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          settings.text('目的地', 'Destination'),
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 64,
-                        child: Text(
-                          settings.text('優惠', 'Discount'),
-                          textAlign: TextAlign.right,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: entries.length,
-                    separatorBuilder: (context, index) =>
-                        const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final KmbBbiEntry entry = entries[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(width: 76, child: Text(entry.route)),
-                            Expanded(
-                              child: Text(entry.destination(settings.language)),
-                            ),
-                            SizedBox(
-                              width: 64,
-                              child: Text(
-                                _discountLabel(entry.discount),
-                                textAlign: TextAlign.right,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+  Widget _content(BuildContext context, AppSettings settings) {
+    if (_failed) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                settings.text('未能載入轉乘優惠', 'Could not load transfer discounts'),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: _retry,
+                child: Text(settings.text('重試', 'Retry')),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      );
+    }
+    if (_entries == null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 12),
+            Text(settings.text('正在載入', 'Loading')),
+          ],
+        ),
+      );
+    }
+    if (_entries!.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            settings.text('沒有適用路線', 'No routes applicable'),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    final ThemeData theme = Theme.of(context);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 76,
+                child: Text(
+                  settings.text('第二程路線', 'Second route'),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  settings.text('目的地', 'Destination'),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 64,
+                child: Text(
+                  settings.text('優惠', 'Discount'),
+                  textAlign: TextAlign.right,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: ListView.separated(
+            itemCount: _entries!.length,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final KmbBbiEntry entry = _entries![index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(width: 76, child: Text(entry.route)),
+                    Expanded(child: Text(entry.destination(settings.language))),
+                    SizedBox(
+                      width: 64,
+                      child: Text(
+                        _discountLabel(entry.discount),
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
