@@ -82,9 +82,16 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
     final String title = settings.text('通告', 'Notice');
     return Scaffold(
       appBar: buildPageBar(context, title: title, subtitle: widget.title),
-      body: _body(context, settings),
+      body: Column(
+        children: [
+          Expanded(child: _body(context, settings)),
+          _ViewerCredit(host: _host),
+        ],
+      ),
     );
   }
+
+  String get _host => Uri.tryParse(widget.url)?.host ?? '';
 
   Widget _body(BuildContext context, AppSettings settings) {
     if (_isPdf) {
@@ -162,6 +169,33 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ViewerCredit extends StatelessWidget {
+  const _ViewerCredit({required this.host});
+
+  final String host;
+
+  @override
+  Widget build(BuildContext context) {
+    if (host.isEmpty) return const SizedBox.shrink();
+    final ThemeData theme = Theme.of(context);
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Data from: $host',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ),
       ),
     );
