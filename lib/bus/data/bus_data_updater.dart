@@ -154,7 +154,16 @@ class BusDataUpdater {
     sp.setInt('busDb.lastCheck', DateTime.now().millisecondsSinceEpoch ~/ 1000);
   }
 
+  static const Duration completelyOutdatedAfter = Duration(days: 7);
+
   bool get _isValidSchema => storedSchema == busDataSchema;
+
+  bool get isCompletelyOutdated {
+    if (!hasData || !_isValidSchema) return true;
+    final DateTime? updated = lastUpdate;
+    if (updated == null) return true;
+    return DateTime.now().difference(updated) > completelyOutdatedAfter;
+  }
 
   Future<bool> shouldAutoCheck(int intervalHours) async {
     if (!_isValidSchema) return true;
