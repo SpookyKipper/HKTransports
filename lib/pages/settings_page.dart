@@ -43,10 +43,6 @@ class SettingsPage extends StatelessWidget {
             icon: Icons.animation,
             title: settings.text('頁面轉場', 'Page transition'),
             value: settings.transitionStyle,
-            caption: settings.text(
-              '對頭線一律使用淡入。',
-              'Direction swap always uses fade.',
-            ),
             items: [
               for (final PageTransitionStyle style
                   in PageTransitionStyle.values)
