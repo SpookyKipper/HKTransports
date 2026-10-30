@@ -154,6 +154,7 @@ class _HomeContentState extends State<HomeContent>
       );
     }
 
+    final bool homeActive = TickerMode.of(context);
     final List<FavoriteGroup> groups = repository.favoriteGroups;
     _groupIds = groups.map((group) => group.id).toList();
     _ensureTabController(groups);
@@ -215,10 +216,11 @@ class _HomeContentState extends State<HomeContent>
           child: TabBarView(
             controller: _tabController,
             children: [
-              for (final FavoriteGroup group in groups)
+              for (int index = 0; index < groups.length; index++)
                 _GroupRoutesView(
-                  key: PageStorageKey<String>(group.id),
-                  group: group,
+                  key: PageStorageKey<String>(groups[index].id),
+                  group: groups[index],
+                  active: homeActive && index == pageIndex,
                 ),
             ],
           ),
@@ -229,9 +231,14 @@ class _HomeContentState extends State<HomeContent>
 }
 
 class _GroupRoutesView extends StatefulWidget {
-  const _GroupRoutesView({super.key, required this.group});
+  const _GroupRoutesView({
+    super.key,
+    required this.group,
+    required this.active,
+  });
 
   final FavoriteGroup group;
+  final bool active;
 
   @override
   State<_GroupRoutesView> createState() => _GroupRoutesViewState();
@@ -351,6 +358,7 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
                         route: route,
                         seq: entry.seq,
                         refreshVersion: _refreshVersion,
+                        showEta: widget.active,
                         onTap: () {
                           repository.addRecent(route);
                           context.push('/route/${route.slug}');
@@ -399,19 +407,35 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
     _etaService = context.read<EtaService>();
     final AppSettings settings = context.read<AppSettings>();
     _etaService.setLanguage(settings.language);
+    if (widget.showEta) _startEtaUpdates();
+  }
+
+  @override
+  void didUpdateWidget(covariant _FavoriteRouteTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.showEta != widget.showEta) {
+      _stopEtaUpdates();
+      if (widget.showEta) _startEtaUpdates();
+      return;
+    }
+    if (widget.showEta && oldWidget.refreshVersion != widget.refreshVersion) {
+      _fetch();
+    }
+  }
+
+  void _startEtaUpdates() {
     _fetch();
+    final AppSettings settings = context.read<AppSettings>();
+    _timer?.cancel();
     _timer = Timer.periodic(
       Duration(seconds: settings.refreshSeconds),
       (_) => _fetch(),
     );
   }
 
-  @override
-  void didUpdateWidget(covariant _FavoriteRouteTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.refreshVersion != widget.refreshVersion) {
-      _fetch();
-    }
+  void _stopEtaUpdates() {
+    _timer?.cancel();
+    _timer = null;
   }
 
   @override
@@ -422,11 +446,12 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _stopEtaUpdates();
     super.dispose();
   }
 
   Future<void> _fetch() async {
+    if (!widget.showEta) return;
     final List<BusEta> etas = await _etaService.fetchRouteStop(
       widget.route,
       widget.seq,
