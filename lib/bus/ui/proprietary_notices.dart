@@ -31,7 +31,7 @@ class ProprietaryNoticesTab extends StatelessWidget {
             _AsyncNoticeSection(
               key: ValueKey<String>('kmb-${settings.language}'),
               title: settings.text('九巴路線最新消息', 'KMB route news'),
-              emptyText: settings.text('現時沒有路線最新消息', 'No route news'),
+              creditHost: ProprietaryNoticeService.kmbHost,
               errorText: settings.text(
                 '未能載入九巴路線最新消息',
                 'Could not load KMB route news',
@@ -41,8 +41,6 @@ class ProprietaryNoticesTab extends StatelessWidget {
             )
           else
             _DisabledSourceNotice(company: BusCompany.kmb),
-        if (hasKmb && kmbEnabled)
-          _CreditsLine(host: ProprietaryNoticeService.kmbHost),
         if (hasCtb)
           if (ctbEnabled)
             _CitybusNotices(route: route)
@@ -65,34 +63,46 @@ class CitybusStopNotices extends StatelessWidget {
     if (!settings.isProprietaryEnabled(ProprietaryDataSource.citybus)) {
       return const SizedBox.shrink();
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Divider(),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _AsyncNoticeSection(
-            key: ValueKey<String>('ctb-stop-$stopId-${settings.language}'),
-            title: settings.text('城巴站務通告', 'Citybus stop notices'),
-            emptyText: settings.text('現時沒有站務通告', 'No stop notices'),
-            errorText: settings.text(
-              '未能載入城巴站務通告',
-              'Could not load Citybus stop notices',
-            ),
-            loader: () => const ProprietaryNoticeService()
-                .fetchCitybusStopNotices(stopId, zh: settings.isChinese),
-          ),
-        ),
-        _CreditsLine(host: ProprietaryNoticeService.citybusHost),
-      ],
+    return _AsyncNoticeSection(
+      key: ValueKey<String>('ctb-stop-$stopId-${settings.language}'),
+      title: settings.text('城巴站務通告', 'Citybus stop notices'),
+      creditHost: ProprietaryNoticeService.citybusHost,
+      showTopDivider: true,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      errorText: settings.text(
+        '未能載入城巴站務通告',
+        'Could not load Citybus stop notices',
+      ),
+      loader: () => const ProprietaryNoticeService().fetchCitybusStopNotices(
+        stopId,
+        zh: settings.isChinese,
+      ),
     );
   }
 }
 
-class _CitybusNotices extends StatelessWidget {
+class _CitybusNotices extends StatefulWidget {
   const _CitybusNotices({required this.route});
 
   final RouteEntry route;
+
+  @override
+  State<_CitybusNotices> createState() => _CitybusNoticesState();
+}
+
+class _CitybusNoticesState extends State<_CitybusNotices> {
+  bool _specialHasNotices = false;
+  bool _routeHasNotices = false;
+
+  void _setSpecialHasNotices(bool value) {
+    if (!mounted || _specialHasNotices == value) return;
+    setState(() => _specialHasNotices = value);
+  }
+
+  void _setRouteHasNotices(bool value) {
+    if (!mounted || _routeHasNotices == value) return;
+    setState(() => _routeHasNotices = value);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,26 +113,27 @@ class _CitybusNotices extends StatelessWidget {
         _AsyncNoticeSection(
           key: ValueKey<String>('ctb-special-${settings.language}'),
           title: settings.text('城巴特別通告', 'Citybus special notices'),
-          emptyText: settings.text('現時沒有特別通告', 'No special notices'),
           errorText: settings.text(
             '未能載入城巴特別通告',
             'Could not load Citybus special notices',
           ),
+          onHasDataChanged: _setSpecialHasNotices,
           loader: () => const ProprietaryNoticeService()
-              .fetchCitybusSpecialNotices(route, zh: settings.isChinese),
+              .fetchCitybusSpecialNotices(widget.route, zh: settings.isChinese),
         ),
         _AsyncNoticeSection(
           key: ValueKey<String>('ctb-route-${settings.language}'),
           title: settings.text('城巴路線乘客通告', 'Citybus route passenger notices'),
-          emptyText: settings.text('現時沒有路線乘客通告', 'No route passenger notices'),
           errorText: settings.text(
             '未能載入城巴路線乘客通告',
             'Could not load Citybus route notices',
           ),
+          onHasDataChanged: _setRouteHasNotices,
           loader: () => const ProprietaryNoticeService()
-              .fetchCitybusRouteNotices(route, zh: settings.isChinese),
+              .fetchCitybusRouteNotices(widget.route, zh: settings.isChinese),
         ),
-        _CreditsLine(host: ProprietaryNoticeService.citybusHost),
+        if (_specialHasNotices || _routeHasNotices)
+          _CreditsLine(host: ProprietaryNoticeService.citybusHost),
       ],
     );
   }
@@ -132,15 +143,21 @@ class _AsyncNoticeSection extends StatefulWidget {
   const _AsyncNoticeSection({
     super.key,
     required this.title,
-    required this.emptyText,
     required this.errorText,
     required this.loader,
+    this.creditHost,
+    this.showTopDivider = false,
+    this.padding,
+    this.onHasDataChanged,
   });
 
   final String title;
-  final String emptyText;
   final String errorText;
   final Future<List<ProprietaryNotice>> Function() loader;
+  final String? creditHost;
+  final bool showTopDivider;
+  final EdgeInsetsGeometry? padding;
+  final ValueChanged<bool>? onHasDataChanged;
 
   @override
   State<_AsyncNoticeSection> createState() => _AsyncNoticeSectionState();
@@ -164,12 +181,14 @@ class _AsyncNoticeSectionState extends State<_AsyncNoticeSection> {
         _notices = notices;
         _failed = false;
       });
+      widget.onHasDataChanged?.call(notices.isNotEmpty);
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _notices = null;
         _failed = true;
       });
+      widget.onHasDataChanged?.call(false);
     }
   }
 
@@ -183,8 +202,11 @@ class _AsyncNoticeSectionState extends State<_AsyncNoticeSection> {
 
   @override
   Widget build(BuildContext context) {
+    if (_notices != null && _notices!.isEmpty && !_failed) {
+      return const SizedBox.shrink();
+    }
     final ThemeData theme = Theme.of(context);
-    return Column(
+    final Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
@@ -216,16 +238,21 @@ class _AsyncNoticeSectionState extends State<_AsyncNoticeSection> {
               trackStrokeWidth: 4,
             ),
           )
-        else if (_notices!.isEmpty)
-          Text(
-            widget.emptyText,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          )
-        else
+        else ...[
           for (final ProprietaryNotice notice in _notices!)
             _NoticeCard(notice: notice),
+          if (widget.creditHost != null) _CreditsLine(host: widget.creditHost!),
+        ],
+      ],
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.showTopDivider) const Divider(),
+        if (widget.padding != null)
+          Padding(padding: widget.padding!, child: content)
+        else
+          content,
       ],
     );
   }
@@ -339,21 +366,17 @@ class _KmbBbiSectionState extends State<_KmbBbiSection> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_failed && (_entries == null || _entries!.isEmpty)) {
+      return const SizedBox.shrink();
+    }
     final AppSettings settings = context.watch<AppSettings>();
     final int count = _entries?.length ?? 0;
-    final String subtitle;
-    if (_failed) {
-      subtitle = settings.text('載入失敗，點按重試', 'Could not load; tap to retry');
-    } else if (_entries == null) {
-      subtitle = settings.text('載入中', 'Loading');
-    } else if (_entries!.isEmpty) {
-      subtitle = settings.text('現時沒有轉乘優惠資料', 'No transfer discounts available');
-    } else {
-      subtitle = settings.text(
-        '點按查看 $count 項轉乘優惠',
-        'Tap to view $count transfer discounts',
-      );
-    }
+    final String subtitle = _failed
+        ? settings.text('載入失敗，點按重試', 'Could not load; tap to retry')
+        : settings.text(
+            '點按查看 $count 項轉乘優惠',
+            'Tap to view $count transfer discounts',
+          );
 
     return Card.filled(
       margin: const EdgeInsets.only(top: 12, bottom: 8),
@@ -393,8 +416,8 @@ class _KmbBbiSectionState extends State<_KmbBbiSection> {
                   ),
                   subtitle: Text(
                     settings.text(
-                      'Credits: search.kmb.hk',
-                      'Credits: search.kmb.hk',
+                      'Data from: search.kmb.hk',
+                      'Data from: search.kmb.hk',
                     ),
                   ),
                   trailing: IconButton(
@@ -471,18 +494,6 @@ class _KmbBbiSectionState extends State<_KmbBbiSection> {
                     },
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    settings.text(
-                      '轉乘優惠資料由 search.kmb.hk 提供',
-                      'Transfer discount data provided by search.kmb.hk',
-                    ),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -513,7 +524,7 @@ class _CreditsLine extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
       child: Text(
-        'Credits: $host',
+        'Data from: $host',
         style: theme.textTheme.bodySmall?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
         ),
