@@ -25,11 +25,11 @@ class RouteNumberPad extends StatelessWidget {
     final Set<String> chars = possibleChars
         .map((String value) => value.toUpperCase())
         .toSet();
-    final List<String> letters = chars
-        .where((String value) => RegExp(r'^[A-Z]$').hasMatch(value))
-        .toList()
-      ..sort();
-    final bool hasLetters = letters.isNotEmpty;
+    final List<String> letters =
+        chars
+            .where((String value) => RegExp(r'^[A-Z]$').hasMatch(value))
+            .toList()
+          ..sort();
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
@@ -42,7 +42,7 @@ class RouteNumberPad extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  flex: hasLetters ? 62 : 100,
+                  flex: 62,
                   child: _NumberPad(
                     chars: chars,
                     hasQuery: hasQuery,
@@ -53,16 +53,11 @@ class RouteNumberPad extends StatelessWidget {
                     backspaceTooltip: backspaceTooltip,
                   ),
                 ),
-                if (hasLetters) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 35,
-                    child: _LetterPad(
-                      letters: letters,
-                      onCharacter: onCharacter,
-                    ),
-                  ),
-                ],
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 35,
+                  child: _LetterPad(letters: letters, onCharacter: onCharacter),
+                ),
               ],
             ),
           ),
@@ -172,7 +167,11 @@ class _LetterPad extends StatelessWidget {
 }
 
 class _PadButton extends StatelessWidget {
-  const _PadButton({required this.onPressed, required this.child, this.tooltip});
+  const _PadButton({
+    required this.onPressed,
+    required this.child,
+    this.tooltip,
+  });
 
   final VoidCallback? onPressed;
   final Widget child;
