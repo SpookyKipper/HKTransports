@@ -1,5 +1,5 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:hktransports/app/rounded_cupertino_page_transitions_builder.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 
 const Color _fallbackSeed = Color(0xFF6750A4);
@@ -36,7 +36,7 @@ PageTransitionsBuilder transitionBuilderFor(PageTransitionStyle style) {
     case PageTransitionStyle.predictiveBackFullscreen:
       return const PredictiveBackFullscreenPageTransitionsBuilder();
     case PageTransitionStyle.cupertino:
-      return const RoundedCupertinoPageTransitionsBuilder();
+      return const CupertinoPageTransitionsBuilder();
     case PageTransitionStyle.zoom:
       return const ZoomPageTransitionsBuilder();
     case PageTransitionStyle.fadeUpwards:
