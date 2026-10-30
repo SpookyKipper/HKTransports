@@ -124,8 +124,10 @@ class _RoutePageState extends State<_RoutePage> {
     return Scaffold(
       appBar: buildPageBar(
         context,
-        title:
-            '${route.route} ${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+        title: route.route,
+        subtitle:
+            '${settings.text('往', 'to')} ${route.dest.get(settings.language)}'
+            ' · ${settings.text('由', 'from')} ${route.orig.get(settings.language)}',
         actions: [
           if (reverse != null)
             IconButton(
