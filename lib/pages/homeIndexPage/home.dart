@@ -531,10 +531,7 @@ class _CompactEtaLine extends StatelessWidget {
         ? Theme.of(context).colorScheme.primary
         : Theme.of(context).colorScheme.onSurfaceVariant;
     final TextStyle? style = first
-        ? Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: color,
-            fontWeight: FontWeight.w600,
-          )
+        ? Theme.of(context).textTheme.bodyLarge?.copyWith(color: color)
         : Theme.of(context).textTheme.bodySmall?.copyWith(color: color);
 
     return Row(
