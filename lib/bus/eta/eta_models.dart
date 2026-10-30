@@ -39,4 +39,33 @@ class BusEta {
   }
 
   bool get isScheduledLike => scheduled || isScheduledMark;
+
+  bool get isDelayedJourney {
+    final String en = remarkEn.toLowerCase();
+    return en.contains('delayed journey') ||
+        remarkZh.contains('受阻於') ||
+        remarkZh.contains('受困於');
+  }
+
+  String? get delayedFromStopCode {
+    if (!isDelayedJourney) return null;
+    final Match? match = RegExp(
+      r'\(([A-Za-z]{2}\d{3}[a-z]?)\)',
+    ).firstMatch(remarkEn.isNotEmpty ? remarkEn : remarkZh);
+    return match?.group(1)?.toUpperCase();
+  }
+
+  bool canShowDelayedEta({
+    required int stopIndex,
+    required Map<String, int> stopIndexByCode,
+    required int minutes,
+  }) {
+    if (!isDelayedJourney) return true;
+    final String? code = delayedFromStopCode;
+    final int? stuckIndex = code == null ? null : stopIndexByCode[code];
+    return stuckIndex != null &&
+        stopIndex == stuckIndex + 1 &&
+        minutes >= 0 &&
+        minutes < 5;
+  }
 }

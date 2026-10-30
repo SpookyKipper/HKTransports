@@ -307,6 +307,14 @@ class _RoutePageState extends State<_RoutePage> {
     int index,
   ) {
     final AppSettings settings = context.watch<AppSettings>();
+    final BusRepository repository = context.read<BusRepository>();
+    final Map<String, int> stopIndexByCode = {};
+    for (int i = 0; i < stopIds.length; i++) {
+      final String? code = repository.stopById(stopIds[i])?.stationCode;
+      if (code != null) {
+        stopIndexByCode.putIfAbsent(code, () => i);
+      }
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -315,6 +323,8 @@ class _RoutePageState extends State<_RoutePage> {
           etas: _etas[index],
           showCompany: route.companies.length > 1,
           atOrigin: index == 0,
+          stopIndex: index,
+          stopIndexByCode: stopIndexByCode,
         ),
         Align(
           alignment: Alignment.centerRight,
@@ -414,12 +424,16 @@ class _EtaList extends StatelessWidget {
     required this.etas,
     required this.showCompany,
     required this.atOrigin,
+    required this.stopIndex,
+    required this.stopIndexByCode,
   });
 
   final bool loading;
   final List<BusEta>? etas;
   final bool showCompany;
   final bool atOrigin;
+  final int stopIndex;
+  final Map<String, int> stopIndexByCode;
 
   @override
   Widget build(BuildContext context) {
@@ -454,6 +468,8 @@ class _EtaList extends StatelessWidget {
             first: index == 0,
             showCompany: showCompany,
             atOrigin: atOrigin,
+            stopIndex: stopIndex,
+            stopIndexByCode: stopIndexByCode,
           ),
       ],
     );
@@ -466,12 +482,16 @@ class _EtaLine extends StatelessWidget {
     required this.first,
     required this.showCompany,
     required this.atOrigin,
+    required this.stopIndex,
+    required this.stopIndexByCode,
   });
 
   final BusEta eta;
   final bool first;
   final bool showCompany;
   final bool atOrigin;
+  final int stopIndex;
+  final Map<String, int> stopIndexByCode;
 
   @override
   Widget build(BuildContext context) {
@@ -496,6 +516,23 @@ class _EtaLine extends StatelessWidget {
     final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
     final String clock = DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
+    final bool showDelayedEta = eta.canShowDelayedEta(
+      stopIndex: stopIndex,
+      stopIndexByCode: stopIndexByCode,
+      minutes: minutes,
+    );
+    if (!showDelayedEta) {
+      final String message = remark.isEmpty
+          ? settings.text('延誤', 'Delayed')
+          : remark;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          message,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color),
+        ),
+      );
+    }
     final String wait = minutes < 1
         ? atOrigin
               ? settings.text('即場開出', 'Departing now')
