@@ -1,7 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hktransports/app/app_theme.dart';
-import 'package:hktransports/app/rounded_cupertino_page_transitions_builder.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 
 void main() {
@@ -39,14 +39,14 @@ void main() {
     );
   });
 
-  test('cupertino uses the rounded hardware corner builder', () {
+  test('cupertino uses the default Cupertino builder', () {
     final ThemeData theme = buildAppTheme(
       fallbackLightScheme(),
       PageTransitionStyle.cupertino,
     );
     expect(
       theme.pageTransitionsTheme.builders[TargetPlatform.android],
-      isA<RoundedCupertinoPageTransitionsBuilder>(),
+      isA<CupertinoPageTransitionsBuilder>(),
     );
   });
 

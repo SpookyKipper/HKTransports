@@ -24,7 +24,7 @@ extension PageTransitionStyleInfo on PageTransitionStyle {
       case PageTransitionStyle.predictiveBackFullscreen:
         return zh ? '預測返回（全螢幕）' : 'Predictive back (fullscreen)';
       case PageTransitionStyle.cupertino:
-        return zh ? 'Cupertino（圓角）' : 'Cupertino (rounded)';
+        return zh ? '滑動' : 'Slide';
       case PageTransitionStyle.zoom:
         return zh ? '縮放' : 'Zoom';
       case PageTransitionStyle.fadeUpwards:

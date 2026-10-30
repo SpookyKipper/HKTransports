@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:material_ui/material_ui.dart' as mui;
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/app_theme.dart';
-import 'package:hktransports/app/display_geometry.dart';
 import 'package:hktransports/app/fade_forward_page.dart';
 import 'package:hktransports/app/m3e_scope.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
@@ -71,7 +70,6 @@ void main() async {
     await dirAppdata.create(recursive: true);
   }
   await initObjectBox();
-  await DisplayGeometry.load();
 
   final AppSettings settings = AppSettings();
   final BusRepository repository = BusRepository(settings);
