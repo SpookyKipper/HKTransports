@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -22,9 +23,10 @@ class OfficialLinks extends StatelessWidget {
       );
       if (url.isEmpty) continue;
       buttons.add(
-        TextButton.icon(
+        M3EButton.icon(
           onPressed: () =>
               launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+          style: M3EButtonStyle.text,
           icon: const Icon(Icons.open_in_new),
           label: Text(company.label(settings.language)),
         ),

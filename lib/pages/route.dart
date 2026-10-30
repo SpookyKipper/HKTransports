@@ -130,14 +130,16 @@ class _RoutePageState extends State<_RoutePage> {
             '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
         actions: [
           if (reverse != null)
-            IconButton(
+            M3EIconButton(
               tooltip: settings.text('對頭線', 'Reverse route'),
+              variant: M3EIconButtonVariant.standard,
               onPressed: () =>
                   context.pushReplacement('/route/${reverse.slug}?fade=1'),
               icon: const Icon(Icons.swap_horiz),
             ),
-          IconButton(
+          M3EIconButton(
             tooltip: settings.text('收藏', 'Favourites'),
+            variant: M3EIconButtonVariant.standard,
             onPressed: () => showRouteGroupSheet(
               context,
               route,
@@ -149,8 +151,9 @@ class _RoutePageState extends State<_RoutePage> {
                   : Icons.star_border,
             ),
           ),
-          IconButton(
+          M3EIconButton(
             tooltip: settings.text('時間表', 'Timetable'),
+            variant: M3EIconButtonVariant.standard,
             onPressed: () =>
                 _showTimetable(context, route, _expandedIndex ?? 0),
             icon: const Icon(Icons.schedule),
@@ -325,20 +328,20 @@ class _RoutePageState extends State<_RoutePage> {
             ),
           ),
           const SizedBox(width: 8),
-          IconButton(
+          M3EIconButton(
             tooltip: settings.text(
               expanded ? '收起' : '展開',
               expanded ? 'Collapse' : 'Expand',
             ),
+            variant: M3EIconButtonVariant.standard,
+            size: M3EIconButtonSize.xs,
+            inflateHitTarget: false,
             onPressed: onToggle,
             icon: AnimatedRotation(
               turns: expanded ? 0.5 : 0,
               duration: const Duration(milliseconds: 200),
               child: const Icon(Icons.expand_more),
             ),
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
         ],
       ),
@@ -373,9 +376,10 @@ class _RoutePageState extends State<_RoutePage> {
         ),
         Align(
           alignment: Alignment.centerRight,
-          child: TextButton.icon(
+          child: M3EButton.icon(
             onPressed: () =>
                 _showStopInfo(context, route, stopIds[index], index),
+            style: M3EButtonStyle.text,
             icon: const Icon(Icons.info_outline),
             label: Text(settings.text('車站資訊', 'Stop information')),
           ),
@@ -603,15 +607,14 @@ class _EtaLine extends StatelessWidget {
                 '預計時間不準確',
                 'Estimated time may be inaccurate',
               ),
-              child: TextButton(
+              child: M3EButton.text(
                 onPressed: () =>
                     _showDelayedEtaDialog(context, settings, parts, message),
-                style: TextButton.styleFrom(
+                size: M3EButtonSize.xs,
+                decoration: M3EButtonDecoration.styleFrom(
                   foregroundColor: color,
                   minimumSize: const Size(28, 20),
                   padding: EdgeInsets.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
                 ),
                 child: const Icon(Icons.info_outline, size: 16),
               ),
@@ -686,7 +689,7 @@ class _EtaLine extends StatelessWidget {
             ],
           ),
           actions: [
-            TextButton(
+            M3EButton.text(
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(settings.text('關閉', 'Close')),
             ),
@@ -757,17 +760,18 @@ class _StopInfoSheet extends StatelessWidget {
             Wrap(
               spacing: 8,
               children: [
-                TextButton.icon(
+                M3EButton.icon(
                   onPressed: () => launchUrl(
                     Uri.parse(
                       'https://www.google.com/maps/?q=${stop.lat},${stop.lng}',
                     ),
                     mode: LaunchMode.externalApplication,
                   ),
+                  style: M3EButtonStyle.text,
                   icon: const Icon(Icons.map_outlined),
                   label: Text(settings.text('地圖', 'Map')),
                 ),
-                TextButton.icon(
+                M3EButton.icon(
                   onPressed: () => launchUrl(
                     Uri.parse(
                       'https://www.google.com/maps/dir/?api=1'
@@ -775,6 +779,7 @@ class _StopInfoSheet extends StatelessWidget {
                     ),
                     mode: LaunchMode.externalApplication,
                   ),
+                  style: M3EButtonStyle.text,
                   icon: const Icon(Icons.directions_walk),
                   label: Text(settings.text('步行路線', 'Walking directions')),
                 ),

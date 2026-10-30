@@ -36,8 +36,9 @@ class _HomeShellState extends State<HomeShell> {
         context,
         title: titles[_index],
         actions: [
-          IconButton(
+          M3EIconButton(
             tooltip: settings.text('設定', 'Settings'),
+            variant: M3EIconButtonVariant.standard,
             onPressed: () => context.push('/settings'),
             icon: const Icon(Icons.settings_outlined),
           ),
@@ -74,14 +75,14 @@ class _HomeShellState extends State<HomeShell> {
                         _ToolbarDestination(
                           icon: Icons.search,
                           selectedIcon: Icons.search,
-                          label: settings.text('路線搜尋', 'Search'),
+                          label: settings.text('搜尋', 'Search'),
                           selected: _index == 1,
                           onTap: () => _selectPage(1),
                         ),
                         _ToolbarDestination(
                           icon: Icons.campaign_outlined,
                           selectedIcon: Icons.campaign,
-                          label: settings.text('交通快訊', 'News'),
+                          label: settings.text('快訊', 'News'),
                           selected: _index == 2,
                           onTap: () => _selectPage(2),
                         ),
@@ -118,24 +119,20 @@ class _ToolbarDestination extends StatelessWidget {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return Tooltip(
       message: label,
-      child: TextButton.icon(
-        onPressed: onTap,
-        icon: Icon(selected ? selectedIcon : icon),
-        label: AnimatedSize(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          child: selected ? Text(label) : const SizedBox(width: 0, height: 0),
-        ),
-        style: TextButton.styleFrom(
-          foregroundColor: selected
-              ? scheme.onSecondaryContainer
-              : scheme.onSurfaceVariant,
-          backgroundColor: selected
-              ? scheme.secondaryContainer
-              : Colors.transparent,
-          minimumSize: const Size(48, 48),
-          padding: EdgeInsets.symmetric(horizontal: selected ? 12 : 10),
-          shape: const StadiumBorder(),
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        child: M3EButton(
+          onPressed: onTap,
+          style: selected ? M3EButtonStyle.tonal : M3EButtonStyle.text,
+          size: M3EButtonSize.sm,
+          icon: Icon(selected ? selectedIcon : icon),
+          label: selected ? Text(label) : null,
+          decoration: M3EButtonDecoration.styleFrom(
+            foregroundColor: selected
+                ? scheme.onSecondaryContainer
+                : scheme.onSurfaceVariant,
+          ),
         ),
       ),
     );

@@ -145,7 +145,7 @@ class _HomeContentState extends State<HomeContent>
             ),
           ),
           const SizedBox(height: 16),
-          FilledButton.icon(
+          M3EButton.icon(
             onPressed: () => context.push('/updateData'),
             icon: const Icon(Icons.download_outlined),
             label: Text(settings.text('下載路線資料', 'Download route data')),
@@ -192,22 +192,22 @@ class _HomeContentState extends State<HomeContent>
                   ],
                 ),
               ),
-              IconButton(
+              M3EIconButton(
                 tooltip: settings.text('管理群組', 'Manage groups'),
-                color: unselectedTabColor,
+                variant: M3EIconButtonVariant.standard,
                 onPressed: () => context.push('/favoriteGroups'),
-                icon: const Icon(Icons.tune),
+                icon: Icon(Icons.tune, color: unselectedTabColor),
               ),
-              IconButton(
+              M3EIconButton(
                 tooltip: settings.text('新增群組', 'New group'),
-                color: unselectedTabColor,
+                variant: M3EIconButtonVariant.standard,
                 onPressed: () async {
                   final String? name = await promptFavoriteGroupName(context);
                   if (name != null) {
                     repository.createFavoriteGroup(name);
                   }
                 },
-                icon: const Icon(Icons.add),
+                icon: Icon(Icons.add, color: unselectedTabColor),
               ),
             ],
           ),
@@ -280,8 +280,9 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
                 ),
               ),
               if (canSort)
-                TextButton.icon(
+                M3EButton.icon(
                   onPressed: () => setState(() => _sorting = !_sorting),
+                  style: M3EButtonStyle.text,
                   icon: Icon(_sorting ? Icons.check : Icons.sort),
                   label: Text(
                     _sorting

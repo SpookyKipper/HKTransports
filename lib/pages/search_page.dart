@@ -4,6 +4,7 @@ import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/route_number_pad.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 class SearchPage extends StatefulWidget {
@@ -44,7 +45,7 @@ class _SearchPageState extends State<SearchPage> {
           ),
           const SizedBox(height: 16),
           Center(
-            child: FilledButton(
+            child: M3EButton.filled(
               onPressed: () => context.push('/updateData'),
               child: Text(settings.text('下載路線資料', 'Download route data')),
             ),
@@ -150,8 +151,9 @@ class _SearchPageState extends State<SearchPage> {
               ),
             ),
             if (_query.isNotEmpty)
-              IconButton(
+              M3EIconButton(
                 tooltip: settings.text('清除', 'Clear'),
+                variant: M3EIconButtonVariant.standard,
                 onPressed: _clearNumber,
                 icon: const Icon(Icons.close),
               ),

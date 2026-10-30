@@ -34,6 +34,12 @@ class BusDataUpdater {
     return File('${dir.path}/$_fileName.bak');
   }
 
+  Future<int> dataSizeBytes() async {
+    final File file = await dataFile();
+    if (!await file.exists()) return 0;
+    return file.length();
+  }
+
   String? get storedMd5 => sp.getString('busDb.md5');
 
   int? get lastUpdateSeconds => sp.getInt('busDb.updateTime');

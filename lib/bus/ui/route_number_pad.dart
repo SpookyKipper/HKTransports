@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 
 class RouteNumberPad extends StatelessWidget {
   const RouteNumberPad({
@@ -174,13 +175,12 @@ class _PadButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget button = SizedBox.expand(
-      child: FilledButton.tonal(
+      child: M3EButton.tonal(
         onPressed: onPressed,
-        style: FilledButton.styleFrom(
+        size: M3EButtonSize.custom(height: 48, hPadding: 0),
+        shape: M3EButtonShape.square,
+        decoration: M3EButtonDecoration.styleFrom(
           padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
           textStyle: Theme.of(context).textTheme.titleLarge,
         ),
         child: child,

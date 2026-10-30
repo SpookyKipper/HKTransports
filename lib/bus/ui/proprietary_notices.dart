@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/notice_link.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/notice/proprietary_notice_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -46,7 +47,10 @@ class ProprietaryNoticesTab extends StatelessWidget {
             _CitybusNotices(route: route)
           else
             _DisabledSourceNotice(company: BusCompany.ctb),
-        if (hasKmb && kmbEnabled) _KmbBbiSection(route: route),
+        if (hasKmb && kmbEnabled)
+          _BbiSection(company: BusCompany.kmb, route: route),
+        if (hasCtb && ctbEnabled)
+          _BbiSection(company: BusCompany.ctb, route: route),
       ],
     );
   }
@@ -225,7 +229,7 @@ class _AsyncNoticeSectionState extends State<_AsyncNoticeSection> {
               Icon(Icons.error_outline, color: theme.colorScheme.error),
               const SizedBox(width: 8),
               Expanded(child: Text(widget.errorText)),
-              TextButton(
+              M3EButton.text(
                 onPressed: _retry,
                 child: Text(
                   Provider.of<AppSettings>(
@@ -325,18 +329,19 @@ class _DisabledSourceNotice extends StatelessWidget {
   }
 }
 
-class _KmbBbiSection extends StatelessWidget {
-  const _KmbBbiSection({required this.route});
+class _BbiSection extends StatelessWidget {
+  const _BbiSection({required this.company, required this.route});
 
+  final BusCompany company;
   final RouteEntry route;
 
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
-    final bool jointlyOperated = route.companies.length > 1;
-    final String title = jointlyOperated
-        ? settings.text('九巴第二程路線轉乘計劃', 'KMB second-leg transfer scheme')
-        : settings.text('第二程路線轉乘計劃', 'Second-leg transfer scheme');
+    final bool kmb = company == BusCompany.kmb;
+    final String title = kmb
+        ? settings.text('九巴轉乘優惠', 'KMB interchange discounts')
+        : settings.text('城巴轉乘優惠', 'Citybus interchange discounts');
 
     return Card.filled(
       margin: const EdgeInsets.only(top: 12, bottom: 8),
@@ -344,30 +349,37 @@ class _KmbBbiSection extends StatelessWidget {
         leading: const Icon(Icons.alt_route),
         title: Text(title),
         subtitle: Text(
-          settings.text('點按查看轉乘優惠', 'Tap to view transfer discounts'),
+          settings.text('點按查看轉乘優惠', 'Tap to view interchange discounts'),
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => showDialog<void>(
           context: context,
-          builder: (context) => _KmbBbiDialog(route: route, title: title),
+          builder: (context) =>
+              _BbiDialog(company: company, route: route, title: title),
         ),
       ),
     );
   }
 }
 
-class _KmbBbiDialog extends StatefulWidget {
-  const _KmbBbiDialog({required this.route, required this.title});
+class _BbiDialog extends StatefulWidget {
+  const _BbiDialog({
+    required this.company,
+    required this.route,
+    required this.title,
+  });
 
+  final BusCompany company;
   final RouteEntry route;
   final String title;
 
   @override
-  State<_KmbBbiDialog> createState() => _KmbBbiDialogState();
+  State<_BbiDialog> createState() => _BbiDialogState();
 }
 
-class _KmbBbiDialogState extends State<_KmbBbiDialog> {
-  List<KmbBbiEntry>? _entries;
+class _BbiDialogState extends State<_BbiDialog> {
+  BbiLeg _leg = BbiLeg.first;
+  List<BbiEntry>? _entries;
   bool _failed = false;
 
   @override
@@ -377,21 +389,43 @@ class _KmbBbiDialogState extends State<_KmbBbiDialog> {
   }
 
   Future<void> _load() async {
+    final BbiLeg requestedLeg = _leg;
     try {
-      final List<KmbBbiEntry> entries = await const ProprietaryNoticeService()
-          .fetchKmbBbi(widget.route);
-      if (!mounted) return;
+      final AppSettings settings = context.read<AppSettings>();
+      final BbiService service = const BbiService();
+      final List<BbiEntry> entries = widget.company == BusCompany.kmb
+          ? await service.loadKmb(
+              widget.route,
+              zh: settings.isChinese,
+              leg: requestedLeg,
+            )
+          : await service.loadCitybus(
+              widget.route,
+              zh: settings.isChinese,
+              leg: requestedLeg,
+            );
+      if (!mounted || requestedLeg != _leg) return;
       setState(() {
         _entries = entries;
         _failed = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || requestedLeg != _leg) return;
       setState(() {
         _entries = null;
         _failed = true;
       });
     }
+  }
+
+  void _selectLeg(BbiLeg leg) {
+    if (_leg == leg) return;
+    setState(() {
+      _leg = leg;
+      _entries = null;
+      _failed = false;
+    });
+    _load();
   }
 
   void _retry() {
@@ -405,31 +439,54 @@ class _KmbBbiDialogState extends State<_KmbBbiDialog> {
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
+    final bool kmb = widget.company == BusCompany.kmb;
+    final String host = kmb ? BbiService.kmbHost : BbiService.citybusHost;
     return Dialog(
-      insetPadding: const EdgeInsets.all(16),
+      insetPadding: const EdgeInsets.all(12),
       child: SizedBox(
         width: double.maxFinite,
-        height: MediaQuery.sizeOf(context).height * 0.8,
+        height: MediaQuery.sizeOf(context).height * 0.85,
         child: Column(
           children: [
             ListTile(
               title: Text(widget.title),
-              subtitle: Text('Data from: ${ProprietaryNoticeService.kmbHost}'),
-              trailing: IconButton(
+              subtitle: Text('Data from: $host'),
+              trailing: M3EIconButton(
                 tooltip: settings.text('關閉', 'Close'),
+                variant: M3EIconButtonVariant.standard,
                 onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(Icons.close),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: M3ESegmentedButton<BbiLeg>(
+                segments: [
+                  M3ESegment(
+                    value: BbiLeg.first,
+                    label: settings.text('本線為首程', 'First leg'),
+                  ),
+                  M3ESegment(
+                    value: BbiLeg.second,
+                    label: settings.text('本線為次程', 'Second leg'),
+                  ),
+                ],
+                selected: {_leg},
+                showSelectedIcon: false,
+                onSelectionChanged: (Set<BbiLeg> selection) {
+                  if (selection.isNotEmpty) _selectLeg(selection.first);
+                },
+              ),
+            ),
             const Divider(height: 1),
-            Expanded(child: _content(context, settings)),
+            Expanded(child: _content(context, settings, kmb)),
           ],
         ),
       ),
     );
   }
 
-  Widget _content(BuildContext context, AppSettings settings) {
+  Widget _content(BuildContext context, AppSettings settings, bool kmb) {
     if (_failed) {
       return Center(
         child: Padding(
@@ -438,11 +495,11 @@ class _KmbBbiDialogState extends State<_KmbBbiDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                settings.text('未能載入轉乘優惠', 'Could not load transfer discounts'),
+                settings.text('未能載入轉乘資料', 'Could not load interchange data'),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              TextButton(
+              M3EButton.text(
                 onPressed: _retry,
                 child: Text(settings.text('重試', 'Retry')),
               ),
@@ -453,17 +510,27 @@ class _KmbBbiDialogState extends State<_KmbBbiDialog> {
     }
     if (_entries == null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 12),
-            Text(settings.text('正在載入', 'Loading')),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 12),
+              Text(
+                settings.text(
+                  '正在載入轉乘資料，首次使用可能需要一些時間。',
+                  'Loading interchange data. The first use may take a while.',
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }
-    if (_entries!.isEmpty) {
+    final List<BbiEntry> entries = _entries!;
+    if (entries.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -475,57 +542,175 @@ class _KmbBbiDialogState extends State<_KmbBbiDialog> {
       );
     }
 
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      itemCount: entries.length + (kmb ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == entries.length) {
+          return _KmbBbiLegend(settings: settings);
+        }
+        return _BbiCard(entry: entries[index], leg: _leg);
+      },
+    );
+  }
+}
+
+class _BbiCard extends StatelessWidget {
+  const _BbiCard({required this.entry, required this.leg});
+
+  final BbiEntry entry;
+  final BbiLeg leg;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
     final ThemeData theme = Theme.of(context);
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 76,
-                child: Text(
-                  settings.text('第二程路線', 'Second route'),
-                  style: theme.textTheme.labelLarge?.copyWith(
+    return Card.outlined(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(entry.route, style: theme.textTheme.titleMedium),
+                const SizedBox(width: 6),
+                Text(
+                  leg == BbiLeg.first
+                      ? settings.text('次程', 'Second leg')
+                      : settings.text('首程', 'First leg'),
+                  style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-              ),
-              Expanded(
-                child: Text(
-                  settings.text('目的地', 'Destination'),
-                  style: theme.textTheme.labelLarge?.copyWith(
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${settings.text('往', 'to')} ${entry.destination}',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+              ],
+            ),
+            if (entry.stop.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.directions_bus_outlined,
+                    size: 18,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(entry.stop)),
+                ],
+              ),
+            ],
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                if (entry.discount.isNotEmpty)
+                  _BbiTag(icon: Icons.payments_outlined, label: entry.discount),
+                if (entry.timeLimit.isNotEmpty)
+                  _BbiTag(icon: Icons.schedule, label: entry.timeLimit),
+                if (entry.consecutive.isNotEmpty)
+                  _BbiTag(
+                    icon: Icons.repeat,
+                    label:
+                        '${settings.text('連續', 'Consecutive')} ${entry.consecutive}',
+                  ),
+              ],
+            ),
+            if (entry.remark.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                entry.remark,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
-          ),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: ListView.separated(
-            itemCount: _entries!.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final KmbBbiEntry entry = _entries![index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+            if (entry.detail.isNotEmpty)
+              Align(
+                alignment: Alignment.centerRight,
+                child: M3EButton.text(
+                  onPressed: () => _showDetail(context, settings),
+                  child: Text(settings.text('詳情', 'Details')),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(width: 76, child: Text(entry.route)),
-                    Expanded(child: Text(entry.destination(settings.language))),
-                  ],
-                ),
-              );
-            },
-          ),
+              ),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  void _showDetail(BuildContext context, AppSettings settings) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(settings.text('詳情', 'Details')),
+        content: SingleChildScrollView(child: Text(entry.detail)),
+        actions: [
+          M3EButton.text(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(settings.text('關閉', 'Close')),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BbiTag extends StatelessWidget {
+  const _BbiTag({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Flexible(child: Text(label, style: theme.textTheme.labelMedium)),
+        ],
+      ),
+    );
+  }
+}
+
+class _KmbBbiLegend extends StatelessWidget {
+  const _KmbBbiLegend({required this.settings});
+
+  final AppSettings settings;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        settings.text(
+          '^ 30分鐘內 · # 60分鐘內 · * 90分鐘內 · @ 120分鐘內 · ! 指定路段適用',
+          '^ within 30 min · # within 60 min · * within 90 min · @ within 120 min · ! applies to specified sections',
+        ),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }
