@@ -12,7 +12,7 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
 import 'package:hktransports/bus/ui/timetable_sheet.dart';
 import 'package:intl/intl.dart';
-import 'package:m3e_core/m3e_core.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -160,44 +160,64 @@ class _RoutePageState extends State<_RoutePage> {
           _RouteHeader(route: route),
           _RouteUpdateNotice(route: route),
           Expanded(
-            child: M3EPullToRefreshIndicator(
-              indicatorIcon: const M3EContainedLoadingIndicator(
-                width: 48,
-                height: 48,
-                padding: EdgeInsets.all(4),
-              ),
+            child: M3ERefreshIndicator.contained(
               onRefresh: () async {
                 final int? index = _expandedIndex;
                 if (index != null) await _fetch(index);
               },
-              child: M3EExpandableCardList.builder(
+              child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 itemCount: stopIds.length,
-                allowMultipleExpanded: false,
-                initiallyExpanded: const {},
-                onExpansionChanged: _onExpansionChanged,
-                style: M3EExpandableStyle(
-                  outerRadius: 24,
-                  innerRadius: 8,
-                  hoverRadius: 10,
-                  pressedRadius: 4,
-                  border: BorderSide.none,
-                  elevation: 0,
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  headerPadding: const EdgeInsets.all(16),
-                  bodyPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  iconPlacement: IconPlacement.right,
-                ),
-                headerBuilder: (context, index, progress) => _buildStopHeader(
-                  context,
-                  repository,
-                  route,
-                  stopIds,
-                  index,
-                  holiday,
-                ),
-                bodyBuilder: (context, index, progress) =>
-                    _buildStopBody(context, route, stopIds, index),
+                itemBuilder: (context, index) {
+                  final bool isExpanded = _expandedIndex == index;
+                  final M3EListExpandableTheme expandableTheme = M3ETheme.of(
+                    context,
+                  ).listTheme.expandable;
+                  return M3EExpandableItem(
+                    key: ValueKey<String>(
+                      '${stopIds[index]}|'
+                      '${_etas[index]?.length ?? -1}|'
+                      '${_loading.contains(index)}',
+                    ),
+                    index: index,
+                    totalCount: stopIds.length,
+                    isExpanded: isExpanded,
+                    decoration: M3EExpandableStyle(
+                      outerRadius: 24,
+                      innerRadius: 8,
+                      hoverRadius: 10,
+                      pressedRadius: 4,
+                      border: BorderSide.none,
+                      elevation: 0,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                      headerPadding: const EdgeInsets.all(16),
+                      bodyPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      iconPlacement: M3EExpandableIconPlacement.right,
+                      expandIcon: null,
+                      collapseIcon: null,
+                    ),
+                    expandMotion: expandableTheme.expandMotion,
+                    collapseMotion: expandableTheme.collapseMotion,
+                    onToggle: () => _onExpansionChanged(index, !isExpanded),
+                    headerBuilder: (context, index, progress) =>
+                        _buildStopHeader(
+                          context,
+                          repository,
+                          route,
+                          stopIds,
+                          index,
+                          holiday,
+                          isExpanded,
+                          () => _onExpansionChanged(index, !isExpanded),
+                        ),
+                    bodyBuilder: (context, index, progress) {
+                      if (progress <= 0) return const SizedBox.shrink();
+                      return _buildStopBody(context, route, stopIds, index);
+                    },
+                  );
+                },
               ),
             ),
           ),
@@ -213,6 +233,8 @@ class _RoutePageState extends State<_RoutePage> {
     List<String> stopIds,
     int index,
     bool holiday,
+    bool expanded,
+    VoidCallback onToggle,
   ) {
     final AppSettings settings = context.watch<AppSettings>();
     final String stopId = stopIds[index];
@@ -295,6 +317,22 @@ class _RoutePageState extends State<_RoutePage> {
               ),
             ],
           ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          tooltip: settings.text(
+            expanded ? '收起' : '展開',
+            expanded ? 'Collapse' : 'Expand',
+          ),
+          onPressed: onToggle,
+          icon: AnimatedRotation(
+            turns: expanded ? 0.5 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: const Icon(Icons.expand_more),
+          ),
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         ),
       ],
     );
@@ -447,7 +485,7 @@ class _EtaList extends StatelessWidget {
     if (loading && visible.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
-        child: M3ELinearProgressIndicator(),
+        child: M3EProgressIndicator.linear(),
       );
     }
     if (visible.isEmpty) {
