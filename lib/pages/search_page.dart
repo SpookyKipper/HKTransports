@@ -107,7 +107,9 @@ class _SearchPageState extends State<SearchPage> {
                   },
                 ),
         ),
-        Padding(
+        Container(
+          width: double.infinity,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
           child: RouteNumberPad(
             possibleChars: possibleChars,
