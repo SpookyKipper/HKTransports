@@ -275,7 +275,7 @@ class _DropdownSettingState<T> extends State<_DropdownSetting<T>> {
             itemStyle: M3EDropdownItemStyle(
               outerRadius: 20,
               backgroundColor: Theme.of(context).brightness == Brightness.light
-                  ? Theme.of(context).colorScheme.surfaceContainerLowest
+                  ? Theme.of(context).colorScheme.surfaceContainerLow
                   : null,
             ),
             items: [
