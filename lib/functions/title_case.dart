@@ -84,13 +84,21 @@ final List<String> _sortedSpecialCases = [..._specialCases]
 
 final RegExp _wordPattern = RegExp(r"[A-Za-z]+(?:'[A-Za-z]+)*");
 final RegExp _codePattern = RegExp(r'([A-Za-z]{1,2})(\d{1,3})([A-Za-z])?');
+final RegExp _bbiSeparatorPattern = RegExp(
+  r'\bBBI\b[ \t]*[-\u2013\u2014][ \t]*',
+  caseSensitive: false,
+);
 
 String toProperCase(String text) {
   if (text.isEmpty) return text;
   final String protected = _protectSpecialCases(text);
   final String titled = _titleCaseWords(protected);
   final String coded = _applyCodeCase(titled);
-  return _restoreSpecialCases(coded);
+  return _normaliseBbi(_restoreSpecialCases(coded));
+}
+
+String _normaliseBbi(String text) {
+  return text.replaceAll(_bbiSeparatorPattern, 'BBI - ');
 }
 
 String _protectSpecialCases(String text) {

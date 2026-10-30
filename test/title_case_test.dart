@@ -38,10 +38,43 @@ void main() {
     expect(toProperCase('2ND'), '2nd');
   });
 
+  test('BBI separators are normalised', () {
+    expect(
+      toProperCase('FANLING STATION BBI-CHEUNG WAH ESTATE'),
+      'Fanling Station BBI - Cheung Wah Estate',
+    );
+    expect(
+      toProperCase('TAI WO HAU BBI -TAI WO HAU STATION'),
+      'Tai Wo Hau BBI - Tai Wo Hau Station',
+    );
+    expect(
+      toProperCase('TSING YI BBI - CHEUNG ON BUS TERMINUS'),
+      'Tsing Yi BBI - Cheung On Bus Terminus',
+    );
+    expect(toProperCase('TUEN MUN ROAD BBI'), 'Tuen Mun Road BBI');
+    expect(
+      toProperCase('NGAU CHI WAN BBI-NGAU CHI WAN MARKET'),
+      'Ngau Chi Wan BBI - Ngau Chi Wan Market',
+    );
+  });
+
   test('apostrophes and embedded codes are handled', () {
     expect(toProperCase("O'BRIEN ROAD"), "O'Brien Road");
     expect(toProperCase("QUEEN'S ROAD"), "Queen's Road");
     expect(toProperCase('TSING WAN (TW123)'), 'Tsing Wan (TW123)');
+  });
+
+  test('KMB BBI stop names normalise after the station code is removed', () {
+    final StopEntry stop = StopEntry.fromJson('04A05525A6AB819D', {
+      'name': {
+        'en': 'FANLING STATION BBI-CHEUNG WAH ESTATE (ND183)',
+        'zh': '粉嶺站轉車站－祥華邨 (ND183)',
+      },
+      'location': {'lat': 22.5, 'lng': 114.1},
+    });
+
+    expect(stop.stationCode, 'ND183');
+    expect(stop.displayName('en'), 'Fanling Station BBI - Cheung Wah Estate');
   });
 
   test('only KMB stops receive title casing', () {
