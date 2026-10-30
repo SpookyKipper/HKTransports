@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:provider/provider.dart';
@@ -115,14 +116,7 @@ class CreditsPage extends StatelessWidget {
               ),
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              showLicensePage(
-                context: context,
-                applicationName: 'HKTransports',
-                applicationLegalese:
-                    'Based on HK Bus ETA by Law Wai Chun and contributors. GPL-3.0-only.',
-              );
-            },
+            onTap: () => context.push('/licenses'),
           ),
         ],
       ),
