@@ -34,6 +34,11 @@ class RouteGroupSheet extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
     final List<FavoriteGroup> groups = repository.favoriteGroups;
+    final List<String> stopIds = route.primaryStops;
+    final StopEntry? stop = stopSeq >= 0 && stopSeq < stopIds.length
+        ? repository.stopById(stopIds[stopSeq])
+        : null;
+    final String stopName = stop?.displayName(settings.language) ?? '';
 
     return SizedBox(
       height: MediaQuery.sizeOf(context).height * 0.6,
@@ -44,14 +49,18 @@ class RouteGroupSheet extends StatelessWidget {
             title: Text(
               '${route.route} ${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
             ),
-            subtitle: Text(route.companiesLabel(settings.language)),
+            subtitle: Text(
+              stopName.isEmpty
+                  ? route.companiesLabel(settings.language)
+                  : '$stopName · ${route.companiesLabel(settings.language)}',
+            ),
             leading: const Icon(Icons.star_outline),
           ),
           const Divider(),
           for (final FavoriteGroup group in groups)
             ListTile(
               leading: Checkbox(
-                value: repository.isRouteInGroup(group.id, route.key),
+                value: repository.isEntryInGroup(group.id, route.key, stopSeq),
                 onChanged: (_) => repository.toggleRouteInGroup(
                   group.id,
                   route.key,
@@ -61,8 +70,8 @@ class RouteGroupSheet extends StatelessWidget {
               title: Text(group.name),
               subtitle: Text(
                 settings.text(
-                  '${repository.routesInGroup(group).length} 條路線',
-                  '${repository.routesInGroup(group).length} routes',
+                  '${repository.entriesInGroup(group).length} 個收藏',
+                  '${repository.entriesInGroup(group).length} favourites',
                 ),
               ),
               trailing: group.isDefault

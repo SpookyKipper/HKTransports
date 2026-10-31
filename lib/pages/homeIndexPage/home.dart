@@ -274,8 +274,8 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
               Expanded(
                 child: Text(
                   settings.text(
-                    '${entries.length} 條路線',
-                    '${entries.length} routes',
+                    '${entries.length} 個收藏',
+                    '${entries.length} favourites',
                   ),
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
@@ -304,8 +304,8 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
                     children: [
                       Text(
                         settings.text(
-                          '尚未收藏路線\n在路線頁面按星號即可加入。',
-                          'No saved routes yet.\nTap the star on a route to add it.',
+                          '尚未收藏車站\n在路線頁面的車站按星號即可加入。',
+                          'No saved stops yet.\nTap the star on a stop to add it.',
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -363,7 +363,15 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
                         showEta: widget.active,
                         onTap: () {
                           repository.addRecent(route);
-                          context.push('/route/${route.slug}');
+                          final List<String> stops = route.primaryStops;
+                          final String? stopId =
+                              entry.seq >= 0 && entry.seq < stops.length
+                              ? stops[entry.seq]
+                              : null;
+                          final String stopQuery = stopId == null
+                              ? ''
+                              : '?stop=${Uri.encodeQueryComponent(stopId)}';
+                          context.push('/route/${route.slug}$stopQuery');
                         },
                       );
                     },
@@ -468,6 +476,11 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
+    final BusRepository repository = context.watch<BusRepository>();
+    final List<String> stopIds = widget.route.primaryStops;
+    final StopEntry? stop = widget.seq >= 0 && widget.seq < stopIds.length
+        ? repository.stopById(stopIds[widget.seq])
+        : null;
     final List<BusEta> etas = (_etas ?? const [])
         .where((eta) => eta.eta != null)
         .take(3)
@@ -521,7 +534,7 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
                     '${settings.text('往', 'to')} ${widget.route.dest.get(settings.language)}',
                   ),
                   Text(
-                    '${widget.route.orig.get(settings.language)} · ${widget.route.companiesLabel(settings.language)}',
+                    '${stop?.displayName(settings.language) ?? widget.route.orig.get(settings.language)} · ${widget.route.companiesLabel(settings.language)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
