@@ -258,7 +258,7 @@ class RouteMapState extends State<RouteMap> {
             'symbol-placement': 'line',
             'symbol-spacing': 50.0,
             'icon-image': _arrowImageName,
-            'icon-size': 0.65,
+            'icon-size': 0.3,
             'icon-rotate': 90.0,
             'icon-allow-overlap': true,
             'icon-ignore-placement': true,
