@@ -62,3 +62,26 @@ ThemeData buildAppTheme(
     ),
   );
 }
+
+/// Exposes both theme variants so surfaces that should keep their light-mode
+/// palette can resolve it even while the app is in dark mode.
+class AppColorSchemes extends InheritedWidget {
+  const AppColorSchemes({
+    super.key,
+    required this.light,
+    required this.dark,
+    required super.child,
+  });
+
+  final ColorScheme light;
+  final ColorScheme dark;
+
+  static ColorScheme? lightOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<AppColorSchemes>()?.light;
+  }
+
+  @override
+  bool updateShouldNotify(AppColorSchemes oldWidget) {
+    return light != oldWidget.light || dark != oldWidget.dark;
+  }
+}
