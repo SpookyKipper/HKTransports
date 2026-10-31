@@ -456,6 +456,8 @@ class _BbiDialogState extends State<_BbiDialog> {
     final String host = kmb ? BbiService.kmbHost : BbiService.citybusHost;
     return Dialog(
       insetPadding: const EdgeInsets.all(12),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: SizedBox(
         width: double.maxFinite,
         height: MediaQuery.sizeOf(context).height * 0.85,
