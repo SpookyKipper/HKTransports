@@ -243,10 +243,7 @@ class _AsyncNoticeSectionState extends State<_AsyncNoticeSection> {
         else if (_notices == null)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
-            child: M3EProgressIndicator.linear(
-              strokeWidth: 4,
-              trackStrokeWidth: 4,
-            ),
+            child: Center(child: M3ELoadingIndicator(size: 24)),
           )
         else ...[
           for (final ProprietaryNotice notice in _notices!)

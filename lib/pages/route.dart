@@ -525,7 +525,7 @@ class _EtaList extends StatelessWidget {
     if (loading && visible.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
-        child: M3EProgressIndicator.linear(strokeWidth: 4, trackStrokeWidth: 4),
+        child: Center(child: M3ELoadingIndicator(size: 24)),
       );
     }
     if (visible.isEmpty) {
