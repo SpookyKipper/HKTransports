@@ -32,9 +32,8 @@ Source code for the original project: [github.com/hkbus/hk-independent-bus-eta](
 
 ### Map data
 
-- [OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
-- [TomTom](https://www.tomtom.com/legal/en_gb/product-attributions/)
-- [MapTiler](https://www.maptiler.com/)
+- [Lands Department](https://api.portal.hkmapservice.gov.hk/disclaimer)
+- [GeoData Hong Kong](https://geodata.gov.hk)
 
 ### License
 

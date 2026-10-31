@@ -11,6 +11,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
+import 'package:hktransports/bus/ui/route_map.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
 import 'package:hktransports/bus/ui/timetable_sheet.dart';
 import 'package:intl/intl.dart';
@@ -51,6 +52,8 @@ class _RoutePageState extends State<_RoutePage> {
   late final EtaService _etaService;
   final Map<int, List<BusEta>?> _etas = {};
   final Set<int> _loading = {};
+  final GlobalKey<RouteMapState> _mapKey = GlobalKey<RouteMapState>();
+  final Map<int, GlobalKey> _stationKeys = {};
   Timer? _timer;
   int? _expandedIndex;
 
@@ -102,6 +105,7 @@ class _RoutePageState extends State<_RoutePage> {
     if (expanded) {
       setState(() => _expandedIndex = index);
       _startRefresh(index);
+      _mapKey.currentState?.focusStation(index);
     } else {
       setState(() {
         _expandedIndex = null;
@@ -109,6 +113,27 @@ class _RoutePageState extends State<_RoutePage> {
       });
       _timer?.cancel();
     }
+  }
+
+  void _onMapStationTap(int index) {
+    if (_expandedIndex != index) {
+      _onExpansionChanged(index, true);
+    } else {
+      _mapKey.currentState?.focusStation(index);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>.delayed(const Duration(milliseconds: 300), () {
+        if (!mounted) return;
+        final BuildContext? stationContext =
+            _stationKeys[index]?.currentContext;
+        if (stationContext == null) return;
+        Scrollable.ensureVisible(
+          stationContext,
+          duration: const Duration(milliseconds: 300),
+          alignment: 0,
+        );
+      });
+    });
   }
 
   @override
@@ -122,6 +147,13 @@ class _RoutePageState extends State<_RoutePage> {
       repository.database?.holidays ?? const [],
       hkNow(),
     );
+    final List<RouteMapStation> mapStations = [];
+    for (int index = 0; index < stopIds.length; index++) {
+      final StopEntry? stop = repository.stopById(stopIds[index]);
+      if (stop != null) {
+        mapStations.add(RouteMapStation(index: index, stop: stop));
+      }
+    }
 
     final RouteEntry? reverse = repository.findReverse(route);
     return Scaffold(
@@ -164,7 +196,35 @@ class _RoutePageState extends State<_RoutePage> {
       ),
       body: Column(
         children: [
-          _RouteHeader(route: route),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: RouteMap(
+              key: _mapKey,
+              stations: mapStations,
+              onStationTap: _onMapStationTap,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 6, 20, 8),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 2,
+              children: [
+                Text(
+                  '${settings.text('由', 'from')} ${route.orig.get(settings.language)}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  route.companiesLabel(settings.language),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
           _RouteUpdateNotice(route: route),
           Expanded(
             child: M3ERefreshIndicator.contained(
@@ -174,57 +234,61 @@ class _RoutePageState extends State<_RoutePage> {
               },
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                cacheExtent: 12000,
                 itemCount: stopIds.length,
                 itemBuilder: (context, index) {
                   final bool isExpanded = _expandedIndex == index;
                   final M3EListExpandableTheme expandableTheme = M3ETheme.of(
                     context,
                   ).listTheme.expandable;
-                  return M3EExpandableItem(
-                    key: ValueKey<String>(
-                      '${stopIds[index]}|'
-                      '${_etas[index]?.length ?? -1}|'
-                      '${_loading.contains(index)}',
-                    ),
-                    index: index,
-                    totalCount: stopIds.length,
-                    isExpanded: isExpanded,
-                    decoration: M3EExpandableStyle(
-                      outerRadius: 24,
-                      innerRadius: 8,
-                      hoverRadius: 24,
-                      pressedRadius: 24,
-                      gap: 3,
-                      elevation: 0,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      headerPadding: const EdgeInsets.all(16),
-                      bodyPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      iconPlacement: M3EExpandableIconPlacement.right,
-                      expandIcon: null,
-                      collapseIcon: null,
-                      useInkWell: false,
-                    ),
-                    expandMotion: expandableTheme.expandMotion,
-                    collapseMotion: expandableTheme.collapseMotion,
-                    onToggle: () => _onExpansionChanged(index, !isExpanded),
-                    headerBuilder: (context, index, progress) =>
-                        _buildStopHeader(
+                  return KeyedSubtree(
+                    key: _stationKeys.putIfAbsent(index, () => GlobalKey()),
+                    child: M3EExpandableItem(
+                      key: ValueKey<String>(
+                        '${stopIds[index]}|'
+                        '${_etas[index]?.length ?? -1}|'
+                        '${_loading.contains(index)}',
+                      ),
+                      index: index,
+                      totalCount: stopIds.length,
+                      isExpanded: isExpanded,
+                      decoration: M3EExpandableStyle(
+                        outerRadius: 24,
+                        innerRadius: 8,
+                        hoverRadius: 24,
+                        pressedRadius: 24,
+                        gap: 3,
+                        elevation: 0,
+                        color: Theme.of(
                           context,
-                          repository,
-                          route,
-                          stopIds,
-                          index,
-                          holiday,
-                          isExpanded,
-                          pinned,
-                          () => _onExpansionChanged(index, !isExpanded),
-                        ),
-                    bodyBuilder: (context, index, progress) {
-                      if (progress <= 0) return const SizedBox.shrink();
-                      return _buildStopBody(context, route, stopIds, index);
-                    },
+                        ).colorScheme.surfaceContainerHighest,
+                        headerPadding: const EdgeInsets.all(16),
+                        bodyPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        iconPlacement: M3EExpandableIconPlacement.right,
+                        expandIcon: null,
+                        collapseIcon: null,
+                        useInkWell: false,
+                      ),
+                      expandMotion: expandableTheme.expandMotion,
+                      collapseMotion: expandableTheme.collapseMotion,
+                      onToggle: () => _onExpansionChanged(index, !isExpanded),
+                      headerBuilder: (context, index, progress) =>
+                          _buildStopHeader(
+                            context,
+                            repository,
+                            route,
+                            stopIds,
+                            index,
+                            holiday,
+                            isExpanded,
+                            pinned,
+                            () => _onExpansionChanged(index, !isExpanded),
+                          ),
+                      bodyBuilder: (context, index, progress) {
+                        if (progress <= 0) return const SizedBox.shrink();
+                        return _buildStopBody(context, route, stopIds, index);
+                      },
+                    ),
                   );
                 },
               ),
@@ -437,61 +501,6 @@ class _RoutePageState extends State<_RoutePage> {
       builder: (context) {
         return TimetableSheet(route: route, initialStopIndex: stopIndex);
       },
-    );
-  }
-}
-
-class _RouteHeader extends StatelessWidget {
-  const _RouteHeader({required this.route});
-
-  final RouteEntry route;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppSettings settings = context.watch<AppSettings>();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: SizedBox(
-        width: double.infinity,
-        child: Card.filled(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(24)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  route.route,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                Text(
-                  '${settings.text('由', 'from')} ${route.orig.get(settings.language)}',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  route.companiesLabel(settings.language),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                if (route.jt != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    '${settings.text('全程約', 'About')} ${route.jt} ${settings.text('分鐘', 'minutes')}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
