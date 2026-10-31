@@ -65,6 +65,7 @@ final GoRouter _router = GoRouter(
       path: '/route/:slug',
       pageBuilder: (context, state) {
         final String slug = state.pathParameters['slug'] ?? '';
+        final String? stopId = state.uri.queryParameters['stop'];
         final bool fade = state.uri.queryParameters['fade'] == '1';
         if (fade) {
           final PageTransitionsBuilder reverseBuilder = transitionBuilderFor(
@@ -73,12 +74,12 @@ final GoRouter _router = GoRouter(
           return FadeForwardPage<void>(
             key: state.pageKey,
             reverseBuilder: reverseBuilder,
-            child: RoutePageRoute(slug: slug),
+            child: RoutePageRoute(slug: slug, initialStopId: stopId),
           );
         }
         return MaterialPage<void>(
           key: state.pageKey,
-          child: RoutePageRoute(slug: slug),
+          child: RoutePageRoute(slug: slug, initialStopId: stopId),
         );
       },
     ),

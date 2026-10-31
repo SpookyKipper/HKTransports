@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/page_bar.dart';
@@ -20,9 +21,10 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class RoutePageRoute extends StatelessWidget {
-  const RoutePageRoute({super.key, required this.slug});
+  const RoutePageRoute({super.key, required this.slug, this.initialStopId});
 
   final String slug;
+  final String? initialStopId;
 
   @override
   Widget build(BuildContext context) {
@@ -35,14 +37,19 @@ class RoutePageRoute extends StatelessWidget {
         body: Center(child: Text(settings.text('找不到路線', 'Route not found'))),
       );
     }
-    return _RoutePage(key: ValueKey(route.key), route: route);
+    return _RoutePage(
+      key: ValueKey(route.key),
+      route: route,
+      initialStopId: initialStopId,
+    );
   }
 }
 
 class _RoutePage extends StatefulWidget {
-  const _RoutePage({super.key, required this.route});
+  const _RoutePage({super.key, required this.route, this.initialStopId});
 
   final RouteEntry route;
+  final String? initialStopId;
 
   @override
   State<_RoutePage> createState() => _RoutePageState();
@@ -65,6 +72,18 @@ class _RoutePageState extends State<_RoutePage> {
     super.initState();
     final AppSettings settings = context.read<AppSettings>();
     _etaService = EtaService(language: settings.language);
+    final int initialIndex = widget.route.primaryStops.indexOf(
+      widget.initialStopId ?? '',
+    );
+    if (initialIndex >= 0) {
+      _expandedIndex = initialIndex;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _startRefresh(initialIndex);
+        _mapKey.currentState?.focusStation(initialIndex);
+        _scrollToStation(initialIndex);
+      });
+    }
   }
 
   @override
@@ -124,6 +143,10 @@ class _RoutePageState extends State<_RoutePage> {
     } else {
       _mapKey.currentState?.focusStation(index);
     }
+    _scrollToStation(index);
+  }
+
+  void _scrollToStation(int index) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future<void>.delayed(const Duration(milliseconds: 300), () {
         if (!mounted) return;
@@ -137,6 +160,81 @@ class _RoutePageState extends State<_RoutePage> {
         );
       });
     });
+  }
+
+  String? _correspondingStopId(
+    RouteEntry current,
+    RouteEntry reverse,
+    int selectedIndex,
+    BusRepository repository,
+  ) {
+    final List<String> currentStops = current.primaryStops;
+    final List<String> reverseStops = reverse.primaryStops;
+    if (selectedIndex < 0 || selectedIndex >= currentStops.length) {
+      return null;
+    }
+    final String selectedId = currentStops[selectedIndex];
+    if (reverseStops.contains(selectedId)) return selectedId;
+
+    final StopEntry? selected = repository.stopById(selectedId);
+    if (selected == null || reverseStops.isEmpty) return null;
+
+    final List<StopRef>? physical = repository.database?.stopMap[selectedId];
+    if (physical != null) {
+      final Set<String> physicalIds = <String>{
+        selectedId,
+        for (final StopRef ref in physical) ref.stopId,
+      };
+      for (final String stopId in reverseStops) {
+        if (physicalIds.contains(stopId)) return stopId;
+      }
+    }
+
+    final List<String> named = [
+      for (final String stopId in reverseStops)
+        if (_sameStopName(selected, repository.stopById(stopId))) stopId,
+    ];
+    final String? namedStop = _nearestStop(selected, named, repository);
+    if (namedStop != null) return namedStop;
+
+    return _nearestStop(selected, reverseStops, repository, maxMeters: 400);
+  }
+
+  bool _sameStopName(StopEntry current, StopEntry? other) {
+    if (other == null) return false;
+    String normalize(String value) =>
+        value.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+    return normalize(current.displayEn) == normalize(other.displayEn) ||
+        normalize(current.displayZh) == normalize(other.displayZh);
+  }
+
+  String? _nearestStop(
+    StopEntry selected,
+    Iterable<String> stopIds,
+    BusRepository repository, {
+    double? maxMeters,
+  }) {
+    String? nearestId;
+    double nearestDistance = double.infinity;
+    for (final String stopId in stopIds) {
+      final StopEntry? stop = repository.stopById(stopId);
+      if (stop == null) continue;
+      final double distance = _distanceMeters(selected, stop);
+      if (maxMeters != null && distance > maxMeters) continue;
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestId = stopId;
+      }
+    }
+    return nearestId;
+  }
+
+  double _distanceMeters(StopEntry a, StopEntry b) {
+    const double metersPerDegree = 111320;
+    final double midLat = (a.lat + b.lat) / 2 * math.pi / 180;
+    final double dy = (a.lat - b.lat) * metersPerDegree;
+    final double dx = (a.lng - b.lng) * metersPerDegree * math.cos(midLat);
+    return math.sqrt(dx * dx + dy * dy);
   }
 
   @override
@@ -170,8 +268,22 @@ class _RoutePageState extends State<_RoutePage> {
             M3EIconButton(
               tooltip: settings.text('對頭線', 'Reverse route'),
               variant: M3EIconButtonVariant.standard,
-              onPressed: () =>
-                  context.pushReplacement('/route/${reverse.slug}?fade=1'),
+              onPressed: () {
+                final String? stopId = _expandedIndex == null
+                    ? null
+                    : _correspondingStopId(
+                        route,
+                        reverse,
+                        _expandedIndex!,
+                        repository,
+                      );
+                final String stopQuery = stopId == null
+                    ? ''
+                    : '&stop=${Uri.encodeQueryComponent(stopId)}';
+                context.pushReplacement(
+                  '/route/${reverse.slug}?fade=1$stopQuery',
+                );
+              },
               icon: const Icon(Icons.swap_horiz),
             ),
           M3EIconButton(
