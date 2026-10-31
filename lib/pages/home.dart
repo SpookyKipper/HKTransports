@@ -117,7 +117,7 @@ class _ToolbarDestination extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Tooltip(
+    return M3ETooltip(
       message: label,
       child: TextButton.icon(
         onPressed: onTap,

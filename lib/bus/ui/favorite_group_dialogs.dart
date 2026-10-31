@@ -9,37 +9,36 @@ Future<String?> promptFavoriteGroupName(
 }) async {
   final AppSettings settings = context.read<AppSettings>();
   String value = initial ?? '';
-  final String? result = await showDialog<String>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text(
-          initial == null
-              ? settings.text('新增群組', 'New group')
-              : settings.text('重新命名群組', 'Rename group'),
-        ),
-        content: TextFormField(
-          initialValue: initial ?? '',
-          autofocus: true,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(
-            hintText: settings.text('群組名稱', 'Group name'),
-          ),
-          onChanged: (text) => value = text,
-          onFieldSubmitted: (text) => Navigator.pop(context, text),
-        ),
-        actions: [
-          M3EButton.text(
-            onPressed: () => Navigator.pop(context),
-            child: Text(settings.text('取消', 'Cancel')),
-          ),
-          M3EButton.text(
-            onPressed: () => Navigator.pop(context, value),
-            child: Text(settings.text('確定', 'OK')),
-          ),
-        ],
-      );
-    },
+  final TextEditingController controller = TextEditingController(
+    text: initial ?? '',
   );
+  final String? result = await M3EDialog.show<String>(
+    context,
+    autofocusFirst: false,
+    dialog: M3EDialog(
+      title: initial == null
+          ? settings.text('新增群組', 'New group')
+          : settings.text('重新命名群組', 'Rename group'),
+      content: M3ETextField(
+        controller: controller,
+        label: settings.text('群組名稱', 'Group name'),
+        autofocus: true,
+        textCapitalization: TextCapitalization.sentences,
+        onChanged: (text) => value = text,
+        onSubmitted: (text) => Navigator.pop(context, text),
+      ),
+      actions: [
+        M3EButton.text(
+          onPressed: () => Navigator.pop(context),
+          child: Text(settings.text('取消', 'Cancel')),
+        ),
+        M3EButton.text(
+          onPressed: () => Navigator.pop(context, value),
+          child: Text(settings.text('確定', 'OK')),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
   return result;
 }

@@ -613,11 +613,9 @@ class _RoutePageState extends State<_RoutePage> {
     String stopId,
     int stopIndex,
   ) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
+    M3EBottomSheet.show<void>(
+      context,
+      initialValue: M3EBottomSheetValue.expanded,
       builder: (context) {
         return _StopInfoSheet(
           route: route,
@@ -629,11 +627,9 @@ class _RoutePageState extends State<_RoutePage> {
   }
 
   void _showTimetable(BuildContext context, RouteEntry route, int stopIndex) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
+    M3EBottomSheet.show<void>(
+      context,
+      initialValue: M3EBottomSheetValue.expanded,
       builder: (context) {
         return TimetableSheet(route: route, initialStopIndex: stopIndex);
       },
@@ -830,7 +826,7 @@ class _EtaLine extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           children: [
-            Tooltip(
+            M3ETooltip(
               message: settings.text(
                 '預計時間不準確',
                 'Estimated time may be inaccurate',
@@ -887,43 +883,41 @@ class _EtaLine extends StatelessWidget {
     String etaText,
     String message,
   ) {
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        final ThemeData theme = Theme.of(dialogContext);
-        return AlertDialog(
-          title: Text(settings.text('預計到站時間', 'Estimated arrival')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(etaText, style: theme.textTheme.headlineSmall),
-              const SizedBox(height: 12),
+    final ThemeData theme = Theme.of(context);
+    M3EDialog.show<void>(
+      context,
+      dialog: M3EDialog(
+        title: settings.text('預計到站時間', 'Estimated arrival'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(etaText, style: theme.textTheme.headlineSmall),
+            const SizedBox(height: 12),
+            Text(
+              settings.text(
+                '此預計時間未必準確。',
+                'This estimated time may not be accurate.',
+              ),
+            ),
+            if (message.isNotEmpty) ...[
+              const SizedBox(height: 8),
               Text(
-                settings.text(
-                  '此預計時間未必準確。',
-                  'This estimated time may not be accurate.',
+                message,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              if (message.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  message,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
             ],
-          ),
-          actions: [
-            M3EButton.text(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(settings.text('關閉', 'Close')),
-            ),
           ],
-        );
-      },
+        ),
+        actions: [
+          M3EButton.text(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(settings.text('關閉', 'Close')),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -973,16 +967,14 @@ class _StopInfoSheet extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          ListTile(
-            title: Text(stop?.displayName(settings.language) ?? stopId),
-            subtitle: Text(
-              [
-                if (stop?.stationCode != null)
-                  '${settings.text('站碼', 'Code')} ${stop!.stationCode}',
-                if (stop?.platformCode != null)
-                  '${settings.text('月台', 'Platform')} ${stop!.platformCode}',
-              ].join('  '),
-            ),
+          M3EListItem(
+            headline: stop?.displayName(settings.language) ?? stopId,
+            supportingText: [
+              if (stop?.stationCode != null)
+                '${settings.text('站碼', 'Code')} ${stop!.stationCode}',
+              if (stop?.platformCode != null)
+                '${settings.text('月台', 'Platform')} ${stop!.platformCode}',
+            ].join('  '),
           ),
           if (stop != null)
             Wrap(
@@ -1014,7 +1006,7 @@ class _StopInfoSheet extends StatelessWidget {
               ],
             ),
           if (citybusStopId != null) CitybusStopNotices(stopId: citybusStopId),
-          const Divider(),
+          const M3EDivider(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
@@ -1029,13 +1021,11 @@ class _StopInfoSheet extends StatelessWidget {
             )
           else
             for (final RouteStopRef ref in routes)
-              ListTile(
-                title: Text(
-                  '${ref.route.route} ${settings.text('往', 'to')} ${ref.route.dest.get(settings.language)}',
-                ),
-                subtitle: Text(
-                  '${ref.route.orig.get(settings.language)} · ${ref.route.companiesLabel(settings.language)}',
-                ),
+              M3EListItem(
+                headline:
+                    '${ref.route.route} ${settings.text('往', 'to')} ${ref.route.dest.get(settings.language)}',
+                supportingText:
+                    '${ref.route.orig.get(settings.language)} · ${ref.route.companiesLabel(settings.language)}',
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.pop(context);
@@ -1090,25 +1080,21 @@ class _RouteUpdateNoticeState extends State<_RouteUpdateNotice> {
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: Card.filled(
-        child: ListTile(
-          leading: const Icon(Icons.sync),
-          title: Text(settings.text('有較新的路線資料', 'Newer route data available')),
-          subtitle: Text(settings.text('點按更新', 'Tap to update')),
-          onTap: () async {
-            final bool updated = await repository.update(force: true);
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  updated
-                      ? settings.text('資料已更新', 'Data updated')
-                      : settings.text('更新失敗', 'Update failed'),
-                ),
-              ),
-            );
-          },
-        ),
+      child: M3EListItem(
+        variant: M3ECardVariant.filled,
+        leading: const Icon(Icons.sync),
+        headline: settings.text('有較新的路線資料', 'Newer route data available'),
+        supportingText: settings.text('點按更新', 'Tap to update'),
+        onTap: () async {
+          final bool updated = await repository.update(force: true);
+          if (!context.mounted) return;
+          M3ESnackbar.show(
+            context,
+            message: updated
+                ? settings.text('資料已更新', 'Data updated')
+                : settings.text('更新失敗', 'Update failed'),
+          );
+        },
       ),
     );
   }

@@ -187,6 +187,6 @@ class _PadButton extends StatelessWidget {
       ),
     );
     if (tooltip == null) return button;
-    return Tooltip(message: tooltip!, child: button);
+    return M3ETooltip(message: tooltip!, child: button);
   }
 }
