@@ -41,6 +41,16 @@ class BbiService {
   static const String citybusHost = 'www.citybus.com.hk';
   static const Duration _timeout = Duration(minutes: 3);
   static final Map<String, List<BbiEntry>> _kmbCache = {};
+  static const List<String> _allKmbFiles = [
+    'BBI_routeF1.js',
+    'BBI_routeF2.js',
+    'BBI_routeB1.js',
+    'BBI_routeB2.js',
+    'en.BBI_routeF1.js',
+    'en.BBI_routeF2.js',
+    'en.BBI_routeB1.js',
+    'en.BBI_routeB2.js',
+  ];
 
   Future<List<BbiEntry>> loadKmb(
     RouteEntry route, {
@@ -137,6 +147,31 @@ class BbiService {
     return entries;
   }
 
+  Future<bool> refreshAll({
+    void Function(int completed, int total)? onProgress,
+  }) async {
+    bool ok = true;
+    for (int index = 0; index < _allKmbFiles.length; index++) {
+      try {
+        await _ensureKmbFile(_allKmbFiles[index], force: true);
+      } catch (_) {
+        ok = false;
+      }
+      onProgress?.call(index + 1, _allKmbFiles.length);
+    }
+    _kmbCache.clear();
+    return ok;
+  }
+
+  Future<void> clearCache() async {
+    _kmbCache.clear();
+    final Directory dir = await _kmbDirectory();
+    if (!await dir.exists()) return;
+    await for (final FileSystemEntity entity in dir.list()) {
+      if (entity is File) await entity.delete();
+    }
+  }
+
   Future<int> storedBytes() async {
     final Directory dir = await _kmbDirectory();
     if (!await dir.exists()) return 0;
@@ -163,10 +198,12 @@ class BbiService {
     return dir;
   }
 
-  Future<File> _ensureKmbFile(String name) async {
+  Future<File> _ensureKmbFile(String name, {bool force = false}) async {
     final Directory dir = await _kmbDirectory();
     final File file = File('${dir.path}/$name');
-    if (await file.exists() && await file.length() > 1000) return file;
+    if (!force && await file.exists() && await file.length() > 1000) {
+      return file;
+    }
     final Uri uri = Uri.https(kmbHost, '/storage/$name');
     final http.Response response = await http.get(uri).timeout(_timeout);
     if (response.statusCode != 200) {
