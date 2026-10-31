@@ -39,6 +39,7 @@ class CreditsPage extends StatelessWidget {
             subtitle: settings.text('原網站', 'Original website'),
             url: 'https://hkbus.app',
           ),
+          const M3EDivider(),
           _SectionTitle(settings.text('資料來源', 'Data sources')),
           _LinkTile(
             icon: Icons.data_object,
@@ -72,6 +73,7 @@ class CreditsPage extends StatelessWidget {
             url:
                 'https://data.gov.hk/en-data/dataset/hk-td-tis_3-routes-and-fares-of-public-transport',
           ),
+          const M3EDivider(),
           _SectionTitle(settings.text('地圖', 'Map')),
           _LinkTile(
             icon: Icons.map_outlined,
@@ -88,6 +90,7 @@ class CreditsPage extends StatelessWidget {
             subtitle: settings.text('地圖標籤', 'Map labels'),
             url: 'https://portal.csdi.gov.hk',
           ),
+          const M3EDivider(),
           _SectionTitle(settings.text('其他', 'Other')),
           _LinkTile(
             icon: Icons.traffic_outlined,

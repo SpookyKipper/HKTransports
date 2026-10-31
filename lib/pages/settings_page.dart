@@ -167,6 +167,7 @@ class SettingsPage extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/proprietaryData'),
           ),
+          const M3EDivider(),
           M3EListItem(
             leading: const Icon(Icons.tune),
             headline: settings.text('管理收藏群組', 'Manage favourite groups'),
