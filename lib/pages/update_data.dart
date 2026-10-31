@@ -57,7 +57,8 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     }
 
     final AppSettings latestSettings = context.read<AppSettings>();
-    if (!latestSettings.isProprietaryEnabled(ProprietaryDataSource.kmb)) {
+    if (downloadAgain ||
+        !latestSettings.isProprietaryEnabled(ProprietaryDataSource.kmb)) {
       await _loadSizes();
       if (!mounted) return;
       _showMessage(
