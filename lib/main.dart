@@ -10,6 +10,8 @@ import 'package:hktransports/app/m3e_scope.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/state/pinned_stops.dart';
+import 'package:hktransports/bus/ui/pinned_stops_bar.dart';
 import 'package:hktransports/objectBox/store.dart';
 import 'package:hktransports/pages/credits_page.dart';
 import 'package:hktransports/pages/favorite_groups_page.dart';
@@ -150,6 +152,9 @@ void main() async {
         Provider<EtaService>(
           create: (_) => EtaService(language: settings.language),
         ),
+        ChangeNotifierProvider<PinnedStopsController>(
+          create: (_) => PinnedStopsController(),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -198,7 +203,9 @@ class MyApp extends StatelessWidget {
                             systemScale * settings.textScale,
                           ),
                         ),
-                        child: child ?? const SizedBox.shrink(),
+                        child: PinnedStopsHost(
+                          child: child ?? const SizedBox.shrink(),
+                        ),
                       ),
                     );
                   },

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hktransports/bus/state/pinned_stops.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:provider/provider.dart';
 
 PreferredSizeWidget buildPageBar(
   BuildContext context, {
@@ -8,6 +10,10 @@ PreferredSizeWidget buildPageBar(
   List<Widget>? actions,
 }) {
   final ColorScheme scheme = Theme.of(context).colorScheme;
+  final bool hasPinnedStops = context
+      .watch<PinnedStopsController>()
+      .stations
+      .isNotEmpty;
   final TextStyle titleStyle =
       Theme.of(
         context,
@@ -39,6 +45,7 @@ PreferredSizeWidget buildPageBar(
           )
         : null,
     automaticallyImplyLeading: false,
+    safeArea: !hasPinnedStops,
     centerTitle: false,
     variant: M3EAppBarVariant.small,
     hideOnScroll: false,
