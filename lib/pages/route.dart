@@ -262,9 +262,10 @@ class _RoutePageState extends State<_RoutePage> {
       appBar: buildPageBar(
         context,
         title: route.route,
-        titleTrailing: route.isSpecial
-            ? _RouteSpecialTag(label: settings.text('特別班', 'Special'))
-            : null,
+        titleTrailing: _RouteTitleMeta(
+          company: route.companiesLabel(settings.language),
+          special: route.isSpecial ? settings.text('特別班', 'Special') : null,
+        ),
         subtitle:
             '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
         actions: [
@@ -636,6 +637,38 @@ class _RoutePageState extends State<_RoutePage> {
       builder: (context) {
         return TimetableSheet(route: route, initialStopIndex: stopIndex);
       },
+    );
+  }
+}
+
+class _RouteTitleMeta extends StatelessWidget {
+  const _RouteTitleMeta({required this.company, this.special});
+
+  final String company;
+  final String? special;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (company.isNotEmpty)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 140),
+            child: Text(
+              company,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        if (company.isNotEmpty && special != null) const SizedBox(width: 8),
+        if (special != null) _RouteSpecialTag(label: special!),
+      ],
     );
   }
 }
