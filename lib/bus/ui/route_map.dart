@@ -104,7 +104,7 @@ class RouteMapState extends State<RouteMap> {
     await _updateStationSource();
     if (!mounted || !identical(_mapController, controller)) return;
     await controller.fitBounds(
-      bounds: _boundsAround(station.stop.lat, station.stop.lng, 0.004),
+      bounds: _boundsAround(station.stop.lat, station.stop.lng, 0.0035),
       padding: const EdgeInsets.all(24),
       nativeDuration: const Duration(milliseconds: 900),
       webMaxDuration: const Duration(milliseconds: 900),
