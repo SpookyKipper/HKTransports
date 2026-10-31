@@ -58,6 +58,7 @@ class RouteMapState extends State<RouteMap>
   MapController? _mapController;
   StyleController? _styleController;
   Future<String>? _styleFuture;
+  Future<String>? _mapFuture;
   Future<Map<String, dynamic>?>? _waypointsFuture;
   bool? _isChinese;
   bool _layersReady = false;
@@ -105,6 +106,7 @@ class RouteMapState extends State<RouteMap>
     _styleController = null;
     _mapController = null;
     _styleFuture = _loadStyle(zh);
+    _mapFuture = _prepareMap(_styleFuture!);
   }
 
   @override
@@ -194,6 +196,22 @@ class RouteMapState extends State<RouteMap>
     _selectedIndex = stations[nearestIndex].index;
     unawaited(_updateStationSource());
     widget.onStationTap(stations[nearestIndex].index);
+  }
+
+  Future<String> _prepareMap(Future<String> styleFuture) async {
+    final String style = await styleFuture;
+    await _waypointsFuture;
+    return style;
+  }
+
+  bool get _stationsReady {
+    final int expected = widget.route.primaryStops.length;
+    return expected > 0 &&
+        widget.stations.length == expected &&
+        widget.stations.every(
+          (RouteMapStation station) =>
+              _validCoordinate(station.stop.lat, station.stop.lng),
+        );
   }
 
   Future<void> _onStyleLoaded(StyleController style) async {
@@ -540,8 +558,10 @@ class RouteMapState extends State<RouteMap>
   void _retryStyle() {
     final bool zh = _isChinese ?? true;
     _styleCache.remove(zh ? 'tc' : 'en');
+    final Future<String> styleFuture = _loadStyle(zh);
     setState(() {
-      _styleFuture = _loadStyle(zh);
+      _styleFuture = styleFuture;
+      _mapFuture = _prepareMap(styleFuture);
     });
   }
 
@@ -549,7 +569,7 @@ class RouteMapState extends State<RouteMap>
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     context.watch<AppSettings>();
-    final Future<String>? styleFuture = _styleFuture;
+    final Future<String>? styleFuture = _mapFuture;
     return SizedBox(
       height: 256,
       child: ClipRRect(
@@ -590,7 +610,7 @@ class RouteMapState extends State<RouteMap>
               );
             }
             final String? style = snapshot.data;
-            if (style == null) {
+            if (style == null || !_stationsReady) {
               return ColoredBox(
                 color: theme.colorScheme.surfaceContainerHigh,
                 child: const Center(child: M3ELoadingIndicator()),
