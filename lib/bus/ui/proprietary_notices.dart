@@ -378,11 +378,19 @@ class _BbiDialogState extends State<_BbiDialog> {
   BbiLeg _leg = BbiLeg.first;
   List<BbiEntry>? _entries;
   bool _failed = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -475,6 +483,40 @@ class _BbiDialogState extends State<_BbiDialog> {
                 },
               ),
             ),
+            if (!_failed && _entries != null && _entries!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (String value) => setState(() => _query = value),
+                  decoration: InputDecoration(
+                    hintText: settings.text('搜尋轉乘路線', 'Search transfer routes'),
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _query.isEmpty
+                        ? null
+                        : M3EIconButton(
+                            tooltip: settings.text('清除', 'Clear'),
+                            variant: M3EIconButtonVariant.standard,
+                            size: M3EIconButtonSize.xs,
+                            inflateHitTarget: false,
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _query = '');
+                            },
+                            icon: const Icon(Icons.close),
+                          ),
+                    filled: true,
+                    fillColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHigh,
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
             const Divider(height: 1),
             Expanded(child: _content(context, settings)),
           ],
@@ -526,13 +568,23 @@ class _BbiDialogState extends State<_BbiDialog> {
         ),
       );
     }
-    final List<BbiEntry> entries = _entries!;
+    final List<BbiEntry> allEntries = _entries!;
+    final String query = _query.trim().toLowerCase();
+    final List<BbiEntry> entries = query.isEmpty
+        ? allEntries
+        : allEntries.where((BbiEntry entry) {
+            return entry.route.toLowerCase().contains(query) ||
+                entry.destination.toLowerCase().contains(query) ||
+                entry.stop.toLowerCase().contains(query);
+          }).toList();
     if (entries.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            settings.text('沒有適用路線', 'No routes applicable'),
+            query.isEmpty
+                ? settings.text('沒有適用路線', 'No routes applicable')
+                : settings.text('沒有符合的轉乘路線', 'No matching transfer routes'),
             textAlign: TextAlign.center,
           ),
         ),
