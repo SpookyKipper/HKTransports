@@ -39,17 +39,19 @@ class SettingsPage extends StatelessWidget {
             ],
             onChanged: settings.setThemeChoice,
           ),
-          SwitchListTile(
-            secondary: const Icon(Icons.brightness_4_outlined),
-            title: Text(settings.text('在深色模式下調暗地圖', 'Dim map in dark mode')),
-            subtitle: Text(
-              settings.text(
-                '降低地圖亮度，減少夜間眩光',
-                'Reduce map brightness for less glare at night',
-              ),
+          M3EListItem(
+            leading: const Icon(Icons.brightness_4_outlined),
+            headline: settings.text('在深色模式下調暗地圖', 'Dim map in dark mode'),
+            supportingText: settings.text(
+              '降低地圖亮度，減少夜間眩光',
+              'Reduce map brightness for less glare at night',
             ),
-            value: settings.dimMapInDarkMode,
-            onChanged: settings.setDimMapInDarkMode,
+            trailing: M3ESwitch(
+              value: settings.dimMapInDarkMode,
+              onChanged: settings.setDimMapInDarkMode,
+            ),
+            onTap: () =>
+                settings.setDimMapInDarkMode(!settings.dimMapInDarkMode),
           ),
           _DropdownSetting<PageTransitionStyle>(
             icon: Icons.animation,
@@ -118,25 +120,30 @@ class SettingsPage extends StatelessWidget {
             ),
             footer: '${settings.refreshSeconds}s',
           ),
-          SwitchListTile(
-            secondary: const Icon(Icons.filter_alt_outlined),
-            title: Text(
-              settings.text('只顯示現時服務的路線', 'Only show routes running now'),
+          M3EListItem(
+            leading: const Icon(Icons.filter_alt_outlined),
+            headline: settings.text(
+              '只顯示現時服務的路線',
+              'Only show routes running now',
             ),
-            value: settings.routeFilter,
-            onChanged: settings.setRouteFilter,
+            trailing: M3ESwitch(
+              value: settings.routeFilter,
+              onChanged: settings.setRouteFilter,
+            ),
+            onTap: () => settings.setRouteFilter(!settings.routeFilter),
           ),
-          SwitchListTile(
-            secondary: const Icon(Icons.sync),
-            title: Text(settings.text('自動更新路線資料', 'Auto update route data')),
-            subtitle: Text(
-              settings.text(
-                '按下方間隔檢查更新',
-                'Checks for updates at the interval below',
-              ),
+          M3EListItem(
+            leading: const Icon(Icons.sync),
+            headline: settings.text('自動更新路線資料', 'Auto update route data'),
+            supportingText: settings.text(
+              '按下方間隔檢查更新',
+              'Checks for updates at the interval below',
             ),
-            value: settings.autoRenew,
-            onChanged: settings.setAutoRenew,
+            trailing: M3ESwitch(
+              value: settings.autoRenew,
+              onChanged: settings.setAutoRenew,
+            ),
+            onTap: () => settings.setAutoRenew(!settings.autoRenew),
           ),
           _DropdownSetting<int>(
             icon: Icons.timer_outlined,
@@ -153,35 +160,37 @@ class SettingsPage extends StatelessWidget {
             ],
             onChanged: settings.setAutoUpdateHours,
           ),
-          ListTile(
+          M3EListItem(
             leading: const Icon(Icons.hub_outlined),
-            title: Text(settings.text('專有資料', 'Proprietary data')),
-            subtitle: Text(_proprietarySummary(settings)),
+            headline: settings.text('專有資料', 'Proprietary data'),
+            supportingText: _proprietarySummary(settings),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/proprietaryData'),
           ),
-          const Divider(),
-          ListTile(
+          const M3EDivider(),
+          M3EListItem(
             leading: const Icon(Icons.tune),
-            title: Text(settings.text('管理收藏群組', 'Manage favourite groups')),
-            subtitle: Text(settings.text('排序及編輯群組', 'Reorder and edit groups')),
+            headline: settings.text('管理收藏群組', 'Manage favourite groups'),
+            supportingText: settings.text('排序及編輯群組', 'Reorder and edit groups'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/favoriteGroups'),
           ),
-          ListTile(
+          M3EListItem(
             leading: const Icon(Icons.storage_outlined),
-            title: Text(settings.text('路線及車站資料', 'Route and stop data')),
-            subtitle: Text(
-              settings.text('下載、更新或重新整理', 'Download, update or refresh'),
+            headline: settings.text('路線及車站資料', 'Route and stop data'),
+            supportingText: settings.text(
+              '下載、更新或重新整理',
+              'Download, update or refresh',
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/updateData'),
           ),
-          ListTile(
+          M3EListItem(
             leading: const Icon(Icons.info_outline),
-            title: Text(settings.text('鳴謝', 'Credits')),
-            subtitle: Text(
-              settings.text('資料來源與開源項目', 'Data sources and open source'),
+            headline: settings.text('鳴謝', 'Credits'),
+            supportingText: settings.text(
+              '資料來源與開源項目',
+              'Data sources and open source',
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/credits'),

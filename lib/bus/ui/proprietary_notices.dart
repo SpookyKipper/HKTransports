@@ -255,7 +255,7 @@ class _AsyncNoticeSectionState extends State<_AsyncNoticeSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.showTopDivider) const Divider(),
+        if (widget.showTopDivider) const M3EDivider(),
         if (widget.padding != null)
           Padding(padding: widget.padding!, child: content)
         else
@@ -277,12 +277,12 @@ class _NoticeCard extends StatelessWidget {
       if (notice.detail != null) notice.detail!,
     ];
     final Uri? url = notice.url;
-    return Card.filled(
-      margin: const EdgeInsets.only(bottom: 8),
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        title: Text(notice.title),
-        subtitle: meta.isEmpty ? null : Text(meta.join(' · ')),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: M3EListItem(
+        variant: M3ECardVariant.filled,
+        headline: notice.title,
+        supportingText: meta.isEmpty ? null : meta.join(' · '),
         trailing: url == null ? null : const Icon(Icons.open_in_new),
         onTap: url == null
             ? null
@@ -303,24 +303,24 @@ class _DisabledSourceNotice extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
     final String name = company.label(settings.language);
     final bool kmb = company == BusCompany.kmb;
-    return Card.filled(
-      margin: const EdgeInsets.only(top: 12),
-      child: ListTile(
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: M3EListItem(
+        variant: M3ECardVariant.filled,
         leading: const Icon(Icons.lock_outline),
-        title: Text(
-          settings.text('$name通告未顯示', '$name notices are not displayed'),
+        headline: settings.text(
+          '$name通告未顯示',
+          '$name notices are not displayed',
         ),
-        subtitle: Text(
-          kmb
-              ? settings.text(
-                  '九巴專有資料來源尚未啟用。如需查看，請在「設定」→「專有資料」中啟用。',
-                  'The KMB proprietary source is not enabled. Enable it in Settings → Proprietary data to view these notices.',
-                )
-              : settings.text(
-                  '城巴專有資料來源尚未啟用。如需查看，請在「設定」→「專有資料」中啟用。',
-                  'The Citybus proprietary source is not enabled. Enable it in Settings → Proprietary data to view these notices.',
-                ),
-        ),
+        supportingText: kmb
+            ? settings.text(
+                '九巴專有資料來源尚未啟用。如需查看，請在「設定」→「專有資料」中啟用。',
+                'The KMB proprietary source is not enabled. Enable it in Settings → Proprietary data to view these notices.',
+              )
+            : settings.text(
+                '城巴專有資料來源尚未啟用。如需查看，請在「設定」→「專有資料」中啟用。',
+                'The Citybus proprietary source is not enabled. Enable it in Settings → Proprietary data to view these notices.',
+              ),
       ),
     );
   }
@@ -340,13 +340,15 @@ class _BbiSection extends StatelessWidget {
         ? settings.text('九巴轉乘優惠', 'KMB interchange discounts')
         : settings.text('城巴轉乘優惠', 'Citybus interchange discounts');
 
-    return Card.filled(
-      margin: const EdgeInsets.only(top: 12, bottom: 8),
-      child: ListTile(
+    return Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 8),
+      child: M3EListItem(
+        variant: M3ECardVariant.filled,
         leading: const Icon(Icons.alt_route),
-        title: Text(title),
-        subtitle: Text(
-          settings.text('點按查看轉乘優惠', 'Tap to view interchange discounts'),
+        headline: title,
+        supportingText: settings.text(
+          '點按查看轉乘優惠',
+          'Tap to view interchange discounts',
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => showDialog<void>(
@@ -465,9 +467,9 @@ class _BbiDialogState extends State<_BbiDialog> {
         height: MediaQuery.sizeOf(context).height * 0.85,
         child: Column(
           children: [
-            ListTile(
-              title: Text(widget.title),
-              subtitle: Text('Data from: $host'),
+            M3EListItem(
+              headline: widget.title,
+              supportingText: 'Data from: $host',
               trailing: M3EIconButton(
                 tooltip: settings.text('關閉', 'Close'),
                 variant: M3EIconButtonVariant.standard,
@@ -498,7 +500,7 @@ class _BbiDialogState extends State<_BbiDialog> {
             if (!_failed && _entries != null && _entries!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: SearchBar(
+                child: M3ESearchBar(
                   controller: _searchController,
                   leading: const Icon(Icons.search),
                   hintText: settings.text('搜尋轉乘路線', 'Search transfer routes'),
@@ -507,15 +509,16 @@ class _BbiDialogState extends State<_BbiDialog> {
                   shadowColor: const WidgetStatePropertyAll(Colors.transparent),
                   trailing: [
                     if (_query.isNotEmpty)
-                      IconButton(
+                      M3EIconButton(
                         tooltip: settings.text('清除', 'Clear'),
+                        variant: M3EIconButtonVariant.standard,
                         onPressed: _searchController.clear,
                         icon: const Icon(Icons.close),
                       ),
                   ],
                 ),
               ),
-            const Divider(height: 1),
+            const M3EDivider(),
             Expanded(child: _content(context, settings)),
           ],
         ),
@@ -606,95 +609,101 @@ class _BbiCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final ThemeData theme = Theme.of(context);
-    return Card.filled(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(entry.route, style: theme.textTheme.titleMedium),
-                const SizedBox(width: 6),
-                Text(
-                  leg == BbiLeg.first
-                      ? settings.text('次程', 'Second leg')
-                      : settings.text('首程', 'First leg'),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${settings.text('往', 'to')} ${entry.destination}',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-              ],
-            ),
-            if (entry.stop.isNotEmpty) ...[
-              const SizedBox(height: 8),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: M3ECard(
+        variant: M3ECardVariant.filled,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.directions_bus_outlined,
-                    size: 18,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                  Text(entry.route, style: theme.textTheme.titleMedium),
                   const SizedBox(width: 6),
-                  Expanded(child: Text(entry.stop)),
+                  Text(
+                    leg == BbiLeg.first
+                        ? settings.text('次程', 'Second leg')
+                        : settings.text('首程', 'First leg'),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${settings.text('往', 'to')} ${entry.destination}',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                  ),
                 ],
               ),
-            ],
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                if (entry.discount.isNotEmpty)
-                  _BbiTag(icon: Icons.payments_outlined, label: entry.discount),
-                if (entry.timeLimit.isNotEmpty)
-                  _BbiTag(icon: Icons.schedule, label: entry.timeLimit),
-                if (entry.consecutive.isNotEmpty)
-                  _BbiTag(
-                    icon: Icons.repeat,
-                    label:
-                        '${settings.text('連續', 'Consecutive')} ${entry.consecutive}',
-                  ),
+              if (entry.stop.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.directions_bus_outlined,
+                      size: 18,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(entry.stop)),
+                  ],
+                ),
               ],
-            ),
-            if (entry.remark.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text(
-                entry.remark,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  if (entry.discount.isNotEmpty)
+                    _BbiTag(
+                      icon: Icons.payments_outlined,
+                      label: entry.discount,
+                    ),
+                  if (entry.timeLimit.isNotEmpty)
+                    _BbiTag(icon: Icons.schedule, label: entry.timeLimit),
+                  if (entry.consecutive.isNotEmpty)
+                    _BbiTag(
+                      icon: Icons.repeat,
+                      label:
+                          '${settings.text('連續', 'Consecutive')} ${entry.consecutive}',
+                    ),
+                ],
               ),
+              if (entry.remark.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  entry.remark,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              if (entry.detail.isNotEmpty)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: M3EButton.text(
+                    onPressed: () => _showDetail(context, settings),
+                    child: Text(settings.text('詳情', 'Details')),
+                  ),
+                ),
             ],
-            if (entry.detail.isNotEmpty)
-              Align(
-                alignment: Alignment.centerRight,
-                child: M3EButton.text(
-                  onPressed: () => _showDetail(context, settings),
-                  child: Text(settings.text('詳情', 'Details')),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   void _showDetail(BuildContext context, AppSettings settings) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(settings.text('詳情', 'Details')),
+    M3EDialog.show<void>(
+      context,
+      dialog: M3EDialog(
+        title: settings.text('詳情', 'Details'),
         content: SingleChildScrollView(child: Text(entry.detail)),
         actions: [
           M3EButton.text(
