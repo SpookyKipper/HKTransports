@@ -88,7 +88,7 @@ class RouteMapState extends State<RouteMap> {
         LatLng(station.stop.lat, station.stop.lng),
         15,
       ),
-      duration: const Duration(milliseconds: 350),
+      duration: const Duration(milliseconds: 900),
     );
     await _updateCircleSelection(controller, index);
   }
