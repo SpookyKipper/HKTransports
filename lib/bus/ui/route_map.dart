@@ -647,15 +647,6 @@ class RouteMapState extends State<RouteMap>
                   },
                   onEvent: _onMapEvent,
                   children: [
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: AnimatedOpacity(
-                          opacity: dimMap ? 0.16 : 0,
-                          duration: const Duration(milliseconds: 200),
-                          child: const ColoredBox(color: Colors.black),
-                        ),
-                      ),
-                    ),
                     MapCompass(
                       hideIfRotatedNorth: true,
                       alignment: Alignment.topLeft,
@@ -686,6 +677,16 @@ class RouteMapState extends State<RouteMap>
                       ),
                     ),
                   ],
+                ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      color: dimMap
+                          ? Colors.black.withValues(alpha: 0.16)
+                          : Colors.transparent,
+                    ),
+                  ),
                 ),
                 Positioned.fill(
                   child: MapAttribution(
