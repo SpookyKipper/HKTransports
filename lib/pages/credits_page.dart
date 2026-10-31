@@ -71,8 +71,8 @@ class CreditsPage extends StatelessWidget {
             icon: Icons.map_outlined,
             title: settings.text('地政總署', 'Lands Department'),
             subtitle: settings.text(
-              '地圖由地政總署提供',
-              'Map provided by Lands Department',
+              '© 地圖由地政總署提供',
+              '© Map provided by Lands Department',
             ),
             url: 'https://api.portal.hkmapservice.gov.hk/disclaimer',
           ),
