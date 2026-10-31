@@ -675,6 +675,9 @@ class RouteMapState extends State<RouteMap>
                               alpha: 0.92,
                             ),
                             shape: BoxShape.circle,
+                            border: Border.all(
+                              color: theme.colorScheme.outlineVariant,
+                            ),
                           ),
                           child: SizedBox.square(
                             dimension: 36,
