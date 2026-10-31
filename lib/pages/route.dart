@@ -9,6 +9,7 @@ import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/state/pinned_stops.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
 import 'package:hktransports/bus/ui/timetable_sheet.dart';
@@ -114,6 +115,7 @@ class _RoutePageState extends State<_RoutePage> {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
+    final PinnedStopsController pinned = context.watch<PinnedStopsController>();
     final RouteEntry route = widget.route;
     final List<String> stopIds = route.primaryStops;
     final bool holiday = isHoliday(
@@ -216,6 +218,7 @@ class _RoutePageState extends State<_RoutePage> {
                           index,
                           holiday,
                           isExpanded,
+                          pinned,
                           () => _onExpansionChanged(index, !isExpanded),
                         ),
                     bodyBuilder: (context, index, progress) {
@@ -240,6 +243,7 @@ class _RoutePageState extends State<_RoutePage> {
     int index,
     bool holiday,
     bool expanded,
+    PinnedStopsController pinned,
     VoidCallback onToggle,
   ) {
     final AppSettings settings = context.watch<AppSettings>();
@@ -251,6 +255,7 @@ class _RoutePageState extends State<_RoutePage> {
     final String? code = stop?.stationCode;
     final String? platform = stop?.platformCode;
     final bool isTerminus = index == stopIds.length - 1;
+    final bool isPinned = pinned.contains(route.key, index);
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -327,7 +332,21 @@ class _RoutePageState extends State<_RoutePage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
+          M3EIconButton(
+            tooltip: isPinned
+                ? settings.text('取消釘選', 'Unpin station')
+                : settings.text('釘選', 'Pin station'),
+            icon: const Icon(Icons.push_pin_outlined),
+            selectedIcon: const Icon(Icons.push_pin),
+            isSelected: isPinned,
+            variant: M3EIconButtonVariant.standard,
+            size: M3EIconButtonSize.xs,
+            inflateHitTarget: false,
+            onPressed: () =>
+                pinned.toggle(PinnedStation(routeKey: route.key, seq: index)),
+          ),
+          const SizedBox(width: 4),
           M3EIconButton(
             tooltip: settings.text(
               expanded ? '收起' : '展開',
