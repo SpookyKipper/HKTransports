@@ -413,7 +413,7 @@ class RouteMapState extends State<RouteMap> {
                   ),
                   minMaxZoomPreference: const MinMaxZoomPreference(10, 15),
                   compassEnabled: false,
-                  rotateGesturesEnabled: false,
+                  rotateGesturesEnabled: true,
                   tiltGesturesEnabled: false,
                   logoEnabled: false,
                   attributionButtonPosition:
