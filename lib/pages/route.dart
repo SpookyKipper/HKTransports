@@ -524,6 +524,7 @@ class _RoutePageState extends State<_RoutePage> {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
     final bool isPinned = pinned.contains(route.key, index);
+    final Color secondaryColor = Theme.of(context).colorScheme.onSurfaceVariant;
     final Map<String, int> stopIndexByCode = {};
     for (int i = 0; i < stopIds.length; i++) {
       final String? code = repository.stopById(stopIds[i])?.stationCode;
@@ -578,8 +579,11 @@ class _RoutePageState extends State<_RoutePage> {
                 onPressed: () =>
                     _showStopInfo(context, route, stopIds[index], index),
                 style: M3EButtonStyle.text,
-                icon: const Icon(Icons.info_outline),
-                label: Text(settings.text('車站資訊', 'Stop information')),
+                icon: Icon(Icons.info_outline, color: secondaryColor),
+                label: Text(
+                  settings.text('車站資訊', 'Stop information'),
+                  style: TextStyle(color: secondaryColor),
+                ),
               ),
             ],
           ),
