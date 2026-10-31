@@ -148,11 +148,15 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
           ),
           const SizedBox(height: 16),
           if (routeBusy) ...[
-            M3EProgressIndicator.linear(
-              value: repository.progress,
-              strokeWidth: 4,
-              trackStrokeWidth: 4,
-            ),
+            if (repository.progress != null)
+              M3EProgressIndicator.linearWavy(
+                value: repository.progress,
+                linearSize: M3EProgressIndicatorSize.m,
+                strokeWidth: 4,
+                trackStrokeWidth: 4,
+              )
+            else
+              const M3ELoadingIndicator(size: 24),
             const SizedBox(height: 8),
             Text(
               repository.progress == null
@@ -163,8 +167,9 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
             const SizedBox(height: 16),
           ],
           if (_refreshingBbi) ...[
-            M3EProgressIndicator.linear(
-              value: _bbiTotal == 0 ? null : _bbiCompleted / _bbiTotal,
+            M3EProgressIndicator.linearWavy(
+              value: _bbiTotal == 0 ? 0 : _bbiCompleted / _bbiTotal,
+              linearSize: M3EProgressIndicatorSize.m,
               strokeWidth: 4,
               trackStrokeWidth: 4,
             ),

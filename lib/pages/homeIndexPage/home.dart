@@ -104,8 +104,9 @@ class _HomeContentState extends State<HomeContent>
                 const SizedBox(height: 16),
                 SizedBox(
                   width: 220,
-                  child: M3EProgressIndicator.linear(
+                  child: M3EProgressIndicator.linearWavy(
                     value: progress,
+                    linearSize: M3EProgressIndicatorSize.m,
                     strokeWidth: 4,
                     trackStrokeWidth: 4,
                   ),

@@ -128,7 +128,12 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
     return Stack(
       children: [
         WebViewWidget(controller: _webViewController!),
-        if (_loading) const LinearProgressIndicator(minHeight: 2),
+        if (_loading)
+          const Positioned(
+            top: 8,
+            right: 8,
+            child: M3ELoadingIndicator(size: 24),
+          ),
         if (_failed)
           Positioned.fill(
             child: ColoredBox(
