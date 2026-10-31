@@ -41,11 +41,13 @@ class BbiService {
   static const String citybusHost = 'www.citybus.com.hk';
   static const Duration _timeout = Duration(minutes: 3);
   static final Map<String, List<BbiEntry>> _kmbCache = {};
-  static const List<String> _allKmbFiles = [
+  static const List<String> _kmbFilesZh = [
     'BBI_routeF1.js',
     'BBI_routeF2.js',
     'BBI_routeB1.js',
     'BBI_routeB2.js',
+  ];
+  static const List<String> _kmbFilesEn = [
     'en.BBI_routeF1.js',
     'en.BBI_routeF2.js',
     'en.BBI_routeB1.js',
@@ -148,16 +150,18 @@ class BbiService {
   }
 
   Future<bool> refreshAll({
+    required bool zh,
     void Function(int completed, int total)? onProgress,
   }) async {
+    final List<String> files = zh ? _kmbFilesZh : _kmbFilesEn;
     bool ok = true;
-    for (int index = 0; index < _allKmbFiles.length; index++) {
+    for (int index = 0; index < files.length; index++) {
       try {
-        await _ensureKmbFile(_allKmbFiles[index], force: true);
+        await _ensureKmbFile(files[index], force: true);
       } catch (_) {
         ok = false;
       }
-      onProgress?.call(index + 1, _allKmbFiles.length);
+      onProgress?.call(index + 1, files.length);
     }
     _kmbCache.clear();
     return ok;

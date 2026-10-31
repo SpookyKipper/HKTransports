@@ -17,7 +17,7 @@ class UpdateDataPageRoute extends StatefulWidget {
 class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
   bool _refreshingBbi = false;
   int _bbiCompleted = 0;
-  int _bbiTotal = 8;
+  int _bbiTotal = 4;
 
   Future<void> _runUpdate({
     required bool force,
@@ -50,11 +50,12 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     setState(() {
       _refreshingBbi = true;
       _bbiCompleted = 0;
-      _bbiTotal = 8;
+      _bbiTotal = 4;
     });
     bool refreshed = false;
     try {
       refreshed = await const BbiService().refreshAll(
+        zh: latestSettings.isChinese,
         onProgress: (int completed, int total) {
           if (!mounted) return;
           setState(() {
