@@ -178,10 +178,10 @@ class RouteMapState extends State<RouteMap> {
       for (final RouteMapStation station in validStations)
         CircleOptions(
           geometry: LatLng(station.stop.lat, station.stop.lng),
-          circleRadius: 8,
+          circleRadius: 6,
           circleColor: routeColor,
           circleStrokeColor: '#FFFFFF',
-          circleStrokeWidth: 2,
+          circleStrokeWidth: 1.5,
         ),
     ];
     final List<Map<String, dynamic>> data = [
@@ -376,10 +376,10 @@ class RouteMapState extends State<RouteMap> {
       await controller.updateCircle(
         circle,
         CircleOptions(
-          circleRadius: isSelected ? 11 : 8,
+          circleRadius: isSelected ? 9 : 6,
           circleColor: isSelected ? selectedColor : routeColor,
           circleStrokeColor: '#FFFFFF',
-          circleStrokeWidth: isSelected ? 3 : 2,
+          circleStrokeWidth: isSelected ? 2.5 : 1.5,
         ),
       );
     }
