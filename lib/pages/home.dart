@@ -61,77 +61,32 @@ class _HomeShellState extends State<HomeShell> {
                 safeArea: false,
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 actions: [
-                  M3EToolbarWidget(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _ToolbarDestination(
-                          icon: Icons.home_outlined,
-                          selectedIcon: Icons.home,
-                          label: settings.text('主頁', 'Home'),
-                          selected: _index == 0,
-                          onTap: () => _selectPage(0),
-                        ),
-                        _ToolbarDestination(
-                          icon: Icons.search,
-                          selectedIcon: Icons.search,
-                          label: settings.text('搜尋', 'Search'),
-                          selected: _index == 1,
-                          onTap: () => _selectPage(1),
-                        ),
-                        _ToolbarDestination(
-                          icon: Icons.campaign_outlined,
-                          selectedIcon: Icons.campaign,
-                          label: settings.text('快訊', 'News'),
-                          selected: _index == 2,
-                          onTap: () => _selectPage(2),
-                        ),
-                      ],
-                    ),
+                  M3EToolbarAction(
+                    icon: _index == 0 ? Icons.home : Icons.home_outlined,
+                    label: settings.text('主頁', 'Home'),
+                    tooltip: settings.text('主頁', 'Home'),
+                    active: _index == 0,
+                    onPressed: () => _selectPage(0),
+                  ),
+                  M3EToolbarAction(
+                    icon: Icons.search,
+                    label: settings.text('搜尋', 'Search'),
+                    tooltip: settings.text('搜尋', 'Search'),
+                    active: _index == 1,
+                    onPressed: () => _selectPage(1),
+                  ),
+                  M3EToolbarAction(
+                    icon: _index == 2
+                        ? Icons.campaign
+                        : Icons.campaign_outlined,
+                    label: settings.text('快訊', 'News'),
+                    tooltip: settings.text('快訊', 'News'),
+                    active: _index == 2,
+                    onPressed: () => _selectPage(2),
                   ),
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ToolbarDestination extends StatelessWidget {
-  const _ToolbarDestination({
-    required this.icon,
-    required this.selectedIcon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final IconData selectedIcon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Tooltip(
-      message: label,
-      child: AnimatedSize(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        child: M3EButton(
-          onPressed: onTap,
-          style: selected ? M3EButtonStyle.tonal : M3EButtonStyle.text,
-          size: M3EButtonSize.sm,
-          icon: Icon(selected ? selectedIcon : icon),
-          label: selected ? Text(label) : null,
-          decoration: M3EButtonDecoration.styleFrom(
-            foregroundColor: selected
-                ? scheme.onSecondaryContainer
-                : scheme.onSurfaceVariant,
           ),
         ),
       ),
