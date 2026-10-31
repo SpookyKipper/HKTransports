@@ -7,6 +7,7 @@ import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/bus/data/route_waypoints.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/map_attribution.dart';
 import 'package:http/http.dart' as http;
 import 'package:maplibre/maplibre.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -57,6 +58,7 @@ class RouteMapState extends State<RouteMap>
 
   MapController? _mapController;
   StyleController? _styleController;
+  List<String> _attributions = const [];
   Future<String>? _styleFuture;
   Future<String>? _mapFuture;
   Future<Map<String, dynamic>?>? _waypointsFuture;
@@ -105,6 +107,7 @@ class RouteMapState extends State<RouteMap>
     _layersReady = false;
     _styleController = null;
     _mapController = null;
+    _attributions = const [];
     _styleFuture = _loadStyle(zh);
     _mapFuture = _prepareMap(_styleFuture!);
   }
@@ -219,7 +222,9 @@ class RouteMapState extends State<RouteMap>
   Future<void> _onStyleLoaded(StyleController style) async {
     if (!mounted) return;
     _styleController = style;
+    _attributions = style.getAttributionsSync();
     _layersReady = false;
+    if (mounted) setState(() {});
     final List<RouteMapStation> stations = _validStations();
     final List<Geographic> points = [
       for (final RouteMapStation station in stations)
@@ -651,14 +656,6 @@ class RouteMapState extends State<RouteMap>
                         ),
                       ),
                     ),
-                    MediaQuery.removePadding(
-                      context: context,
-                      removeBottom: true,
-                      child: const SourceAttribution(
-                        showMapLibre: false,
-                        alignment: Alignment.bottomRight,
-                      ),
-                    ),
                     MapCompass(
                       hideIfRotatedNorth: true,
                       alignment: Alignment.topLeft,
@@ -690,9 +687,15 @@ class RouteMapState extends State<RouteMap>
                     ),
                   ],
                 ),
+                Positioned.fill(
+                  child: MapAttribution(
+                    attributions: _attributions,
+                    padding: const EdgeInsets.fromLTRB(42, 0, 10, 10),
+                  ),
+                ),
                 Positioned(
-                  right: 44,
-                  bottom: 14,
+                  left: 10,
+                  bottom: 10,
                   child: IgnorePointer(
                     child: Image.asset(
                       'assets/images/landsd.png',
