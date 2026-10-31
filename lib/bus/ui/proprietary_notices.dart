@@ -494,20 +494,47 @@ class _BbiDialogState extends State<_BbiDialog> {
             if (!_failed && _entries != null && _entries!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: M3ESearchBar(
-                  controller: _searchController,
-                  leading: const Icon(Icons.search),
-                  hintText: settings.text('搜尋轉乘路線', 'Search transfer routes'),
-                  showClearButton: true,
-                  margin: 0,
-                  focusedMargin: 0,
-                  expandOnFocus: false,
-                  constraints: const BoxConstraints(
-                    minWidth: 0,
-                    maxWidth: double.infinity,
-                    minHeight: 56,
+                child: SizedBox(
+                  height: 64,
+                  child: M3ESearchBar(
+                    controller: _searchController,
+                    leading: const Icon(Icons.search),
+                    hintText: settings.text('搜尋轉乘路線', 'Search transfer routes'),
+                    showClearButton: true,
+                    margin: 0,
+                    focusedMargin: 0,
+                    expandOnFocus: false,
+                    alignment: AlignmentDirectional.centerStart,
+                    constraints: const BoxConstraints(
+                      minWidth: 0,
+                      maxWidth: double.infinity,
+                      minHeight: 64,
+                      maxHeight: 64,
+                    ),
+                    backgroundColor: WidgetStatePropertyAll(
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                    ),
+                    side: WidgetStatePropertyAll(
+                      BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                    shape: WidgetStatePropertyAll(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(32),
+                      ),
+                    ),
+                    elevation: const WidgetStatePropertyAll(0),
+                    textStyle: WidgetStatePropertyAll(
+                      Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    hintStyle: WidgetStatePropertyAll(
+                      Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    textInputAction: TextInputAction.search,
                   ),
-                  textInputAction: TextInputAction.search,
                 ),
               ),
             const Divider(height: 1),
