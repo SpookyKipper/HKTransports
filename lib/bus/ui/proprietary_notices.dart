@@ -454,6 +454,10 @@ class _BbiDialogState extends State<_BbiDialog> {
     final AppSettings settings = context.watch<AppSettings>();
     final bool kmb = widget.company == BusCompany.kmb;
     final String host = kmb ? BbiService.kmbHost : BbiService.citybusHost;
+    final ThemeData theme = Theme.of(context);
+    final Color searchBackground = theme.brightness == Brightness.dark
+        ? theme.colorScheme.surface
+        : Colors.white;
     return Dialog(
       insetPadding: const EdgeInsets.all(12),
       clipBehavior: Clip.antiAlias,
@@ -500,6 +504,9 @@ class _BbiDialogState extends State<_BbiDialog> {
                   controller: _searchController,
                   leading: const Icon(Icons.search),
                   hintText: settings.text('搜尋轉乘路線', 'Search transfer routes'),
+                  backgroundColor: WidgetStatePropertyAll(searchBackground),
+                  elevation: const WidgetStatePropertyAll(0),
+                  shadowColor: const WidgetStatePropertyAll(Colors.transparent),
                   trailing: [
                     if (_query.isNotEmpty)
                       IconButton(
