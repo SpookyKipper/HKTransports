@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:material_ui/material_ui.dart' as mui;
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/app_theme.dart';
+import 'package:hktransports/app/app_transition_page.dart';
 import 'package:hktransports/app/fade_forward_page.dart';
 import 'package:hktransports/app/m3e_scope.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
@@ -28,6 +29,14 @@ import 'package:hktransports/pages/settings_page.dart';
 import 'package:hktransports/pages/update_data.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+
+Page<void> _page(BuildContext context, GoRouterState state, Widget child) {
+  return AppTransitionPage<void>(
+    key: state.pageKey,
+    style: context.read<AppSettings>().transitionStyle,
+    child: child,
+  );
+}
 
 final GoRouter _router = GoRouter(
   routes: [
@@ -77,23 +86,27 @@ final GoRouter _router = GoRouter(
             child: RoutePageRoute(slug: slug, initialStopId: stopId),
           );
         }
-        return MaterialPage<void>(
-          key: state.pageKey,
-          child: RoutePageRoute(slug: slug, initialStopId: stopId),
+        return _page(
+          context,
+          state,
+          RoutePageRoute(slug: slug, initialStopId: stopId),
         );
       },
     ),
     GoRoute(
       path: '/settings',
-      builder: (context, state) => const SettingsPageRoute(),
+      pageBuilder: (context, state) =>
+          _page(context, state, const SettingsPageRoute()),
     ),
     GoRoute(
       path: '/updateData',
-      builder: (context, state) => const UpdateDataPageRoute(),
+      pageBuilder: (context, state) =>
+          _page(context, state, const UpdateDataPageRoute()),
     ),
     GoRoute(
       path: '/proprietaryData',
-      builder: (context, state) => const ProprietaryDataPage(),
+      pageBuilder: (context, state) =>
+          _page(context, state, const ProprietaryDataPage()),
     ),
     GoRoute(
       path: '/notice',
@@ -119,14 +132,20 @@ final GoRouter _router = GoRouter(
         );
       },
     ),
-    GoRoute(path: '/credits', builder: (context, state) => const CreditsPage()),
+    GoRoute(
+      path: '/credits',
+      pageBuilder: (context, state) =>
+          _page(context, state, const CreditsPage()),
+    ),
     GoRoute(
       path: '/licenses',
-      builder: (context, state) => const LicensesPage(),
+      pageBuilder: (context, state) =>
+          _page(context, state, const LicensesPage()),
     ),
     GoRoute(
       path: '/favoriteGroups',
-      builder: (context, state) => const FavoriteGroupsPage(),
+      pageBuilder: (context, state) =>
+          _page(context, state, const FavoriteGroupsPage()),
     ),
   ],
 );
