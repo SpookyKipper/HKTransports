@@ -139,7 +139,7 @@ class RouteMapState extends State<RouteMap>
     if (!mounted || !identical(_mapController, controller)) return;
     final double bearing = controller.getCamera().bearing;
     await controller.fitBounds(
-      bounds: _boundsAround(station.stop.lat, station.stop.lng, 0.0035),
+      bounds: _boundsAround(station.stop.lat, station.stop.lng, 0.002),
       bearing: bearing,
       padding: const EdgeInsets.all(24),
       nativeDuration: const Duration(milliseconds: 900),
