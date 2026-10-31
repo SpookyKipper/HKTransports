@@ -199,16 +199,20 @@ class MyApp extends StatelessWidget {
                   builder: (context, child) {
                     final MediaQueryData media = MediaQuery.of(context);
                     final double systemScale = media.textScaler.scale(1);
-                    return M3EScope(
-                      scheme: Theme.of(context).colorScheme,
-                      child: MediaQuery(
-                        data: media.copyWith(
-                          textScaler: TextScaler.linear(
-                            systemScale * settings.textScale,
+                    return AppColorSchemes(
+                      light: lightScheme,
+                      dark: darkScheme,
+                      child: M3EScope(
+                        scheme: Theme.of(context).colorScheme,
+                        child: MediaQuery(
+                          data: media.copyWith(
+                            textScaler: TextScaler.linear(
+                              systemScale * settings.textScale,
+                            ),
                           ),
-                        ),
-                        child: PinnedStopsHost(
-                          child: child ?? const SizedBox.shrink(),
+                          child: PinnedStopsHost(
+                            child: child ?? const SizedBox.shrink(),
+                          ),
                         ),
                       ),
                     );

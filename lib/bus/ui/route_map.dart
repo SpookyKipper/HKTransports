@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/bus/data/route_waypoints.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -167,7 +168,8 @@ class RouteMapState extends State<RouteMap> {
     ];
     if (validStations.isEmpty) return;
 
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final ColorScheme scheme =
+        AppColorSchemes.lightOf(context) ?? Theme.of(context).colorScheme;
     final String routeColor = _hex(scheme.primary);
     final List<LatLng> points = [
       for (final RouteMapStation station in validStations)
@@ -367,7 +369,8 @@ class RouteMapState extends State<RouteMap> {
     int selected,
   ) async {
     if (!mounted || _circles.isEmpty) return;
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final ColorScheme scheme =
+        AppColorSchemes.lightOf(context) ?? Theme.of(context).colorScheme;
     final String routeColor = _hex(scheme.primary);
     final String selectedColor = _hex(scheme.tertiary);
     for (final Circle circle in List<Circle>.from(_circles)) {
