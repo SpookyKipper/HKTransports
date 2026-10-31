@@ -51,6 +51,7 @@ class RouteMapState extends State<RouteMap> {
   static const String _routeLayerId = 'route-path-line';
   static const String _routeArrowLayerId = 'route-path-arrows';
   static const String _arrowImageName = 'route-direction-arrow';
+  static const double _stationHitRadius = 26;
 
   MapLibreMapController? _controller;
   Future<String>? _styleFuture;
@@ -83,7 +84,6 @@ class RouteMapState extends State<RouteMap> {
 
   @override
   void dispose() {
-    _controller?.onCircleTapped.remove(_onCircleTapped);
     super.dispose();
   }
 
@@ -118,41 +118,62 @@ class RouteMapState extends State<RouteMap> {
     return null;
   }
 
-  void _onCircleTapped(Circle circle) {
-    final dynamic raw = circle.data?['index'];
-    final int? index = raw is int ? raw : int.tryParse('$raw');
-    if (index == null) return;
-    _selectedIndex = index;
-    widget.onStationTap(index);
-  }
+  Future<void> _onMapClick(double x, double y) async {
+    final MapLibreMapController? controller = _controller;
+    if (controller == null) return;
+    final List<RouteMapStation> stations = [
+      for (final RouteMapStation station in widget.stations)
+        if (_validCoordinate(station.stop.lat, station.stop.lng)) station,
+    ];
+    if (stations.isEmpty) return;
 
-  void _onMapClick(LatLng point) {
-    RouteMapStation? nearest;
+    final List<math.Point> screenPoints;
+    try {
+      screenPoints = await controller.toScreenLocationBatch([
+        for (final RouteMapStation station in stations)
+          LatLng(station.stop.lat, station.stop.lng),
+      ]);
+    } catch (_) {
+      return;
+    }
+    if (!mounted ||
+        !identical(_controller, controller) ||
+        screenPoints.length != stations.length) {
+      return;
+    }
+
+    int nearestIndex = -1;
     double nearestDistance = double.infinity;
-    for (final RouteMapStation station in widget.stations) {
-      if (!_validCoordinate(station.stop.lat, station.stop.lng)) continue;
-      final double distance = _distanceMeters(
-        point.latitude,
-        point.longitude,
-        station.stop.lat,
-        station.stop.lng,
-      );
+    final List<double> distances = List<double>.filled(stations.length, 0);
+    for (int index = 0; index < stations.length; index++) {
+      final math.Point point = screenPoints[index];
+      final double dx = point.x.toDouble() - x;
+      final double dy = point.y.toDouble() - y;
+      final double distance = math.sqrt(dx * dx + dy * dy);
+      distances[index] = distance;
       if (distance < nearestDistance) {
         nearestDistance = distance;
-        nearest = station;
+        nearestIndex = index;
       }
     }
-    if (nearest == null || nearestDistance > 50) return;
-    _selectedIndex = nearest.index;
-    widget.onStationTap(nearest.index);
-  }
+    if (nearestIndex < 0) return;
 
-  double _distanceMeters(double lat1, double lng1, double lat2, double lng2) {
-    const double metersPerDegree = 111320;
-    final double midLat = (lat1 + lat2) / 2 * math.pi / 180;
-    final double dy = (lat1 - lat2) * metersPerDegree;
-    final double dx = (lng1 - lng2) * metersPerDegree * math.cos(midLat);
-    return math.sqrt(dx * dx + dy * dy);
+    double nearestNeighbour = double.infinity;
+    final math.Point nearestPoint = screenPoints[nearestIndex];
+    for (int index = 0; index < screenPoints.length; index++) {
+      if (index == nearestIndex) continue;
+      final math.Point point = screenPoints[index];
+      final double dx = point.x.toDouble() - nearestPoint.x.toDouble();
+      final double dy = point.y.toDouble() - nearestPoint.y.toDouble();
+      final double distance = math.sqrt(dx * dx + dy * dy);
+      if (distance < nearestNeighbour) nearestNeighbour = distance;
+    }
+
+    // Keep the enlarged click target inside the gap to the closest dot.
+    final double hitRadius = math.min(_stationHitRadius, nearestNeighbour / 2);
+    if (distances[nearestIndex] > hitRadius) return;
+    _selectedIndex = stations[nearestIndex].index;
+    widget.onStationTap(stations[nearestIndex].index);
   }
 
   Future<void> _onStyleLoaded() async {
@@ -550,10 +571,13 @@ class RouteMapState extends State<RouteMap> {
                       AttributionButtonPosition.bottomRight,
                   onMapCreated: (MapLibreMapController controller) {
                     _controller = controller;
-                    controller.onCircleTapped.add(_onCircleTapped);
                   },
-                  onMapClick: (_, LatLng coordinates) =>
-                      _onMapClick(coordinates),
+                  featureTapsTriggersMapClick: true,
+                  onMapClick: (math.Point point, LatLng _) {
+                    unawaited(
+                      _onMapClick(point.x.toDouble(), point.y.toDouble()),
+                    );
+                  },
                   onStyleLoadedCallback: _onStyleLoaded,
                 ),
                 Positioned(
