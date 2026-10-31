@@ -345,6 +345,7 @@ class _RoutePageState extends State<_RoutePage> {
                             pressedRadius: 24,
                             gap: _stationGap,
                             elevation: 0,
+                            expandedStateFill: false,
                             color: Theme.of(
                               context,
                             ).colorScheme.surfaceContainerHighest,
