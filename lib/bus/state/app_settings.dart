@@ -25,11 +25,14 @@ extension ProprietaryDataSourceInfo on ProprietaryDataSource {
         return settings.text('HK Bus ETA 通告服務', 'HK Bus ETA notices');
       case ProprietaryDataSource.kmb:
         return settings.text(
-          '路線最新消息及轉乘優惠',
-          'Route news and transfer discounts',
+          '路線通告及轉乘優惠',
+          'Route announcements and transfer discounts',
         );
       case ProprietaryDataSource.citybus:
-        return settings.text('特別、路線及站務通告', 'Special, route and stop notices');
+        return settings.text(
+          '特別、路線及站務通告，以及轉乘優惠',
+          'Special, route and stop notices, and transfer discounts',
+        );
     }
   }
 }
