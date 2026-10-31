@@ -568,7 +568,9 @@ class RouteMapState extends State<RouteMap>
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    context.watch<AppSettings>();
+    final AppSettings settings = context.watch<AppSettings>();
+    final bool dimMap =
+        theme.brightness == Brightness.dark && settings.dimMapInDarkMode;
     final Future<String>? styleFuture = _mapFuture;
     return SizedBox(
       height: 256,
@@ -636,6 +638,15 @@ class RouteMapState extends State<RouteMap>
                   },
                   onEvent: _onMapEvent,
                   children: [
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: AnimatedOpacity(
+                          opacity: dimMap ? 0.16 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: const ColoredBox(color: Colors.black),
+                        ),
+                      ),
+                    ),
                     MediaQuery.removePadding(
                       context: context,
                       removeBottom: true,

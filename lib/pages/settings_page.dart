@@ -39,6 +39,18 @@ class SettingsPage extends StatelessWidget {
             ],
             onChanged: settings.setThemeChoice,
           ),
+          SwitchListTile(
+            secondary: const Icon(Icons.brightness_4_outlined),
+            title: Text(settings.text('在深色模式下調暗地圖', 'Dim map in dark mode')),
+            subtitle: Text(
+              settings.text(
+                '降低地圖亮度，減少夜間眩光',
+                'Reduce map brightness for less glare at night',
+              ),
+            ),
+            value: settings.dimMapInDarkMode,
+            onChanged: settings.setDimMapInDarkMode,
+          ),
           _DropdownSetting<PageTransitionStyle>(
             icon: Icons.animation,
             title: settings.text('頁面轉場', 'Page transition'),

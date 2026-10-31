@@ -119,6 +119,7 @@ class AppSettings extends ChangeNotifier {
   int _refreshSeconds = 30;
   int _textScalePercent = 110;
   bool _routeFilter = false;
+  bool _dimMapInDarkMode = true;
   bool _autoRenew = true;
   int _autoUpdateHours = 24;
   final Set<ProprietaryDataSource> _proprietarySources = {};
@@ -134,6 +135,7 @@ class AppSettings extends ChangeNotifier {
   int get textScalePercent => _textScalePercent;
   double get textScale => _textScalePercent / 100;
   bool get routeFilter => _routeFilter;
+  bool get dimMapInDarkMode => _dimMapInDarkMode;
   bool get autoRenew => _autoRenew;
   int get autoUpdateHours => _autoUpdateHours;
   Set<ProprietaryDataSource> get proprietarySources =>
@@ -174,6 +176,7 @@ class AppSettings extends ChangeNotifier {
     _refreshSeconds = (sp.getInt('refreshSeconds') ?? 30).clamp(5, 120);
     _textScalePercent = (sp.getInt('textScalePercent') ?? 110).clamp(80, 160);
     _routeFilter = sp.getBool('routeFilter') ?? false;
+    _dimMapInDarkMode = sp.getBool('dimMapInDarkMode') ?? true;
     _autoRenew = sp.getBool('autoRenew') ?? true;
     _autoUpdateHours = (sp.getInt('autoUpdateHours') ?? 24).clamp(1, 168);
     for (final ProprietaryDataSource source in ProprietaryDataSource.values) {
@@ -232,6 +235,13 @@ class AppSettings extends ChangeNotifier {
     if (_routeFilter == value) return;
     _routeFilter = value;
     sp.setBool('routeFilter', value);
+    notifyListeners();
+  }
+
+  void setDimMapInDarkMode(bool value) {
+    if (_dimMapInDarkMode == value) return;
+    _dimMapInDarkMode = value;
+    sp.setBool('dimMapInDarkMode', value);
     notifyListeners();
   }
 
