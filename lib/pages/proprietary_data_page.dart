@@ -78,7 +78,7 @@ class ProprietaryDataPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           M3EList(
-            variant: M3ECardVariant.outlined,
+            variant: M3ECardVariant.filled,
             itemCount: ProprietaryDataSource.values.length,
             itemBuilder: (BuildContext context, int index) {
               final ProprietaryDataSource source =

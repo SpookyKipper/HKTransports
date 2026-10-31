@@ -168,29 +168,22 @@ class _PinnedStopsBarState extends State<PinnedStopsBar> {
       color: theme.colorScheme.surfaceContainerLow,
       child: SafeArea(
         bottom: false,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: theme.colorScheme.outlineVariant),
-            ),
-          ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Row(
-              children: [
-                for (int index = 0; index < items.length; index++) ...[
-                  _PinnedChip(
-                    item: items[index],
-                    settings: settings,
-                    onUnpin: () => context.read<PinnedStopsController>().remove(
-                      items[index].pin,
-                    ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Row(
+            children: [
+              for (int index = 0; index < items.length; index++) ...[
+                _PinnedChip(
+                  item: items[index],
+                  settings: settings,
+                  onUnpin: () => context.read<PinnedStopsController>().remove(
+                    items[index].pin,
                   ),
-                  if (index != items.length - 1) const SizedBox(width: 8),
-                ],
+                ),
+                if (index != items.length - 1) const SizedBox(width: 8),
               ],
-            ),
+            ],
           ),
         ),
       ),
