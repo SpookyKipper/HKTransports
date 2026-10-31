@@ -233,7 +233,7 @@ class _RoutePageState extends State<_RoutePage> {
                       totalCount: stopIds.length,
                       isExpanded: isExpanded,
                       decoration: M3EExpandableStyle(
-                        outerRadius: 24,
+                        outerRadius: index == 0 ? 8 : 24,
                         innerRadius: 8,
                         hoverRadius: 24,
                         pressedRadius: 24,

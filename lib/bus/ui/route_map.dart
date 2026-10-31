@@ -486,7 +486,10 @@ class RouteMapState extends State<RouteMap> {
     return SizedBox(
       height: 256,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(24),
+          bottom: Radius.circular(8),
+        ),
         child: FutureBuilder<String>(
           future: styleFuture,
           builder: (context, snapshot) {
