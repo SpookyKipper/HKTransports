@@ -268,6 +268,7 @@ class RouteMapState extends State<RouteMap> {
             symbolSpacing: 50,
             iconImage: _arrowImageName,
             iconSize: 0.65,
+            iconRotate: 90,
             iconAllowOverlap: true,
             iconIgnorePlacement: true,
             iconRotationAlignment: 'map',
