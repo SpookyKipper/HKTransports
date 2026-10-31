@@ -579,10 +579,7 @@ class _BbiDialogState extends State<_BbiDialog> {
               const M3ELoadingIndicator(),
               const SizedBox(height: 12),
               Text(
-                settings.text(
-                  '正在載入轉乘資料，首次使用可能需要一些時間。',
-                  'Loading interchange data. The first use may take a while.',
-                ),
+                settings.text('正在載入轉乘資料', 'Loading interchange data'),
                 textAlign: TextAlign.center,
               ),
             ],
