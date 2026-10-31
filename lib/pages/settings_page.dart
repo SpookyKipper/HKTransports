@@ -186,7 +186,7 @@ class SettingsPage extends StatelessWidget {
       case EtaFormat.exact:
         return settings.text('到站時間', 'Clock time');
       case EtaFormat.mixed:
-        return settings.text('到站時間（到站時差）', 'Clock time (minutes remaining)');
+        return settings.text('到站時間 + 到站時差', 'Clock time + minutes remaining');
     }
   }
 
