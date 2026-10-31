@@ -455,9 +455,7 @@ class _BbiDialogState extends State<_BbiDialog> {
     final bool kmb = widget.company == BusCompany.kmb;
     final String host = kmb ? BbiService.kmbHost : BbiService.citybusHost;
     final ThemeData theme = Theme.of(context);
-    final Color searchBackground = theme.brightness == Brightness.dark
-        ? theme.colorScheme.surface
-        : Colors.white;
+    final Color searchBackground = theme.colorScheme.surfaceContainerHighest;
     return Dialog(
       insetPadding: const EdgeInsets.all(12),
       clipBehavior: Clip.antiAlias,
@@ -608,7 +606,7 @@ class _BbiCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final ThemeData theme = Theme.of(context);
-    return Card.outlined(
+    return Card.filled(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
         padding: const EdgeInsets.all(16),
