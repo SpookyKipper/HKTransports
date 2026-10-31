@@ -20,6 +20,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
   int _bbiTotal = 4;
   int? _routeBytes;
   int? _kmbBytes;
+  DateTime? _kmbUpdatedAt;
 
   @override
   void initState() {
@@ -30,11 +31,14 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
   Future<void> _loadSizes() async {
     final BusRepository repository = context.read<BusRepository>();
     final int routeBytes = await repository.updater.dataSizeBytes();
-    final int kmbBytes = await const BbiService().storedBytes();
+    final BbiService bbi = const BbiService();
+    final int kmbBytes = await bbi.storedBytes();
+    final DateTime? kmbUpdatedAt = await bbi.storedUpdatedAt();
     if (!mounted) return;
     setState(() {
       _routeBytes = routeBytes;
       _kmbBytes = kmbBytes;
+      _kmbUpdatedAt = kmbUpdatedAt;
     });
   }
 
@@ -388,6 +392,11 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                     ),
                     const SizedBox(height: 8),
                     _sizeText(context, settings, _kmbBytes, optional: true),
+                    if (_kmbUpdatedAt != null)
+                      Text(
+                        '${settings.text('上次更新', 'Last updated')}: '
+                        '${DateFormat('yyyy-MM-dd HH:mm').format(_kmbUpdatedAt!)}',
+                      ),
                     if (_refreshingBbi)
                       _progress(context, settings, route: false),
                     const SizedBox(height: 12),
