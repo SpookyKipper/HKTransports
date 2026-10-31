@@ -325,8 +325,6 @@ class _RoutePageState extends State<_RoutePage> {
                     itemCount: stopIds.length,
                     itemBuilder: (context, index) {
                       final bool isExpanded = _expandedIndex == index;
-                      final M3EListExpandableTheme expandableTheme =
-                          M3ETheme.of(context).listTheme.expandable;
                       return KeyedSubtree(
                         key: _stationKeys.putIfAbsent(index, () => GlobalKey()),
                         child: M3EExpandableItem(
@@ -361,8 +359,14 @@ class _RoutePageState extends State<_RoutePage> {
                             collapseIcon: null,
                             useInkWell: false,
                           ),
-                          expandMotion: expandableTheme.expandMotion,
-                          collapseMotion: expandableTheme.collapseMotion,
+                          expandMotion: const M3ESpring(
+                            stiffness: 300,
+                            damping: 0.9,
+                          ),
+                          collapseMotion: const M3ESpring(
+                            stiffness: 320,
+                            damping: 0.9,
+                          ),
                           onToggle: () =>
                               _onExpansionChanged(index, !isExpanded),
                           headerBuilder: (context, index, progress) =>
@@ -377,13 +381,18 @@ class _RoutePageState extends State<_RoutePage> {
                                 () => _onExpansionChanged(index, !isExpanded),
                               ),
                           bodyBuilder: (context, index, progress) {
-                            if (progress <= 0) return const SizedBox.shrink();
-                            return _buildStopBody(
-                              context,
-                              route,
-                              stopIds,
-                              index,
-                              pinned,
+                            if (progress <= 0) {
+                              return const SizedBox.shrink();
+                            }
+                            return Opacity(
+                              opacity: progress.clamp(0.0, 1.0),
+                              child: _buildStopBody(
+                                context,
+                                route,
+                                stopIds,
+                                index,
+                                pinned,
+                              ),
                             );
                           },
                         ),
