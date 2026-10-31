@@ -278,7 +278,7 @@ class _NoticeCard extends StatelessWidget {
     ];
     final Uri? url = notice.url;
     return Card.outlined(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         title: Text(notice.title),
@@ -591,9 +591,10 @@ class _BbiDialogState extends State<_BbiDialog> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       itemCount: entries.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         return _BbiCard(entry: entries[index], leg: _leg);
       },
