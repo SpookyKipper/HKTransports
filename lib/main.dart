@@ -10,6 +10,7 @@ import 'package:hktransports/app/m3e_scope.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
 import 'package:hktransports/bus/ui/pinned_stops_bar.dart';
 import 'package:hktransports/objectBox/store.dart';
@@ -141,6 +142,9 @@ void main() async {
   await initObjectBox();
 
   final AppSettings settings = AppSettings();
+  if (!settings.isProprietaryEnabled(ProprietaryDataSource.kmb)) {
+    await const BbiService().clearCache();
+  }
   final BusRepository repository = BusRepository(settings);
   await repository.initialize();
 

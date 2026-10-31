@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/page_bar.dart';
+import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:provider/provider.dart';
 
@@ -84,9 +85,12 @@ class ProprietaryDataPage extends StatelessWidget {
                     in ProprietaryDataSource.values) ...[
                   CheckboxListTile(
                     value: settings.isProprietaryEnabled(source),
-                    onChanged: (bool? value) {
+                    onChanged: (bool? value) async {
                       if (value == null) return;
                       settings.setProprietarySource(source, value);
+                      if (!value && source == ProprietaryDataSource.kmb) {
+                        await const BbiService().clearCache();
+                      }
                     },
                     title: Text(source.label(settings)),
                     subtitle: Text(source.description(settings)),
