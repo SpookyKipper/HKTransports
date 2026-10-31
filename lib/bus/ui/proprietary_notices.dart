@@ -277,7 +277,7 @@ class _NoticeCard extends StatelessWidget {
       if (notice.detail != null) notice.detail!,
     ];
     final Uri? url = notice.url;
-    return Card.outlined(
+    return Card.filled(
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
