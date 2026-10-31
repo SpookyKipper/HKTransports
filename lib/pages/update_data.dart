@@ -37,11 +37,12 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
       return;
     }
 
-    if (!settings.isProprietaryEnabled(ProprietaryDataSource.kmb)) {
+    final AppSettings latestSettings = context.read<AppSettings>();
+    if (!latestSettings.isProprietaryEnabled(ProprietaryDataSource.kmb)) {
       _showMessage(
         downloadAgain
-            ? settings.text('資料已重新下載', 'Data downloaded')
-            : settings.text('資料已更新', 'Data updated'),
+            ? latestSettings.text('資料已重新下載', 'Data downloaded')
+            : latestSettings.text('資料已更新', 'Data updated'),
       );
       return;
     }
