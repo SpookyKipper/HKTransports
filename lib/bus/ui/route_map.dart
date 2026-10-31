@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hktransports/bus/data/route_waypoints.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -47,6 +48,8 @@ class RouteMapState extends State<RouteMap> {
   static final Map<String, String> _styleCache = {};
   static const String _routeSourceId = 'route-path';
   static const String _routeLayerId = 'route-path-line';
+  static const String _routeArrowLayerId = 'route-path-arrows';
+  static const String _arrowImageName = 'route-direction-arrow';
 
   MapLibreMapController? _controller;
   Future<String>? _styleFuture;
@@ -54,6 +57,7 @@ class RouteMapState extends State<RouteMap> {
   final List<Circle> _circles = [];
   bool? _isChinese;
   bool _styleLoaded = false;
+  bool _arrowImageAdded = false;
   int? _pendingFocusIndex;
   int? _selectedIndex;
 
@@ -71,6 +75,7 @@ class RouteMapState extends State<RouteMap> {
     _isChinese = zh;
     _styleLoaded = false;
     _controller = null;
+    _arrowImageAdded = false;
     _circles.clear();
     _styleFuture = _loadStyle(zh);
   }
@@ -228,6 +233,11 @@ class RouteMapState extends State<RouteMap> {
     String color,
   ) async {
     try {
+      await controller.removeLayer(_routeArrowLayerId);
+    } catch (_) {
+      // The arrow layer does not exist on a fresh style.
+    }
+    try {
       await controller.removeLayer(_routeLayerId);
     } catch (_) {
       // The layer does not exist on a fresh style.
@@ -248,6 +258,40 @@ class RouteMapState extends State<RouteMap> {
         lineOpacity: 0.9,
       ),
     );
+    if (await _ensureArrowImage(controller)) {
+      try {
+        await controller.addSymbolLayer(
+          _routeSourceId,
+          _routeArrowLayerId,
+          SymbolLayerProperties(
+            symbolPlacement: 'line',
+            symbolSpacing: 50,
+            iconImage: _arrowImageName,
+            iconSize: 0.65,
+            iconAllowOverlap: true,
+            iconIgnorePlacement: true,
+            iconRotationAlignment: 'map',
+          ),
+        );
+      } catch (error) {
+        debugPrint('Unable to draw route direction arrows: $error');
+      }
+    }
+  }
+
+  Future<bool> _ensureArrowImage(MapLibreMapController controller) async {
+    if (_arrowImageAdded) return true;
+    try {
+      final ByteData data = await rootBundle.load(
+        'assets/images/route_arrow.png',
+      );
+      await controller.addImage(_arrowImageName, data.buffer.asUint8List());
+      _arrowImageAdded = true;
+      return true;
+    } catch (error) {
+      debugPrint('Unable to load route direction arrow: $error');
+      return false;
+    }
   }
 
   Map<String, dynamic> _fallbackRouteGeoJson(List<LatLng> points) {
