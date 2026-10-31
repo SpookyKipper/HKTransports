@@ -3,5 +3,5 @@ import 'package:hktransports/bus/state/app_settings.dart';
 
 String? departedEtaLabel(BusEta eta, AppSettings settings) {
   if (!eta.hasDepartedAt(DateTime.now().toUtc())) return null;
-  return settings.text('已離站', 'Departed');
+  return settings.text('正在離站', 'Leaving now');
 }

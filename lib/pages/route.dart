@@ -739,21 +739,19 @@ class _EtaLine extends StatelessWidget {
     final String clock = DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
     final String? departed = departedEtaLabel(eta, settings);
-    final String wait =
-        departed ??
-        (minutes < 1
-            ? atOrigin
-                  ? settings.text('即場開出', 'Departing now')
-                  : settings.text('即將到達', 'Arriving')
-            : '$minutes ${settings.text('分鐘', 'min')}');
+    final String wait = minutes < 1
+        ? atOrigin
+              ? settings.text('即場開出', 'Departing now')
+              : settings.text('即將到達', 'Arriving')
+        : '$minutes ${settings.text('分鐘', 'min')}';
 
-    final String parts =
-        departed ??
-        switch (settings.etaFormat) {
-          EtaFormat.diff => wait,
-          EtaFormat.exact => clock,
-          EtaFormat.mixed => '$clock  $wait',
-        };
+    final String parts = departed != null
+        ? '$clock  $departed'
+        : switch (settings.etaFormat) {
+            EtaFormat.diff => wait,
+            EtaFormat.exact => clock,
+            EtaFormat.mixed => '$clock  $wait',
+          };
     final bool showDelayedEta =
         departed != null ||
         eta.canShowDelayedEta(
