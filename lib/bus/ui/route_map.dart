@@ -35,7 +35,8 @@ class RouteMap extends StatefulWidget {
   RouteMapState createState() => RouteMapState();
 }
 
-class RouteMapState extends State<RouteMap> {
+class RouteMapState extends State<RouteMap>
+    with SingleTickerProviderStateMixin {
   static const String _baseStyleUrl =
       'https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/vt/basemap/WGS84/resources/styles/root.json';
   static const String _basemapTiles =
@@ -62,11 +63,36 @@ class RouteMapState extends State<RouteMap> {
   bool _layersReady = false;
   int? _pendingFocusIndex;
   int? _selectedIndex;
+  late final AnimationController _pulseController;
+  double _selectedOpacity = 1;
+  DateTime _lastPulseUpdate = DateTime.fromMillisecondsSinceEpoch(0);
+  bool _stationSourceWriting = false;
+  bool _stationSourceDirty = false;
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..addListener(_onPulseTick);
     _waypointsFuture = RouteWaypoints.fetch(widget.route);
+  }
+
+  void _onPulseTick() {
+    _selectedOpacity = 0.2 + _pulseController.value * 0.8;
+    final DateTime now = DateTime.now();
+    if (now.difference(_lastPulseUpdate) < const Duration(milliseconds: 50)) {
+      return;
+    }
+    _lastPulseUpdate = now;
+    unawaited(_updateStationSource());
+  }
+
+  void _startPulse() {
+    if (!_pulseController.isAnimating) {
+      _pulseController.repeat(reverse: true);
+    }
   }
 
   @override
@@ -83,6 +109,7 @@ class RouteMapState extends State<RouteMap> {
 
   @override
   void dispose() {
+    _pulseController.dispose();
     _styleController = null;
     _mapController = null;
     super.dispose();
@@ -90,6 +117,7 @@ class RouteMapState extends State<RouteMap> {
 
   void focusStation(int index) {
     _selectedIndex = index;
+    _startPulse();
     if (!_layersReady || _mapController == null) {
       _pendingFocusIndex = index;
       return;
@@ -202,7 +230,6 @@ class RouteMapState extends State<RouteMap> {
     final ColorScheme scheme =
         AppColorSchemes.lightOf(context) ?? Theme.of(context).colorScheme;
     final String routeColor = _hex(scheme.primary);
-    final String selectedColor = _hex(scheme.tertiary);
 
     await _removeLayers(style);
 
@@ -278,37 +305,11 @@ class RouteMapState extends State<RouteMap> {
         id: _stationLayerId,
         sourceId: _stationSourceId,
         paint: <String, Object>{
-          'circle-radius': <Object>[
-            'case',
-            <Object>[
-              '==',
-              <Object>['get', 'selected'],
-              1,
-            ],
-            9.0,
-            6.0,
-          ],
-          'circle-color': <Object>[
-            'case',
-            <Object>[
-              '==',
-              <Object>['get', 'selected'],
-              1,
-            ],
-            selectedColor,
-            routeColor,
-          ],
-          'circle-stroke-width': <Object>[
-            'case',
-            <Object>[
-              '==',
-              <Object>['get', 'selected'],
-              1,
-            ],
-            2.5,
-            1.5,
-          ],
+          'circle-radius': 6.0,
+          'circle-color': routeColor,
+          'circle-stroke-width': 1.5,
           'circle-stroke-color': '#FFFFFF',
+          'circle-opacity': <Object>['get', 'opacity'],
         },
       ),
     );
@@ -338,13 +339,25 @@ class RouteMapState extends State<RouteMap> {
   Future<void> _updateStationSource() async {
     final StyleController? style = _styleController;
     if (!_layersReady || style == null) return;
+    if (_stationSourceWriting) {
+      _stationSourceDirty = true;
+      return;
+    }
+    _stationSourceWriting = true;
     try {
-      await style.updateGeoJsonSource(
-        id: _stationSourceId,
-        data: jsonEncode(_stationGeoJson()),
-      );
+      do {
+        _stationSourceDirty = false;
+        await style.updateGeoJsonSource(
+          id: _stationSourceId,
+          data: jsonEncode(_stationGeoJson()),
+        );
+      } while (_stationSourceDirty &&
+          mounted &&
+          identical(_styleController, style));
     } catch (error) {
       debugPrint('Unable to update station highlighting: $error');
+    } finally {
+      _stationSourceWriting = false;
     }
   }
 
@@ -358,6 +371,9 @@ class RouteMapState extends State<RouteMap> {
             'properties': <String, dynamic>{
               'index': station.index,
               'selected': station.index == _selectedIndex ? 1 : 0,
+              'opacity': station.index == _selectedIndex
+                  ? _selectedOpacity
+                  : 1.0,
             },
             'geometry': <String, dynamic>{
               'type': 'Point',
