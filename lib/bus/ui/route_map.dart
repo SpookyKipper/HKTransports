@@ -133,8 +133,10 @@ class RouteMapState extends State<RouteMap>
     if (controller == null || station == null) return;
     await _updateStationSource();
     if (!mounted || !identical(_mapController, controller)) return;
+    final double bearing = controller.getCamera().bearing;
     await controller.fitBounds(
       bounds: _boundsAround(station.stop.lat, station.stop.lng, 0.0035),
+      bearing: bearing,
       padding: const EdgeInsets.all(24),
       nativeDuration: const Duration(milliseconds: 900),
       webMaxDuration: const Duration(milliseconds: 900),
@@ -431,8 +433,10 @@ class RouteMapState extends State<RouteMap>
     final MapController? controller = _mapController;
     if (controller == null || points.isEmpty) return;
     final LngLatBounds bounds = _boundsForPoints(points);
+    final double bearing = controller.getCamera().bearing;
     await controller.fitBounds(
       bounds: bounds,
+      bearing: bearing,
       padding: const EdgeInsets.all(44),
       nativeDuration: const Duration(milliseconds: 500),
       webMaxDuration: const Duration(milliseconds: 500),
@@ -628,7 +632,7 @@ class RouteMapState extends State<RouteMap>
                     initZoom: 11,
                     minZoom: 8,
                     maxZoom: 18,
-                    gestures: const MapGestures.all(pitch: false),
+                    gestures: const MapGestures.all(rotate: true, pitch: false),
                   ),
                   onMapCreated: (MapController controller) {
                     _mapController = controller;
@@ -653,6 +657,35 @@ class RouteMapState extends State<RouteMap>
                       child: const SourceAttribution(
                         showMapLibre: false,
                         alignment: Alignment.bottomRight,
+                      ),
+                    ),
+                    MapCompass(
+                      hideIfRotatedNorth: true,
+                      alignment: Alignment.topLeft,
+                      padding: const EdgeInsets.all(12),
+                      radius: 18,
+                      rotationOffset: 0,
+                      child: Tooltip(
+                        message: settings.text('重置地圖方向', 'Reset north'),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface.withValues(
+                              alpha: 0.92,
+                            ),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: theme.colorScheme.outlineVariant,
+                            ),
+                          ),
+                          child: SizedBox.square(
+                            dimension: 36,
+                            child: Icon(
+                              Icons.navigation,
+                              size: 20,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
