@@ -50,6 +50,7 @@ class _RoutePage extends StatefulWidget {
 
 class _RoutePageState extends State<_RoutePage> {
   static const double _stationGap = 3;
+  static const double _stationInnerRadius = 8;
 
   late final EtaService _etaService;
   final Map<int, List<BusEta>?> _etas = {};
@@ -214,65 +215,83 @@ class _RoutePageState extends State<_RoutePage> {
                 final int? index = _expandedIndex;
                 if (index != null) await _fetch(index);
               },
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                cacheExtent: 12000,
-                itemCount: stopIds.length,
-                itemBuilder: (context, index) {
-                  final bool isExpanded = _expandedIndex == index;
-                  final M3EListExpandableTheme expandableTheme = M3ETheme.of(
-                    context,
-                  ).listTheme.expandable;
-                  return KeyedSubtree(
-                    key: _stationKeys.putIfAbsent(index, () => GlobalKey()),
-                    child: M3EExpandableItem(
-                      key: ValueKey<String>(
-                        '${stopIds[index]}|'
-                        '${_etas[index]?.length ?? -1}|'
-                        '${_loading.contains(index)}',
-                      ),
-                      index: index,
-                      totalCount: stopIds.length,
-                      isExpanded: isExpanded,
-                      decoration: M3EExpandableStyle(
-                        outerRadius: index == 0 ? 8 : 24,
-                        innerRadius: 8,
-                        hoverRadius: 24,
-                        pressedRadius: 24,
-                        gap: _stationGap,
-                        elevation: 0,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        headerPadding: const EdgeInsets.all(16),
-                        bodyPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        iconPlacement: M3EExpandableIconPlacement.right,
-                        expandIcon: null,
-                        collapseIcon: null,
-                        useInkWell: false,
-                      ),
-                      expandMotion: expandableTheme.expandMotion,
-                      collapseMotion: expandableTheme.collapseMotion,
-                      onToggle: () => _onExpansionChanged(index, !isExpanded),
-                      headerBuilder: (context, index, progress) =>
-                          _buildStopHeader(
-                            context,
-                            repository,
-                            route,
-                            stopIds,
-                            index,
-                            holiday,
-                            isExpanded,
-                            pinned,
-                            () => _onExpansionChanged(index, !isExpanded),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(_stationInnerRadius),
+                  ),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    cacheExtent: 12000,
+                    itemCount: stopIds.length,
+                    itemBuilder: (context, index) {
+                      final bool isExpanded = _expandedIndex == index;
+                      final M3EListExpandableTheme expandableTheme =
+                          M3ETheme.of(context).listTheme.expandable;
+                      return KeyedSubtree(
+                        key: _stationKeys.putIfAbsent(index, () => GlobalKey()),
+                        child: M3EExpandableItem(
+                          key: ValueKey<String>(
+                            '${stopIds[index]}|'
+                            '${_etas[index]?.length ?? -1}|'
+                            '${_loading.contains(index)}',
                           ),
-                      bodyBuilder: (context, index, progress) {
-                        if (progress <= 0) return const SizedBox.shrink();
-                        return _buildStopBody(context, route, stopIds, index);
-                      },
-                    ),
-                  );
-                },
+                          index: index,
+                          totalCount: stopIds.length,
+                          isExpanded: isExpanded,
+                          decoration: M3EExpandableStyle(
+                            outerRadius: index == 0 ? _stationInnerRadius : 24,
+                            innerRadius: _stationInnerRadius,
+                            hoverRadius: 24,
+                            pressedRadius: 24,
+                            gap: _stationGap,
+                            elevation: 0,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            headerPadding: const EdgeInsets.all(16),
+                            bodyPadding: const EdgeInsets.fromLTRB(
+                              16,
+                              0,
+                              16,
+                              16,
+                            ),
+                            iconPlacement: M3EExpandableIconPlacement.right,
+                            expandIcon: null,
+                            collapseIcon: null,
+                            useInkWell: false,
+                          ),
+                          expandMotion: expandableTheme.expandMotion,
+                          collapseMotion: expandableTheme.collapseMotion,
+                          onToggle: () =>
+                              _onExpansionChanged(index, !isExpanded),
+                          headerBuilder: (context, index, progress) =>
+                              _buildStopHeader(
+                                context,
+                                repository,
+                                route,
+                                stopIds,
+                                index,
+                                holiday,
+                                isExpanded,
+                                pinned,
+                                () => _onExpansionChanged(index, !isExpanded),
+                              ),
+                          bodyBuilder: (context, index, progress) {
+                            if (progress <= 0) return const SizedBox.shrink();
+                            return _buildStopBody(
+                              context,
+                              route,
+                              stopIds,
+                              index,
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ),
