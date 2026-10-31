@@ -3,13 +3,12 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/bus/data/route_waypoints.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:http/http.dart' as http;
-import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:maplibre/maplibre.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
@@ -50,16 +49,17 @@ class RouteMapState extends State<RouteMap> {
   static const String _routeSourceId = 'route-path';
   static const String _routeLayerId = 'route-path-line';
   static const String _routeArrowLayerId = 'route-path-arrows';
+  static const String _stationSourceId = 'route-stations';
+  static const String _stationLayerId = 'route-stations-layer';
   static const String _arrowImageName = 'route-direction-arrow';
   static const double _stationHitRadius = 26;
 
-  MapLibreMapController? _controller;
+  MapController? _mapController;
+  StyleController? _styleController;
   Future<String>? _styleFuture;
   Future<Map<String, dynamic>?>? _waypointsFuture;
-  final List<Circle> _circles = [];
   bool? _isChinese;
-  bool _styleLoaded = false;
-  bool _arrowImageAdded = false;
+  bool _layersReady = false;
   int? _pendingFocusIndex;
   int? _selectedIndex;
 
@@ -75,40 +75,40 @@ class RouteMapState extends State<RouteMap> {
     final bool zh = context.read<AppSettings>().isChinese;
     if (_isChinese == zh) return;
     _isChinese = zh;
-    _styleLoaded = false;
-    _controller = null;
-    _arrowImageAdded = false;
-    _circles.clear();
+    _layersReady = false;
+    _styleController = null;
+    _mapController = null;
     _styleFuture = _loadStyle(zh);
   }
 
   @override
   void dispose() {
+    _styleController = null;
+    _mapController = null;
     super.dispose();
   }
 
   void focusStation(int index) {
     _selectedIndex = index;
-    if (!_styleLoaded || _controller == null) {
+    if (!_layersReady || _mapController == null) {
       _pendingFocusIndex = index;
       return;
     }
-    _focusStationCamera(index);
+    unawaited(_focusStationCamera(index));
   }
 
   Future<void> _focusStationCamera(int index) async {
-    final MapLibreMapController? controller = _controller;
-    if (controller == null) return;
+    final MapController? controller = _mapController;
     final RouteMapStation? station = _stationAt(index);
-    if (station == null) return;
-    await controller.animateCamera(
-      CameraUpdate.newLatLngZoom(
-        LatLng(station.stop.lat, station.stop.lng),
-        15,
-      ),
-      duration: const Duration(milliseconds: 900),
+    if (controller == null || station == null) return;
+    await _updateStationSource();
+    if (!mounted || !identical(_mapController, controller)) return;
+    await controller.fitBounds(
+      bounds: _boundsAround(station.stop.lat, station.stop.lng, 0.005),
+      padding: const EdgeInsets.all(28),
+      nativeDuration: const Duration(milliseconds: 900),
+      webMaxDuration: const Duration(milliseconds: 900),
     );
-    await _updateCircleSelection(controller, index);
   }
 
   RouteMapStation? _stationAt(int index) {
@@ -118,38 +118,33 @@ class RouteMapState extends State<RouteMap> {
     return null;
   }
 
-  Future<void> _onMapClick(double x, double y) async {
-    final MapLibreMapController? controller = _controller;
-    if (controller == null) return;
-    final List<RouteMapStation> stations = [
-      for (final RouteMapStation station in widget.stations)
-        if (_validCoordinate(station.stop.lat, station.stop.lng)) station,
-    ];
+  void _onMapEvent(MapEvent event) {
+    if (event is! MapEventClick) return;
+    _onMapClick(event.screenPoint);
+  }
+
+  void _onMapClick(Offset tap) {
+    final MapController? controller = _mapController;
+    if (controller == null || !_layersReady) return;
+    final List<RouteMapStation> stations = _validStations();
     if (stations.isEmpty) return;
 
-    final List<math.Point> screenPoints;
+    final List<Offset> screenPoints;
     try {
-      screenPoints = await controller.toScreenLocationBatch([
+      screenPoints = controller.toScreenLocations([
         for (final RouteMapStation station in stations)
-          LatLng(station.stop.lat, station.stop.lng),
+          Geographic(lon: station.stop.lng, lat: station.stop.lat),
       ]);
     } catch (_) {
       return;
     }
-    if (!mounted ||
-        !identical(_controller, controller) ||
-        screenPoints.length != stations.length) {
-      return;
-    }
+    if (screenPoints.length != stations.length) return;
 
     int nearestIndex = -1;
     double nearestDistance = double.infinity;
     final List<double> distances = List<double>.filled(stations.length, 0);
     for (int index = 0; index < stations.length; index++) {
-      final math.Point point = screenPoints[index];
-      final double dx = point.x.toDouble() - x;
-      final double dy = point.y.toDouble() - y;
-      final double distance = math.sqrt(dx * dx + dy * dy);
+      final double distance = (screenPoints[index] - tap).distance;
       distances[index] = distance;
       if (distance < nearestDistance) {
         nearestDistance = distance;
@@ -159,62 +154,34 @@ class RouteMapState extends State<RouteMap> {
     if (nearestIndex < 0) return;
 
     double nearestNeighbour = double.infinity;
-    final math.Point nearestPoint = screenPoints[nearestIndex];
+    final Offset nearestPoint = screenPoints[nearestIndex];
     for (int index = 0; index < screenPoints.length; index++) {
       if (index == nearestIndex) continue;
-      final math.Point point = screenPoints[index];
-      final double dx = point.x.toDouble() - nearestPoint.x.toDouble();
-      final double dy = point.y.toDouble() - nearestPoint.y.toDouble();
-      final double distance = math.sqrt(dx * dx + dy * dy);
+      final double distance = (screenPoints[index] - nearestPoint).distance;
       if (distance < nearestNeighbour) nearestNeighbour = distance;
     }
-
-    // Keep the enlarged click target inside the gap to the closest dot.
     final double hitRadius = math.min(_stationHitRadius, nearestNeighbour / 2);
     if (distances[nearestIndex] > hitRadius) return;
+
     _selectedIndex = stations[nearestIndex].index;
+    unawaited(_updateStationSource());
     widget.onStationTap(stations[nearestIndex].index);
   }
 
-  Future<void> _onStyleLoaded() async {
-    final MapLibreMapController? controller = _controller;
-    if (controller == null) return;
-    _styleLoaded = true;
-    await controller.clearCircles();
-    await controller.clearLines();
+  Future<void> _onStyleLoaded(StyleController style) async {
+    if (!mounted) return;
+    _styleController = style;
+    _layersReady = false;
+    final List<RouteMapStation> stations = _validStations();
+    final List<Geographic> points = [
+      for (final RouteMapStation station in stations)
+        Geographic(lon: station.stop.lng, lat: station.stop.lat),
+    ];
+    if (points.isEmpty) return;
 
-    final List<RouteMapStation> validStations = [
-      for (final RouteMapStation station in widget.stations)
-        if (_validCoordinate(station.stop.lat, station.stop.lng)) station,
-    ];
-    if (validStations.isEmpty) return;
-
-    final ColorScheme scheme =
-        AppColorSchemes.lightOf(context) ?? Theme.of(context).colorScheme;
-    final String routeColor = _hex(scheme.primary);
-    final List<LatLng> points = [
-      for (final RouteMapStation station in validStations)
-        LatLng(station.stop.lat, station.stop.lng),
-    ];
-
-    final List<CircleOptions> circles = [
-      for (final RouteMapStation station in validStations)
-        CircleOptions(
-          geometry: LatLng(station.stop.lat, station.stop.lng),
-          circleRadius: 6,
-          circleColor: routeColor,
-          circleStrokeColor: '#FFFFFF',
-          circleStrokeWidth: 1.5,
-        ),
-    ];
-    final List<Map<String, dynamic>> data = [
-      for (final RouteMapStation station in validStations)
-        <String, dynamic>{'index': station.index},
-    ];
-    final List<Circle> added = await controller.addCircles(circles, data);
-    _circles
-      ..clear()
-      ..addAll(added);
+    await _buildLayers(style, points);
+    if (!mounted || !identical(_styleController, style)) return;
+    _layersReady = true;
 
     final int? pending = _pendingFocusIndex;
     if (pending != null) {
@@ -223,102 +190,185 @@ class RouteMapState extends State<RouteMap> {
     } else {
       await _fitCamera(points);
       if (_selectedIndex != null) {
-        await _updateCircleSelection(controller, _selectedIndex!);
+        await _updateStationSource();
       }
     }
-    await _drawRouteLine(controller, routeColor, points);
   }
 
-  Future<void> _drawRouteLine(
-    MapLibreMapController controller,
-    String color,
-    List<LatLng> stopPoints,
+  Future<void> _buildLayers(
+    StyleController style,
+    List<Geographic> points,
   ) async {
+    final ColorScheme scheme =
+        AppColorSchemes.lightOf(context) ?? Theme.of(context).colorScheme;
+    final String routeColor = _hex(scheme.primary);
+    final String selectedColor = _hex(scheme.tertiary);
+
+    await _removeLayers(style);
+
     final Map<String, dynamic>? waypoints = await _waypointsFuture;
-    if (!mounted || !identical(_controller, controller)) return;
-    final Map<String, dynamic> fallback = _fallbackRouteGeoJson(stopPoints);
-    if (waypoints == null) {
-      await _setRouteLine(controller, fallback, color);
-      return;
-    }
+    if (!mounted || !identical(_styleController, style)) return;
+    final Map<String, dynamic> fallback = _fallbackRouteGeoJson(points);
+    Map<String, dynamic> routeData = waypoints ?? fallback;
     try {
-      await _setRouteLine(controller, waypoints, color);
+      await style.addSource(
+        GeoJsonSource(id: _routeSourceId, data: jsonEncode(routeData)),
+      );
     } catch (error) {
-      debugPrint('Unable to draw route waypoints: $error');
-      if (!mounted || !identical(_controller, controller)) return;
-      await _setRouteLine(controller, fallback, color);
-    }
-  }
-
-  Future<void> _setRouteLine(
-    MapLibreMapController controller,
-    Map<String, dynamic> geoJson,
-    String color,
-  ) async {
-    try {
-      await controller.removeLayer(_routeArrowLayerId);
-    } catch (_) {
-      // The arrow layer does not exist on a fresh style.
-    }
-    try {
-      await controller.removeLayer(_routeLayerId);
-    } catch (_) {
-      // The layer does not exist on a fresh style.
-    }
-    try {
-      await controller.removeSource(_routeSourceId);
-    } catch (_) {
-      // The source does not exist on a fresh style.
-    }
-    await controller.addGeoJsonSource(_routeSourceId, geoJson);
-    await controller.addLineLayer(
-      _routeSourceId,
-      _routeLayerId,
-      LineLayerProperties(
-        lineColor: color,
-        lineWidth: 4,
-        lineJoin: 'round',
-        lineOpacity: 0.9,
-      ),
-    );
-    if (await _ensureArrowImage(controller)) {
+      debugPrint('Unable to add route source: $error');
+      routeData = fallback;
       try {
-        await controller.addSymbolLayer(
-          _routeSourceId,
-          _routeArrowLayerId,
-          SymbolLayerProperties(
-            symbolPlacement: 'line',
-            symbolSpacing: 50,
-            iconImage: _arrowImageName,
-            iconSize: 0.65,
-            iconRotate: 90,
-            iconAllowOverlap: true,
-            iconIgnorePlacement: true,
-            iconRotationAlignment: 'map',
-          ),
+        await style.addSource(
+          GeoJsonSource(id: _routeSourceId, data: jsonEncode(routeData)),
         );
       } catch (error) {
-        debugPrint('Unable to draw route direction arrows: $error');
+        debugPrint('Unable to add fallback route source: $error');
+        return;
+      }
+    }
+
+    await style.addLayer(
+      LineStyleLayer(
+        id: _routeLayerId,
+        sourceId: _routeSourceId,
+        paint: <String, Object>{
+          'line-color': routeColor,
+          'line-width': 4.0,
+          'line-join': 'round',
+          'line-opacity': 0.9,
+        },
+      ),
+    );
+
+    try {
+      await style.removeImage(_arrowImageName);
+    } catch (_) {
+      // First style load has no arrow image yet.
+    }
+    try {
+      await style.addImageFromAssets(
+        id: _arrowImageName,
+        asset: 'assets/images/route_arrow.png',
+      );
+      await style.addLayer(
+        SymbolStyleLayer(
+          id: _routeArrowLayerId,
+          sourceId: _routeSourceId,
+          layout: <String, Object>{
+            'symbol-placement': 'line',
+            'symbol-spacing': 50.0,
+            'icon-image': _arrowImageName,
+            'icon-size': 0.65,
+            'icon-rotate': 90.0,
+            'icon-allow-overlap': true,
+            'icon-ignore-placement': true,
+            'icon-rotation-alignment': 'map',
+          },
+        ),
+      );
+    } catch (error) {
+      debugPrint('Unable to draw route direction arrows: $error');
+    }
+
+    await style.addSource(
+      GeoJsonSource(id: _stationSourceId, data: jsonEncode(_stationGeoJson())),
+    );
+    await style.addLayer(
+      CircleStyleLayer(
+        id: _stationLayerId,
+        sourceId: _stationSourceId,
+        paint: <String, Object>{
+          'circle-radius': <Object>[
+            'case',
+            <Object>[
+              '==',
+              <Object>['get', 'selected'],
+              1,
+            ],
+            9.0,
+            6.0,
+          ],
+          'circle-color': <Object>[
+            'case',
+            <Object>[
+              '==',
+              <Object>['get', 'selected'],
+              1,
+            ],
+            selectedColor,
+            routeColor,
+          ],
+          'circle-stroke-width': <Object>[
+            'case',
+            <Object>[
+              '==',
+              <Object>['get', 'selected'],
+              1,
+            ],
+            2.5,
+            1.5,
+          ],
+          'circle-stroke-color': '#FFFFFF',
+        },
+      ),
+    );
+  }
+
+  Future<void> _removeLayers(StyleController style) async {
+    for (final String layerId in <String>[
+      _routeArrowLayerId,
+      _routeLayerId,
+      _stationLayerId,
+    ]) {
+      try {
+        await style.removeLayer(layerId);
+      } catch (_) {
+        // Layer does not exist on a fresh style.
+      }
+    }
+    for (final String sourceId in <String>[_routeSourceId, _stationSourceId]) {
+      try {
+        await style.removeSource(sourceId);
+      } catch (_) {
+        // Source does not exist on a fresh style.
       }
     }
   }
 
-  Future<bool> _ensureArrowImage(MapLibreMapController controller) async {
-    if (_arrowImageAdded) return true;
+  Future<void> _updateStationSource() async {
+    final StyleController? style = _styleController;
+    if (!_layersReady || style == null) return;
     try {
-      final ByteData data = await rootBundle.load(
-        'assets/images/route_arrow.png',
+      await style.updateGeoJsonSource(
+        id: _stationSourceId,
+        data: jsonEncode(_stationGeoJson()),
       );
-      await controller.addImage(_arrowImageName, data.buffer.asUint8List());
-      _arrowImageAdded = true;
-      return true;
     } catch (error) {
-      debugPrint('Unable to load route direction arrow: $error');
-      return false;
+      debugPrint('Unable to update station highlighting: $error');
     }
   }
 
-  Map<String, dynamic> _fallbackRouteGeoJson(List<LatLng> points) {
+  Map<String, dynamic> _stationGeoJson() {
+    return <String, dynamic>{
+      'type': 'FeatureCollection',
+      'features': <dynamic>[
+        for (final RouteMapStation station in _validStations())
+          <String, dynamic>{
+            'type': 'Feature',
+            'properties': <String, dynamic>{
+              'index': station.index,
+              'selected': station.index == _selectedIndex ? 1 : 0,
+            },
+            'geometry': <String, dynamic>{
+              'type': 'Point',
+              'coordinates': <double>[station.stop.lng, station.stop.lat],
+            },
+          },
+      ],
+    };
+  }
+
+  Map<String, dynamic> _fallbackRouteGeoJson(List<Geographic> points) {
     if (points.length < 2) {
       return <String, dynamic>{
         'type': 'FeatureCollection',
@@ -334,8 +384,8 @@ class RouteMapState extends State<RouteMap> {
           'geometry': <String, dynamic>{
             'type': 'LineString',
             'coordinates': <List<double>>[
-              for (final LatLng point in points)
-                <double>[point.longitude, point.latitude],
+              for (final Geographic point in points)
+                <double>[point.lon, point.lat],
             ],
           },
         },
@@ -343,71 +393,48 @@ class RouteMapState extends State<RouteMap> {
     };
   }
 
-  Future<void> _fitCamera(List<LatLng> points) async {
-    final MapLibreMapController? controller = _controller;
+  Future<void> _fitCamera(List<Geographic> points) async {
+    final MapController? controller = _mapController;
     if (controller == null || points.isEmpty) return;
-    if (points.length == 1) {
-      await controller.animateCamera(
-        CameraUpdate.newLatLngZoom(points.first, 15),
-        duration: const Duration(milliseconds: 400),
-      );
-      return;
-    }
-    double minLat = points.first.latitude;
-    double maxLat = points.first.latitude;
-    double minLng = points.first.longitude;
-    double maxLng = points.first.longitude;
-    for (final LatLng point in points) {
-      minLat = point.latitude < minLat ? point.latitude : minLat;
-      maxLat = point.latitude > maxLat ? point.latitude : maxLat;
-      minLng = point.longitude < minLng ? point.longitude : minLng;
-      maxLng = point.longitude > maxLng ? point.longitude : maxLng;
-    }
-    if (minLat == maxLat && minLng == maxLng) {
-      await controller.animateCamera(
-        CameraUpdate.newLatLngZoom(points.first, 15),
-        duration: const Duration(milliseconds: 400),
-      );
-      return;
-    }
-    await controller.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-          southwest: LatLng(minLat, minLng),
-          northeast: LatLng(maxLat, maxLng),
-        ),
-        left: 44,
-        top: 44,
-        right: 44,
-        bottom: 44,
-      ),
-      duration: const Duration(milliseconds: 500),
+    final LngLatBounds bounds = _boundsForPoints(points);
+    await controller.fitBounds(
+      bounds: bounds,
+      padding: const EdgeInsets.all(44),
+      nativeDuration: const Duration(milliseconds: 500),
+      webMaxDuration: const Duration(milliseconds: 500),
     );
   }
 
-  Future<void> _updateCircleSelection(
-    MapLibreMapController controller,
-    int selected,
-  ) async {
-    if (!mounted || _circles.isEmpty) return;
-    final ColorScheme scheme =
-        AppColorSchemes.lightOf(context) ?? Theme.of(context).colorScheme;
-    final String routeColor = _hex(scheme.primary);
-    final String selectedColor = _hex(scheme.tertiary);
-    for (final Circle circle in List<Circle>.from(_circles)) {
-      final dynamic raw = circle.data?['index'];
-      final int? index = raw is int ? raw : int.tryParse('$raw');
-      final bool isSelected = index == selected;
-      await controller.updateCircle(
-        circle,
-        CircleOptions(
-          circleRadius: isSelected ? 9 : 6,
-          circleColor: isSelected ? selectedColor : routeColor,
-          circleStrokeColor: '#FFFFFF',
-          circleStrokeWidth: isSelected ? 2.5 : 1.5,
-        ),
+  LngLatBounds _boundsForPoints(List<Geographic> points) {
+    if (points.length == 1) {
+      return _boundsAround(points.first.lat, points.first.lon, 0.004);
+    }
+    final LngLatBounds bounds = LngLatBounds.fromPoints(points);
+    if (bounds.longitudeWest == bounds.longitudeEast ||
+        bounds.latitudeSouth == bounds.latitudeNorth) {
+      return _boundsAround(
+        (bounds.latitudeSouth + bounds.latitudeNorth) / 2,
+        (bounds.longitudeWest + bounds.longitudeEast) / 2,
+        0.004,
       );
     }
+    return bounds;
+  }
+
+  LngLatBounds _boundsAround(double lat, double lng, double delta) {
+    return LngLatBounds(
+      longitudeWest: lng - delta,
+      longitudeEast: lng + delta,
+      latitudeSouth: lat - delta,
+      latitudeNorth: lat + delta,
+    );
+  }
+
+  List<RouteMapStation> _validStations() {
+    return [
+      for (final RouteMapStation station in widget.stations)
+        if (_validCoordinate(station.stop.lat, station.stop.lng)) station,
+    ];
   }
 
   Future<String> _loadStyle(bool zh) async {
@@ -557,32 +584,31 @@ class RouteMapState extends State<RouteMap> {
               children: [
                 MapLibreMap(
                   key: ValueKey<String>('route-map-${_isChinese == true}'),
-                  styleString: style,
-                  initialCameraPosition: CameraPosition(
-                    target: _initialTarget(),
-                    zoom: 11,
+                  options: MapOptions(
+                    initStyle: style,
+                    initCenter: _initialCenter(),
+                    initZoom: 11,
+                    minZoom: 8,
+                    maxZoom: 18,
+                    gestures: const MapGestures.all(pitch: false),
                   ),
-                  minMaxZoomPreference: const MinMaxZoomPreference(8, 18),
-                  compassEnabled: false,
-                  rotateGesturesEnabled: true,
-                  tiltGesturesEnabled: false,
-                  logoEnabled: false,
-                  attributionButtonPosition:
-                      AttributionButtonPosition.bottomRight,
-                  onMapCreated: (MapLibreMapController controller) {
-                    _controller = controller;
+                  onMapCreated: (MapController controller) {
+                    _mapController = controller;
                   },
-                  featureTapsTriggersMapClick: true,
-                  onMapClick: (math.Point point, LatLng _) {
-                    unawaited(
-                      _onMapClick(point.x.toDouble(), point.y.toDouble()),
-                    );
+                  onStyleLoaded: (StyleController style) {
+                    unawaited(_onStyleLoaded(style));
                   },
-                  onStyleLoadedCallback: _onStyleLoaded,
+                  onEvent: _onMapEvent,
+                  children: const [
+                    SourceAttribution(
+                      showMapLibre: false,
+                      alignment: Alignment.bottomRight,
+                    ),
+                  ],
                 ),
                 Positioned(
-                  right: 38,
-                  bottom: 6,
+                  right: 44,
+                  bottom: 8,
                   child: IgnorePointer(
                     child: Image.asset(
                       'assets/images/landsd.png',
@@ -601,19 +627,18 @@ class RouteMapState extends State<RouteMap> {
     );
   }
 
-  LatLng _initialTarget() {
-    final List<RouteMapStation> valid = [
-      for (final RouteMapStation station in widget.stations)
-        if (_validCoordinate(station.stop.lat, station.stop.lng)) station,
-    ];
-    if (valid.isEmpty) return const LatLng(22.3193, 114.1694);
+  Geographic _initialCenter() {
+    final List<RouteMapStation> valid = _validStations();
+    if (valid.isEmpty) {
+      return const Geographic(lon: 114.1694, lat: 22.3193);
+    }
     double lat = 0;
     double lng = 0;
     for (final RouteMapStation station in valid) {
       lat += station.stop.lat;
       lng += station.stop.lng;
     }
-    return LatLng(lat / valid.length, lng / valid.length);
+    return Geographic(lon: lng / valid.length, lat: lat / valid.length);
   }
 
   bool _validCoordinate(double lat, double lng) {
