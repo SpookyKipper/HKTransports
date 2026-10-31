@@ -37,6 +37,15 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
       return;
     }
 
+    if (!settings.isProprietaryEnabled(ProprietaryDataSource.kmb)) {
+      _showMessage(
+        downloadAgain
+            ? settings.text('資料已重新下載', 'Data downloaded')
+            : settings.text('資料已更新', 'Data updated'),
+      );
+      return;
+    }
+
     setState(() {
       _refreshingBbi = true;
       _bbiCompleted = 0;
