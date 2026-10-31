@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/eta/eta_display.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
@@ -579,16 +580,21 @@ class _CompactEtaLine extends StatelessWidget {
     final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
     final String clock = DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
-    final String wait = minutes < 1
-        ? atOrigin
-              ? settings.text('即場開出', 'Departing now')
-              : settings.text('即將到達', 'Arriving')
-        : '$minutes ${settings.text('分', 'min')}';
-    final String text = switch (settings.etaFormat) {
-      EtaFormat.diff => wait,
-      EtaFormat.exact => clock,
-      EtaFormat.mixed => '$clock  $wait',
-    };
+    final String? departed = departedEtaLabel(eta, settings);
+    final String wait =
+        departed ??
+        (minutes < 1
+            ? atOrigin
+                  ? settings.text('即場開出', 'Departing now')
+                  : settings.text('即將到達', 'Arriving')
+            : '$minutes ${settings.text('分', 'min')}');
+    final String text =
+        departed ??
+        switch (settings.etaFormat) {
+          EtaFormat.diff => wait,
+          EtaFormat.exact => clock,
+          EtaFormat.mixed => '$clock  $wait',
+        };
     final Color color = first
         ? Theme.of(context).colorScheme.primary
         : Theme.of(context).colorScheme.onSurfaceVariant;

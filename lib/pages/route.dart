@@ -6,6 +6,7 @@ import 'package:hktransports/app/page_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_data_updater.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/eta/eta_display.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
@@ -737,22 +738,29 @@ class _EtaLine extends StatelessWidget {
     final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
     final String clock = DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
-    final String wait = minutes < 1
-        ? atOrigin
-              ? settings.text('即場開出', 'Departing now')
-              : settings.text('即將到達', 'Arriving')
-        : '$minutes ${settings.text('分鐘', 'min')}';
+    final String? departed = departedEtaLabel(eta, settings);
+    final String wait =
+        departed ??
+        (minutes < 1
+            ? atOrigin
+                  ? settings.text('即場開出', 'Departing now')
+                  : settings.text('即將到達', 'Arriving')
+            : '$minutes ${settings.text('分鐘', 'min')}');
 
-    final String parts = switch (settings.etaFormat) {
-      EtaFormat.diff => wait,
-      EtaFormat.exact => clock,
-      EtaFormat.mixed => '$clock  $wait',
-    };
-    final bool showDelayedEta = eta.canShowDelayedEta(
-      stopIndex: stopIndex,
-      stopIndexByCode: stopIndexByCode,
-      minutes: minutes,
-    );
+    final String parts =
+        departed ??
+        switch (settings.etaFormat) {
+          EtaFormat.diff => wait,
+          EtaFormat.exact => clock,
+          EtaFormat.mixed => '$clock  $wait',
+        };
+    final bool showDelayedEta =
+        departed != null ||
+        eta.canShowDelayedEta(
+          stopIndex: stopIndex,
+          stopIndexByCode: stopIndexByCode,
+          minutes: minutes,
+        );
     if (!showDelayedEta) {
       final String message = remark.isEmpty
           ? settings.text('延誤', 'Delayed')

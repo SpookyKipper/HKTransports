@@ -29,6 +29,15 @@ class BusEta {
 
   bool get hasEta => eta != null;
 
+  bool hasDepartedAt(
+    DateTime now, {
+    Duration grace = const Duration(seconds: 30),
+  }) {
+    final DateTime? time = eta;
+    if (time == null) return false;
+    return now.toUtc().difference(time.toUtc()) >= grace;
+  }
+
   bool get isScheduledMark {
     final String en = remarkEn.toLowerCase();
     final String zh = remarkZh;
