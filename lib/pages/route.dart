@@ -205,27 +205,6 @@ class _RoutePageState extends State<_RoutePage> {
               onStationTap: _onMapStationTap,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 6, 20, 8),
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 2,
-              children: [
-                Text(
-                  '${settings.text('由', 'from')} ${route.orig.get(settings.language)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                Text(
-                  route.companiesLabel(settings.language),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
           _RouteUpdateNotice(route: route),
           Expanded(
             child: M3ERefreshIndicator.contained(
