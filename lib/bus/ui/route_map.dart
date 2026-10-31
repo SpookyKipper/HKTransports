@@ -484,7 +484,7 @@ class RouteMapState extends State<RouteMap> {
     context.watch<AppSettings>();
     final Future<String>? styleFuture = _styleFuture;
     return SizedBox(
-      height: 224,
+      height: 256,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: FutureBuilder<String>(
