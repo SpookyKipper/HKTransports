@@ -7,14 +7,79 @@ import 'package:intl/intl.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
-class UpdateDataPageRoute extends StatelessWidget {
+class UpdateDataPageRoute extends StatefulWidget {
   const UpdateDataPageRoute({super.key});
+
+  @override
+  State<UpdateDataPageRoute> createState() => _UpdateDataPageRouteState();
+}
+
+class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
+  bool _refreshingBbi = false;
+  int _bbiCompleted = 0;
+  int _bbiTotal = 8;
+
+  Future<void> _runUpdate({
+    required bool force,
+    required bool downloadAgain,
+  }) async {
+    final AppSettings settings = context.read<AppSettings>();
+    final BusRepository repository = context.read<BusRepository>();
+    final bool updated = await repository.update(force: force);
+    if (!mounted) return;
+    if (!updated) {
+      final bool failed = repository.error != null;
+      _showMessage(
+        downloadAgain || failed
+            ? settings.text('下載失敗', 'Download failed')
+            : settings.text('資料已是最新', 'Data is up to date'),
+      );
+      return;
+    }
+
+    setState(() {
+      _refreshingBbi = true;
+      _bbiCompleted = 0;
+      _bbiTotal = 8;
+    });
+    bool refreshed = false;
+    try {
+      refreshed = await const BbiService().refreshAll(
+        onProgress: (int completed, int total) {
+          if (!mounted) return;
+          setState(() {
+            _bbiCompleted = completed;
+            _bbiTotal = total;
+          });
+        },
+      );
+    } catch (_) {
+      refreshed = false;
+    }
+    if (!mounted) return;
+    setState(() => _refreshingBbi = false);
+    _showMessage(
+      refreshed
+          ? settings.text('路線及轉乘資料已更新', 'Route and interchange data updated')
+          : settings.text(
+              '路線資料已更新，但轉乘資料更新失敗',
+              'Route data updated, but interchange data refresh failed',
+            ),
+    );
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
-    final bool busy = repository.status == BusDataStatus.updating;
+    final bool routeBusy = repository.status == BusDataStatus.updating;
+    final bool busy = routeBusy || _refreshingBbi;
 
     return Scaffold(
       appBar: buildPageBar(
@@ -73,7 +138,7 @@ class UpdateDataPageRoute extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          if (busy) ...[
+          if (routeBusy) ...[
             M3EProgressIndicator.linear(
               value: repository.progress,
               strokeWidth: 4,
@@ -88,24 +153,29 @@ class UpdateDataPageRoute extends StatelessWidget {
             ),
             const SizedBox(height: 16),
           ],
+          if (_refreshingBbi) ...[
+            M3EProgressIndicator.linear(
+              value: _bbiTotal == 0 ? null : _bbiCompleted / _bbiTotal,
+              strokeWidth: 4,
+              trackStrokeWidth: 4,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              settings.text(
+                '正在更新轉乘資料 $_bbiCompleted/$_bbiTotal',
+                'Updating interchange data $_bbiCompleted/$_bbiTotal',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+          ],
           M3EButton.icon(
             onPressed: busy
                 ? null
-                : () async {
-                    final bool updated = await repository.update(
-                      force: !repository.hasData,
-                    );
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          updated
-                              ? settings.text('資料已更新', 'Data updated')
-                              : settings.text('資料已是最新', 'Data is up to date'),
-                        ),
-                      ),
-                    );
-                  },
+                : () => _runUpdate(
+                    force: !repository.hasData,
+                    downloadAgain: false,
+                  ),
             icon: const Icon(Icons.download_outlined),
             label: Text(
               repository.hasData
@@ -118,19 +188,7 @@ class UpdateDataPageRoute extends StatelessWidget {
             style: M3EButtonStyle.text,
             onPressed: busy
                 ? null
-                : () async {
-                    final bool updated = await repository.update(force: true);
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          updated
-                              ? settings.text('資料已重新下載', 'Data downloaded')
-                              : settings.text('下載失敗', 'Download failed'),
-                        ),
-                      ),
-                    );
-                  },
+                : () => _runUpdate(force: true, downloadAgain: true),
             icon: const Icon(Icons.refresh),
             label: Text(settings.text('重新下載', 'Download again')),
           ),

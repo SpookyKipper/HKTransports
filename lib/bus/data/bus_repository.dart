@@ -6,6 +6,7 @@ import 'package:hktransports/bus/data/bus_data_updater.dart';
 import 'package:hktransports/bus/data/route_search.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
+import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/dataStore/objectbox.dart';
 
@@ -144,7 +145,8 @@ class BusRepository extends ChangeNotifier {
   Future<void> ensureDataAvailable() async {
     if (_status == BusDataStatus.updating) return;
     if (_database == null || updater.isCompletelyOutdated) {
-      await update();
+      final bool updated = await update();
+      if (updated) await const BbiService().clearCache();
     }
   }
 
@@ -157,7 +159,8 @@ class BusRepository extends ChangeNotifier {
     try {
       final bool needed = await checkForUpdate();
       if (needed) {
-        await update(force: true);
+        final bool updated = await update(force: true);
+        if (updated) await const BbiService().clearCache();
       }
     } finally {
       _checking = false;
