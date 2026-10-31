@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 PreferredSizeWidget buildPageBar(
   BuildContext context, {
   required String title,
+  Widget? titleTrailing,
   String? subtitle,
   List<Widget>? actions,
 }) {
@@ -25,8 +26,20 @@ PreferredSizeWidget buildPageBar(
       ).textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant) ??
       TextStyle(color: scheme.onSurfaceVariant);
 
+  final Widget titleWidget = titleTrailing == null
+      ? Text(title, style: titleStyle)
+      : Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(title, style: titleStyle),
+            const SizedBox(width: 8),
+            titleTrailing,
+          ],
+        );
+
   return M3EAppBar.top(
-    title: Text(title, style: titleStyle),
+    title: titleWidget,
     subtitle: subtitle == null
         ? null
         : Text(
