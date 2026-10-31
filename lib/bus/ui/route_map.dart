@@ -586,8 +586,8 @@ class RouteMapState extends State<RouteMap> {
                   child: IgnorePointer(
                     child: Image.asset(
                       'assets/images/landsd.png',
-                      width: 30,
-                      height: 29,
+                      width: 22,
+                      height: 21,
                       fit: BoxFit.contain,
                       filterQuality: FilterQuality.high,
                     ),
