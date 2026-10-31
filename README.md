@@ -24,7 +24,8 @@ Source code for the original project: [github.com/hkbus/hk-independent-bus-eta](
 ### Data sources
 
 - [DATA.GOV.HK](https://data.gov.hk)
-- [HK Bus Crawling](https://github.com/hkbus/hk-bus-crawling)
+- [HK Bus Crawling](https://github.com/SpookyKipper/hk-bus-crawling/)
+- [Transport Route Waypoints](https://github.com/SpookyKipper/hk-transports-route-waypoints)
 - [Common Spatial Data Infrastructure](https://portal.csdi.gov.hk)
 - KMB, Citybus, NLB, Green Minibus, MTR and the ferry operators
 - [HK Bus ETA notices](https://notice.hkbus.app)
@@ -33,7 +34,7 @@ Source code for the original project: [github.com/hkbus/hk-independent-bus-eta](
 ### Map data
 
 - [Lands Department](https://api.portal.hkmapservice.gov.hk/disclaimer)
-- [GeoData Hong Kong](https://geodata.gov.hk)
+- [CSDI](https://portal.csdi.gov.hk)
 
 ### License
 

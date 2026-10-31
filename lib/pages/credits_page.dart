@@ -50,7 +50,14 @@ class CreditsPage extends StatelessWidget {
             icon: Icons.route,
             title: 'HK Bus Crawling',
             subtitle: settings.text('路線及收費資料', 'Route and fare data'),
-            url: 'https://github.com/hkbus/hk-bus-crawling',
+            url: 'https://github.com/SpookyKipper/hk-bus-crawling/',
+          ),
+          _LinkTile(
+            icon: Icons.alt_route,
+            title: 'Transport Route Waypoints',
+            subtitle: settings.text('路線走線資料', 'Route alignment data'),
+            url:
+                'https://github.com/SpookyKipper/hk-transports-route-waypoints',
           ),
           _LinkTile(
             icon: Icons.map_outlined,
@@ -80,7 +87,7 @@ class CreditsPage extends StatelessWidget {
             icon: Icons.layers_outlined,
             title: settings.text('地理空間數據', 'GeoData Hong Kong'),
             subtitle: settings.text('地圖標籤', 'Map labels'),
-            url: 'https://geodata.gov.hk',
+            url: 'https://portal.csdi.gov.hk',
           ),
           const Divider(),
           _SectionTitle(settings.text('其他', 'Other')),
