@@ -411,7 +411,7 @@ class RouteMapState extends State<RouteMap> {
                     target: _initialTarget(),
                     zoom: 11,
                   ),
-                  minMaxZoomPreference: const MinMaxZoomPreference(10, 15),
+                  minMaxZoomPreference: const MinMaxZoomPreference(8, 18),
                   compassEnabled: false,
                   rotateGesturesEnabled: true,
                   tiltGesturesEnabled: false,
