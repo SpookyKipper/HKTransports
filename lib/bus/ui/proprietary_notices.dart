@@ -476,14 +476,14 @@ class _BbiDialogState extends State<_BbiDialog> {
               ),
             ),
             const Divider(height: 1),
-            Expanded(child: _content(context, settings, kmb)),
+            Expanded(child: _content(context, settings)),
           ],
         ),
       ),
     );
   }
 
-  Widget _content(BuildContext context, AppSettings settings, bool kmb) {
+  Widget _content(BuildContext context, AppSettings settings) {
     if (_failed) {
       return Center(
         child: Padding(
@@ -541,11 +541,8 @@ class _BbiDialogState extends State<_BbiDialog> {
 
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      itemCount: entries.length + (kmb ? 1 : 0),
+      itemCount: entries.length,
       itemBuilder: (context, index) {
-        if (index == entries.length) {
-          return _KmbBbiLegend(settings: settings);
-        }
         return _BbiCard(entry: entries[index], leg: _leg);
       },
     );
@@ -685,28 +682,6 @@ class _BbiTag extends StatelessWidget {
           const SizedBox(width: 4),
           Flexible(child: Text(label, style: theme.textTheme.labelMedium)),
         ],
-      ),
-    );
-  }
-}
-
-class _KmbBbiLegend extends StatelessWidget {
-  const _KmbBbiLegend({required this.settings});
-
-  final AppSettings settings;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Text(
-        settings.text(
-          '^ 30分鐘內 · # 60分鐘內 · * 90分鐘內 · @ 120分鐘內 · ! 指定路段適用',
-          '^ within 30 min · # within 60 min · * within 90 min · @ within 120 min · ! applies to specified sections',
-        ),
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
       ),
     );
   }
