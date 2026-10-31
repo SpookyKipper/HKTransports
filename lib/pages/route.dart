@@ -287,20 +287,6 @@ class _RoutePageState extends State<_RoutePage> {
               icon: const Icon(Icons.swap_horiz),
             ),
           M3EIconButton(
-            tooltip: settings.text('收藏', 'Favourites'),
-            variant: M3EIconButtonVariant.standard,
-            onPressed: () => showRouteGroupSheet(
-              context,
-              route,
-              stopSeq: _expandedIndex ?? 0,
-            ),
-            icon: Icon(
-              repository.isRouteInAnyGroup(route.key)
-                  ? Icons.star
-                  : Icons.star_border,
-            ),
-          ),
-          M3EIconButton(
             tooltip: settings.text('時間表', 'Timetable'),
             variant: M3EIconButtonVariant.standard,
             onPressed: () =>
@@ -387,7 +373,6 @@ class _RoutePageState extends State<_RoutePage> {
                                 index,
                                 holiday,
                                 isExpanded,
-                                pinned,
                                 () => _onExpansionChanged(index, !isExpanded),
                               ),
                           bodyBuilder: (context, index, progress) {
@@ -397,6 +382,7 @@ class _RoutePageState extends State<_RoutePage> {
                               route,
                               stopIds,
                               index,
+                              pinned,
                             );
                           },
                         ),
@@ -420,7 +406,6 @@ class _RoutePageState extends State<_RoutePage> {
     int index,
     bool holiday,
     bool expanded,
-    PinnedStopsController pinned,
     VoidCallback onToggle,
   ) {
     final AppSettings settings = context.watch<AppSettings>();
@@ -432,7 +417,6 @@ class _RoutePageState extends State<_RoutePage> {
     final String? code = stop?.stationCode;
     final String? platform = stop?.platformCode;
     final bool isTerminus = index == stopIds.length - 1;
-    final bool isPinned = pinned.contains(route.key, index);
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -511,20 +495,6 @@ class _RoutePageState extends State<_RoutePage> {
           ),
           const SizedBox(width: 4),
           M3EIconButton(
-            tooltip: isPinned
-                ? settings.text('取消釘選', 'Unpin station')
-                : settings.text('釘選', 'Pin station'),
-            icon: const Icon(Icons.push_pin_outlined),
-            selectedIcon: const Icon(Icons.push_pin),
-            isSelected: isPinned,
-            variant: M3EIconButtonVariant.standard,
-            size: M3EIconButtonSize.xs,
-            inflateHitTarget: false,
-            onPressed: () =>
-                pinned.toggle(PinnedStation(routeKey: route.key, seq: index)),
-          ),
-          const SizedBox(width: 4),
-          M3EIconButton(
             tooltip: settings.text(
               expanded ? '收起' : '展開',
               expanded ? 'Collapse' : 'Expand',
@@ -549,9 +519,11 @@ class _RoutePageState extends State<_RoutePage> {
     RouteEntry route,
     List<String> stopIds,
     int index,
+    PinnedStopsController pinned,
   ) {
     final AppSettings settings = context.watch<AppSettings>();
-    final BusRepository repository = context.read<BusRepository>();
+    final BusRepository repository = context.watch<BusRepository>();
+    final bool isPinned = pinned.contains(route.key, index);
     final Map<String, int> stopIndexByCode = {};
     for (int i = 0; i < stopIds.length; i++) {
       final String? code = repository.stopById(stopIds[i])?.stationCode;
@@ -572,12 +544,44 @@ class _RoutePageState extends State<_RoutePage> {
         ),
         Align(
           alignment: Alignment.centerRight,
-          child: M3EButton.icon(
-            onPressed: () =>
-                _showStopInfo(context, route, stopIds[index], index),
-            style: M3EButtonStyle.text,
-            icon: const Icon(Icons.info_outline),
-            label: Text(settings.text('車站資訊', 'Stop information')),
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            children: [
+              M3EIconButton(
+                tooltip: settings.text('收藏此站', 'Favourite this stop'),
+                icon: const Icon(Icons.star_border),
+                selectedIcon: const Icon(Icons.star),
+                isSelected: repository.isEntryInAnyGroup(route.key, index),
+                variant: M3EIconButtonVariant.standard,
+                size: M3EIconButtonSize.xs,
+                inflateHitTarget: false,
+                onPressed: () =>
+                    showRouteGroupSheet(context, route, stopSeq: index),
+              ),
+              M3EIconButton(
+                tooltip: isPinned
+                    ? settings.text('取消釘選', 'Unpin station')
+                    : settings.text('釘選', 'Pin station'),
+                icon: const Icon(Icons.push_pin_outlined),
+                selectedIcon: const Icon(Icons.push_pin),
+                isSelected: isPinned,
+                variant: M3EIconButtonVariant.standard,
+                size: M3EIconButtonSize.xs,
+                inflateHitTarget: false,
+                onPressed: () => pinned.toggle(
+                  PinnedStation(routeKey: route.key, seq: index),
+                ),
+              ),
+              M3EButton.icon(
+                onPressed: () =>
+                    _showStopInfo(context, route, stopIds[index], index),
+                style: M3EButtonStyle.text,
+                icon: const Icon(Icons.info_outline),
+                label: Text(settings.text('車站資訊', 'Stop information')),
+              ),
+            ],
           ),
         ),
       ],

@@ -376,6 +376,24 @@ class BusRepository extends ChangeNotifier {
     );
   }
 
+  bool isEntryInGroup(String groupId, String routeKey, int seq) {
+    final FavoriteGroup? group = favoriteGroupById(groupId);
+    if (group == null) return false;
+    return group.routes.any((value) {
+      final FavoriteEntry entry = FavoriteEntry.parse(value);
+      return entry.routeKey == routeKey && entry.seq == seq;
+    });
+  }
+
+  bool isEntryInAnyGroup(String routeKey, int seq) {
+    return favoriteGroups.any(
+      (group) => group.routes.any((value) {
+        final FavoriteEntry entry = FavoriteEntry.parse(value);
+        return entry.routeKey == routeKey && entry.seq == seq;
+      }),
+    );
+  }
+
   FavoriteGroup? createFavoriteGroup(String name) {
     final String trimmed = name.trim();
     if (trimmed.isEmpty) return null;
@@ -425,15 +443,16 @@ class BusRepository extends ChangeNotifier {
 
   void toggleRouteInGroup(String groupId, String routeKey, {int seq = 0}) {
     final String entry = FavoriteEntry.encode(routeKey, seq);
+    bool matchesEntry(String value) {
+      final FavoriteEntry parsed = FavoriteEntry.parse(value);
+      return parsed.routeKey == routeKey && parsed.seq == seq;
+    }
+
     if (groupId == FavoriteGroup.favoritesId) {
       final List<String> list = [...savedRoutes];
-      final bool exists = list.any(
-        (value) => FavoriteEntry.parse(value).routeKey == routeKey,
-      );
+      final bool exists = list.any(matchesEntry);
       if (exists) {
-        list.removeWhere(
-          (value) => FavoriteEntry.parse(value).routeKey == routeKey,
-        );
+        list.removeWhere(matchesEntry);
       } else {
         list.add(entry);
       }
@@ -446,13 +465,9 @@ class BusRepository extends ChangeNotifier {
     _customGroups = _customGroups!.map((group) {
       if (group.id != groupId) return group;
       final List<String> routes = [...group.routes];
-      final bool exists = routes.any(
-        (value) => FavoriteEntry.parse(value).routeKey == routeKey,
-      );
+      final bool exists = routes.any(matchesEntry);
       if (exists) {
-        routes.removeWhere(
-          (value) => FavoriteEntry.parse(value).routeKey == routeKey,
-        );
+        routes.removeWhere(matchesEntry);
       } else {
         routes.add(entry);
       }

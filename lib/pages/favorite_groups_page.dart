@@ -87,8 +87,8 @@ class FavoriteGroupsPage extends StatelessWidget {
                         title: Text(group.name),
                         subtitle: Text(
                           settings.text(
-                            '${repository.routesInGroup(group).length} 條路線',
-                            '${repository.routesInGroup(group).length} routes',
+                            '${repository.entriesInGroup(group).length} 個收藏',
+                            '${repository.entriesInGroup(group).length} favourites',
                           ),
                         ),
                         onTap: () async {
