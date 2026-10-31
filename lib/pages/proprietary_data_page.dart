@@ -74,18 +74,42 @@ class ProprietaryDataPage extends StatelessWidget {
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 8),
-          for (final ProprietaryDataSource source
-              in ProprietaryDataSource.values) ...[
-            _SourceCard(
-              source: source,
-              settings: settings,
-              enabled: settings.isProprietaryEnabled(source),
-              onChanged: (bool value) =>
-                  _setProprietarySource(settings, source, value),
-            ),
-            if (source != ProprietaryDataSource.values.last)
-              const SizedBox(height: 8),
-          ],
+          M3EList(
+            variant: M3ECardVariant.filled,
+            itemCount: ProprietaryDataSource.values.length,
+            onTap: (int index) {
+              final ProprietaryDataSource source =
+                  ProprietaryDataSource.values[index];
+              _setProprietarySource(
+                settings,
+                source,
+                !settings.isProprietaryEnabled(source),
+              );
+            },
+            itemBuilder: (BuildContext context, int index) {
+              final ProprietaryDataSource source =
+                  ProprietaryDataSource.values[index];
+              final bool enabled = settings.isProprietaryEnabled(source);
+              return M3EListItem(
+                headline: source.label(settings),
+                supportingText: source.description(settings),
+                trailing: ExcludeFocus(
+                  child: IgnorePointer(
+                    child: M3ECheckbox(
+                      value: enabled,
+                      onChanged: (bool? value) {
+                        if (value != null) {
+                          _setProprietarySource(settings, source, value);
+                        }
+                      },
+                      focusable: false,
+                      semanticLabel: source.label(settings),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -100,63 +124,5 @@ class ProprietaryDataPage extends StatelessWidget {
     if (!value && source == ProprietaryDataSource.kmb) {
       await const BbiService().clearCache();
     }
-  }
-}
-
-class _SourceCard extends StatelessWidget {
-  const _SourceCard({
-    required this.source,
-    required this.settings,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final ProprietaryDataSource source;
-  final AppSettings settings;
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    return M3ECard(
-      variant: M3ECardVariant.filled,
-      color: scheme.surfaceContainerHigh,
-      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-      onPressed: () => onChanged(!enabled),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  source.label(settings),
-                  style: theme.textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  source.description(settings),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          M3ECheckbox(
-            value: enabled,
-            onChanged: (bool? value) {
-              if (value != null) onChanged(value);
-            },
-            focusable: false,
-            semanticLabel: source.label(settings),
-          ),
-        ],
-      ),
-    );
   }
 }
