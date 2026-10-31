@@ -249,15 +249,12 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     return Column(
       children: [
         const SizedBox(height: 12),
-        if (value != null)
-          M3EProgressIndicator.linearWavy(
-            value: value,
-            linearSize: M3EProgressIndicatorSize.m,
-            strokeWidth: 4,
-            trackStrokeWidth: 4,
-          )
-        else
-          const M3ELoadingIndicator(size: 24),
+        M3EProgressIndicator.linearWavy(
+          value: value,
+          linearSize: M3EProgressIndicatorSize.m,
+          strokeWidth: 4,
+          trackStrokeWidth: 4,
+        ),
         const SizedBox(height: 8),
         Text(
           route
