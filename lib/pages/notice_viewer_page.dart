@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hktransports/app/app_theme.dart';
+import 'package:hktransports/app/m3e_scope.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -81,13 +84,39 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final String title = settings.text('通告', 'Notice');
-    return Scaffold(
-      appBar: buildPageBar(context, title: title, subtitle: widget.title),
-      body: Column(
-        children: [
-          Expanded(child: _body(context, settings)),
-          _ViewerCredit(host: _host),
-        ],
+    final ColorScheme lightScheme =
+        AppColorSchemes.lightOf(context) ?? fallbackLightScheme();
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: lightScheme.surface,
+        systemNavigationBarIconBrightness: Brightness.dark,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+      child: M3EScope(
+        scheme: lightScheme,
+        child: Theme(
+          data: buildAppTheme(lightScheme, settings.transitionStyle),
+          child: Builder(
+            builder: (BuildContext context) {
+              return Scaffold(
+                appBar: buildPageBar(
+                  context,
+                  title: title,
+                  subtitle: widget.title,
+                ),
+                body: Column(
+                  children: [
+                    Expanded(child: _body(context, settings)),
+                    _ViewerCredit(host: _host),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
