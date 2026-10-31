@@ -51,6 +51,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/logo.png
+    - assets/images/landsd.png
     # - assets/images/mapbox-logo-black.png
     # - assets/images/mapbox-logo-white.png
     - assets/images/mapMarkers/kmb.png

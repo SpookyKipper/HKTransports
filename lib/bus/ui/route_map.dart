@@ -427,28 +427,15 @@ class RouteMapState extends State<RouteMap> {
                   onStyleLoadedCallback: _onStyleLoaded,
                 ),
                 Positioned(
-                  left: 8,
-                  bottom: 8,
+                  right: 38,
+                  bottom: 6,
                   child: IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface.withValues(
-                          alpha: 0.85,
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        child: Text(
-                          '© Lands Department · GeoData Hong Kong',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
+                    child: Image.asset(
+                      'assets/images/landsd.png',
+                      width: 30,
+                      height: 29,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
                     ),
                   ),
                 ),
