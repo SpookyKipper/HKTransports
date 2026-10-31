@@ -129,9 +129,21 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
       children: [
         WebViewWidget(controller: _webViewController!),
         if (_loading)
-          const Positioned.fill(
+          Positioned.fill(
             child: IgnorePointer(
-              child: Center(child: M3ELoadingIndicator(size: 24)),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const M3ELoadingIndicator(size: 36),
+                      const SizedBox(height: 12),
+                      Text(settings.text('正在載入通告', 'Loading notice')),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         if (_failed)
