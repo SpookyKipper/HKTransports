@@ -30,9 +30,14 @@ import 'package:hktransports/pages/update_data.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-Page<void> _page(BuildContext context, GoRouterState state, Widget child) {
+Page<void> _page(
+  BuildContext context,
+  GoRouterState state,
+  Widget child, {
+  LocalKey? key,
+}) {
   return AppTransitionPage<void>(
-    key: state.pageKey,
+    key: key ?? state.pageKey,
     style: context.read<AppSettings>().transitionStyle,
     child: child,
   );
@@ -41,8 +46,12 @@ Page<void> _page(BuildContext context, GoRouterState state, Widget child) {
 final GoRouter _router = GoRouter(
   routes: [
     StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) =>
-          HomeShell(navigationShell: navigationShell),
+      pageBuilder: (context, state, navigationShell) => _page(
+        context,
+        state,
+        HomeShell(navigationShell: navigationShell),
+        key: const ValueKey<String>('home-shell'),
+      ),
       branches: [
         StatefulShellBranch(
           routes: [
