@@ -55,6 +55,7 @@ class RouteMapState extends State<RouteMap>
   static const String _stationLayerId = 'route-stations-layer';
   static const String _arrowImageName = 'route-direction-arrow';
   static const double _stationHitRadius = 26;
+  static const String _mapBackgroundColor = '#F5F2EA';
 
   MapController? _mapController;
   StyleController? _styleController;
@@ -536,11 +537,18 @@ class RouteMapState extends State<RouteMap>
       <String, dynamic>{
         'id': 'background',
         'type': 'background',
-        'paint': <String, dynamic>{'background-color': '#F5F2EA'},
+        'paint': <String, dynamic>{'background-color': _mapBackgroundColor},
       },
     ];
     for (final dynamic value in baseLayers) {
-      if (value is Map) layers.add(_map(value));
+      if (value is! Map) continue;
+      final Map<String, dynamic> layer = _map(value);
+      if (layer['id'] == 'mainland_mask/0/1') {
+        final Map<String, dynamic> paint = _map(layer['paint']);
+        paint['fill-color'] = _mapBackgroundColor;
+        layer['paint'] = paint;
+      }
+      layers.add(layer);
     }
     for (int index = 0; index < labelLayers.length; index++) {
       final dynamic value = labelLayers[index];
