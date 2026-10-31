@@ -262,6 +262,9 @@ class _RoutePageState extends State<_RoutePage> {
       appBar: buildPageBar(
         context,
         title: route.route,
+        titleTrailing: route.isSpecial
+            ? _RouteSpecialTag(label: settings.text('特別班', 'Special'))
+            : null,
         subtitle:
             '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
         actions: [
@@ -633,6 +636,33 @@ class _RoutePageState extends State<_RoutePage> {
       builder: (context) {
         return TimetableSheet(route: route, initialStopIndex: stopIndex);
       },
+    );
+  }
+}
+
+class _RouteSpecialTag extends StatelessWidget {
+  const _RouteSpecialTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: scheme.onPrimaryContainer,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     );
   }
 }

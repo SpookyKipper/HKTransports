@@ -50,4 +50,44 @@ void main() {
     final Text title = tester.widget<Text>(find.text('Test'));
     expect(title.style?.fontSize, 24);
   });
+
+  testWidgets('puts title trailing content on the title line', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      ChangeNotifierProvider<PinnedStopsController>(
+        create: (_) => PinnedStopsController(),
+        child: MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.android),
+          home: Builder(
+            builder: (BuildContext context) {
+              return M3EScope(
+                scheme: Theme.of(context).colorScheme,
+                child: Builder(
+                  builder: (BuildContext context) {
+                    return Scaffold(
+                      appBar: buildPageBar(
+                        context,
+                        title: 'Test',
+                        titleTrailing: const Text('特別班'),
+                        subtitle: 'Subtitle',
+                      ),
+                      body: const SizedBox.shrink(),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    final Offset title = tester.getCenter(find.text('Test'));
+    final Offset tag = tester.getCenter(find.text('特別班'));
+    final Offset subtitle = tester.getCenter(find.text('Subtitle'));
+    expect((tag.dy - title.dy).abs(), lessThan(2));
+    expect(tag.dy, lessThan(subtitle.dy));
+    expect(tag.dx, greaterThan(title.dx));
+  });
 }
