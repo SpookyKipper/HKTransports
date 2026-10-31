@@ -384,13 +384,21 @@ class _BbiDialogState extends State<_BbiDialog> {
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_onSearchTextChanged);
     _load();
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchTextChanged);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchTextChanged() {
+    final String value = _searchController.text;
+    if (value == _query) return;
+    setState(() => _query = value);
   }
 
   Future<void> _load() async {
@@ -486,35 +494,20 @@ class _BbiDialogState extends State<_BbiDialog> {
             if (!_failed && _entries != null && _entries!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: TextField(
+                child: M3ESearchBar(
                   controller: _searchController,
-                  onChanged: (String value) => setState(() => _query = value),
-                  decoration: InputDecoration(
-                    hintText: settings.text('搜尋轉乘路線', 'Search transfer routes'),
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _query.isEmpty
-                        ? null
-                        : M3EIconButton(
-                            tooltip: settings.text('清除', 'Clear'),
-                            variant: M3EIconButtonVariant.standard,
-                            size: M3EIconButtonSize.xs,
-                            inflateHitTarget: false,
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _query = '');
-                            },
-                            icon: const Icon(Icons.close),
-                          ),
-                    filled: true,
-                    fillColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHigh,
-                    isDense: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
+                  leading: const Icon(Icons.search),
+                  hintText: settings.text('搜尋轉乘路線', 'Search transfer routes'),
+                  showClearButton: true,
+                  margin: 0,
+                  focusedMargin: 0,
+                  expandOnFocus: false,
+                  constraints: const BoxConstraints(
+                    minWidth: 0,
+                    maxWidth: double.infinity,
+                    minHeight: 56,
                   ),
+                  textInputAction: TextInputAction.search,
                 ),
               ),
             const Divider(height: 1),
