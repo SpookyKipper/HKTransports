@@ -246,15 +246,33 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     final double? value = route
         ? repository.progress
         : (_bbiTotal == 0 ? 0 : _bbiCompleted / _bbiTotal);
+    final Widget progressBar = value == null
+        ? const M3EProgressIndicator.linearWavy(
+            value: null,
+            linearSize: M3EProgressIndicatorSize.m,
+            strokeWidth: 4,
+            trackStrokeWidth: 4,
+          )
+        : TweenAnimationBuilder<double>(
+            tween: Tween<double>(
+              begin: 0,
+              end: value.clamp(0.0, 1.0).toDouble(),
+            ),
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.easeOutCubic,
+            builder: (context, animated, child) {
+              return M3EProgressIndicator.linearWavy(
+                value: animated,
+                linearSize: M3EProgressIndicatorSize.m,
+                strokeWidth: 4,
+                trackStrokeWidth: 4,
+              );
+            },
+          );
     return Column(
       children: [
         const SizedBox(height: 12),
-        M3EProgressIndicator.linearWavy(
-          value: value,
-          linearSize: M3EProgressIndicatorSize.m,
-          strokeWidth: 4,
-          trackStrokeWidth: 4,
-        ),
+        progressBar,
         const SizedBox(height: 8),
         Text(
           route
