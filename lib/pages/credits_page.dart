@@ -113,12 +113,6 @@ class CreditsPage extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.description_outlined),
             title: Text(settings.text('開源授權', 'Open source licenses')),
-            subtitle: Text(
-              settings.text(
-                '本應用程式採用 GPL-3.0 授權。',
-                'This app is licensed under GPL-3.0.',
-              ),
-            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/licenses'),
           ),
