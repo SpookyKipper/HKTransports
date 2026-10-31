@@ -532,7 +532,13 @@ class RouteMapState extends State<RouteMap>
     final List<dynamic> labelLayers = label['layers'] is List
         ? label['layers'] as List<dynamic>
         : const [];
-    final List<Map<String, dynamic>> layers = [];
+    final List<Map<String, dynamic>> layers = [
+      <String, dynamic>{
+        'id': 'background',
+        'type': 'background',
+        'paint': <String, dynamic>{'background-color': '#F5F2EA'},
+      },
+    ];
     for (final dynamic value in baseLayers) {
       if (value is Map) layers.add(_map(value));
     }
