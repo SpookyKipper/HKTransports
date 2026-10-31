@@ -278,7 +278,7 @@ class _NoticeCard extends StatelessWidget {
     ];
     final Uri? url = notice.url;
     return Card.outlined(
-      margin: EdgeInsets.zero,
+      margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         title: Text(notice.title),
@@ -633,7 +633,7 @@ class _BbiCard extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
     final ThemeData theme = Theme.of(context);
     return Card.outlined(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
