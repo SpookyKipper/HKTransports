@@ -49,6 +49,8 @@ class _RoutePage extends StatefulWidget {
 }
 
 class _RoutePageState extends State<_RoutePage> {
+  static const double _stationGap = 3;
+
   late final EtaService _etaService;
   final Map<int, List<BusEta>?> _etas = {};
   final Set<int> _loading = {};
@@ -197,7 +199,7 @@ class _RoutePageState extends State<_RoutePage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, _stationGap),
             child: RouteMap(
               key: _mapKey,
               route: route,
@@ -237,7 +239,7 @@ class _RoutePageState extends State<_RoutePage> {
                         innerRadius: 8,
                         hoverRadius: 24,
                         pressedRadius: 24,
-                        gap: 3,
+                        gap: _stationGap,
                         elevation: 0,
                         color: Theme.of(
                           context,
