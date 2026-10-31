@@ -24,6 +24,8 @@ class ProprietaryNoticesTab extends StatelessWidget {
       ProprietaryDataSource.citybus,
     );
 
+    final bool showKmbBbi = hasKmb && kmbEnabled;
+    final bool showCtbBbi = hasCtb && ctbEnabled;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
@@ -47,10 +49,13 @@ class ProprietaryNoticesTab extends StatelessWidget {
             _CitybusNotices(route: route)
           else
             _DisabledSourceNotice(company: BusCompany.ctb),
-        if (hasKmb && kmbEnabled)
-          _BbiSection(company: BusCompany.kmb, route: route),
-        if (hasCtb && ctbEnabled)
-          _BbiSection(company: BusCompany.ctb, route: route),
+        if (showKmbBbi) _BbiSection(company: BusCompany.kmb, route: route),
+        if (showCtbBbi)
+          _BbiSection(
+            company: BusCompany.ctb,
+            route: route,
+            topMargin: showKmbBbi ? 0 : 12,
+          ),
       ],
     );
   }
@@ -327,10 +332,15 @@ class _DisabledSourceNotice extends StatelessWidget {
 }
 
 class _BbiSection extends StatelessWidget {
-  const _BbiSection({required this.company, required this.route});
+  const _BbiSection({
+    required this.company,
+    required this.route,
+    this.topMargin = 12,
+  });
 
   final BusCompany company;
   final RouteEntry route;
+  final double topMargin;
 
   @override
   Widget build(BuildContext context) {
@@ -341,7 +351,7 @@ class _BbiSection extends StatelessWidget {
         : settings.text('城巴轉乘優惠', 'Citybus interchange discounts');
 
     return Card.filled(
-      margin: const EdgeInsets.only(top: 12, bottom: 8),
+      margin: EdgeInsets.only(top: topMargin, bottom: 8),
       child: ListTile(
         leading: const Icon(Icons.alt_route),
         title: Text(title),
