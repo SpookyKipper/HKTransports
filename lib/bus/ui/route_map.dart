@@ -298,15 +298,18 @@ class RouteMapState extends State<RouteMap> {
       ..remove('url')
       ..['tiles'] = <String>[_basemapTiles]
       ..['maxzoom'] = 15
-      ..['attribution'] =
-          "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer'>&copy; Map information from Lands Department</a>";
+      ..['attribution'] = zh
+          ? "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer'>地圖由地政總署提供</a>"
+          : "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer'>Map provided by Lands Department</a>";
     labelSource
       ..remove('url')
       ..['tiles'] = <String>[
         '$_labelTilesBase/$lang/WGS84/tile/{z}/{y}/{x}.pbf',
       ]
       ..['maxzoom'] = 15
-      ..['attribution'] = '&copy; GeoData Hong Kong';
+      ..['attribution'] = zh
+          ? '地圖標籤由 GeoData Hong Kong 提供'
+          : 'Map labels by GeoData Hong Kong';
 
     final List<dynamic> baseLayers = base['layers'] is List
         ? base['layers'] as List<dynamic>
