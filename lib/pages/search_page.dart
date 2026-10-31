@@ -71,10 +71,11 @@ class _SearchPageState extends State<SearchPage> {
               : ListView.separated(
                   padding: const EdgeInsets.only(bottom: 8),
                   itemCount: results.length,
-                  separatorBuilder: (context, index) => const M3EDivider(),
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final RouteEntry route = results[index];
-                    return M3EListItem(
+                    return ListTile(
                       leading: SizedBox(
                         width: 64,
                         child: Text(
@@ -82,10 +83,12 @@ class _SearchPageState extends State<SearchPage> {
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ),
-                      headline:
-                          '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
-                      supportingText:
-                          '${route.orig.get(settings.language)} · ${route.companiesLabel(settings.language)}',
+                      title: Text(
+                        '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+                      ),
+                      subtitle: Text(
+                        '${route.orig.get(settings.language)} · ${route.companiesLabel(settings.language)}',
+                      ),
                       trailing: route.isSpecial
                           ? Text(
                               settings.text('特別班', 'Special'),

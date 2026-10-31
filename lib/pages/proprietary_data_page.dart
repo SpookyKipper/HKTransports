@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 class ProprietaryDataPage extends StatelessWidget {
@@ -22,8 +21,8 @@ class ProprietaryDataPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
-          M3ECard(
-            variant: M3ECardVariant.filled,
+          Card(
+            margin: EdgeInsets.zero,
             elevation: 0,
             color: scheme.errorContainer,
             child: Padding(
@@ -77,40 +76,34 @@ class ProprietaryDataPage extends StatelessWidget {
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 8),
-          M3EList(
-            variant: M3ECardVariant.outlined,
-            itemCount: ProprietaryDataSource.values.length,
-            itemBuilder: (BuildContext context, int index) {
-              final ProprietaryDataSource source =
-                  ProprietaryDataSource.values[index];
-              final bool enabled = settings.isProprietaryEnabled(source);
-              return M3EListItem(
-                headline: source.label(settings),
-                supportingText: source.description(settings),
-                trailing: M3ECheckbox(
-                  value: enabled,
-                  onChanged: (bool? value) {
-                    if (value == null) return;
-                    _setSource(settings, source, value);
-                  },
-                ),
-                onTap: () => _setSource(settings, source, !enabled),
-              );
-            },
+          Card.outlined(
+            margin: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (final ProprietaryDataSource source
+                    in ProprietaryDataSource.values) ...[
+                  CheckboxListTile(
+                    value: settings.isProprietaryEnabled(source),
+                    onChanged: (bool? value) async {
+                      if (value == null) return;
+                      settings.setProprietarySource(source, value);
+                      if (!value && source == ProprietaryDataSource.kmb) {
+                        await const BbiService().clearCache();
+                      }
+                    },
+                    title: Text(source.label(settings)),
+                    subtitle: Text(source.description(settings)),
+                    controlAffinity: ListTileControlAffinity.trailing,
+                  ),
+                  if (source != ProprietaryDataSource.values.last)
+                    const Divider(height: 1),
+                ],
+              ],
+            ),
           ),
         ],
       ),
     );
-  }
-
-  Future<void> _setSource(
-    AppSettings settings,
-    ProprietaryDataSource source,
-    bool value,
-  ) async {
-    settings.setProprietarySource(source, value);
-    if (!value && source == ProprietaryDataSource.kmb) {
-      await const BbiService().clearCache();
-    }
   }
 }

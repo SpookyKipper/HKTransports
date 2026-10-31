@@ -12,9 +12,11 @@ Future<void> showRouteGroupSheet(
   RouteEntry route, {
   int stopSeq = 0,
 }) {
-  return M3EBottomSheet.show<void>(
-    context,
-    initialValue: M3EBottomSheetValue.expanded,
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
     builder: (context) {
       return RouteGroupSheet(route: route, stopSeq: stopSeq);
     },
@@ -43,18 +45,21 @@ class RouteGroupSheet extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          M3EListItem(
-            headline:
-                '${route.route} ${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
-            supportingText: stopName.isEmpty
-                ? route.companiesLabel(settings.language)
-                : '$stopName · ${route.companiesLabel(settings.language)}',
+          ListTile(
+            title: Text(
+              '${route.route} ${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+            ),
+            subtitle: Text(
+              stopName.isEmpty
+                  ? route.companiesLabel(settings.language)
+                  : '$stopName · ${route.companiesLabel(settings.language)}',
+            ),
             leading: const Icon(Icons.star_outline),
           ),
-          const M3EDivider(),
+          const Divider(),
           for (final FavoriteGroup group in groups)
-            M3EListItem(
-              leading: M3ECheckbox(
+            ListTile(
+              leading: Checkbox(
                 value: repository.isEntryInGroup(group.id, route.key, stopSeq),
                 onChanged: (_) => repository.toggleRouteInGroup(
                   group.id,
@@ -62,10 +67,12 @@ class RouteGroupSheet extends StatelessWidget {
                   seq: stopSeq,
                 ),
               ),
-              headline: group.name,
-              supportingText: settings.text(
-                '${repository.entriesInGroup(group).length} 個收藏',
-                '${repository.entriesInGroup(group).length} favourites',
+              title: Text(group.name),
+              subtitle: Text(
+                settings.text(
+                  '${repository.entriesInGroup(group).length} 個收藏',
+                  '${repository.entriesInGroup(group).length} favourites',
+                ),
               ),
               trailing: group.isDefault
                   ? null
@@ -101,10 +108,10 @@ class RouteGroupSheet extends StatelessWidget {
                 seq: stopSeq,
               ),
             ),
-          const M3EDivider(),
-          M3EListItem(
+          const Divider(),
+          ListTile(
             leading: const Icon(Icons.add),
-            headline: settings.text('新增群組', 'New group'),
+            title: Text(settings.text('新增群組', 'New group')),
             onTap: () async {
               final String? name = await promptFavoriteGroupName(context);
               if (name == null) return;
@@ -129,24 +136,26 @@ class RouteGroupSheet extends StatelessWidget {
     FavoriteGroup group,
   ) async {
     final AppSettings settings = context.read<AppSettings>();
-    final bool? confirmed = await M3EDialog.show<bool>(
-      context,
-      dialog: M3EDialog(
-        title: settings.text('刪除群組', 'Delete group'),
-        content: Text(
-          settings.text('確定刪除「${group.name}」？', 'Delete "${group.name}"?'),
-        ),
-        actions: [
-          M3EButton.text(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(settings.text('取消', 'Cancel')),
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(settings.text('刪除群組', 'Delete group')),
+          content: Text(
+            settings.text('確定刪除「${group.name}」？', 'Delete "${group.name}"?'),
           ),
-          M3EButton.text(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(settings.text('刪除', 'Delete')),
-          ),
-        ],
-      ),
+          actions: [
+            M3EButton.text(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(settings.text('取消', 'Cancel')),
+            ),
+            M3EButton.text(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(settings.text('刪除', 'Delete')),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed == true) {
       repository.deleteFavoriteGroup(group.id);

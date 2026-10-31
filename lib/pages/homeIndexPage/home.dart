@@ -22,8 +22,61 @@ class HomeContent extends StatefulWidget {
   State<HomeContent> createState() => _HomeContentState();
 }
 
-class _HomeContentState extends State<HomeContent> {
+class _HomeContentState extends State<HomeContent>
+    with TickerProviderStateMixin {
   String? _selectedGroupId;
+  TabController? _tabController;
+  List<String> _groupIds = const [];
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
+
+  void _ensureTabController(List<FavoriteGroup> groups) {
+    if (_tabController != null && _tabController!.length == groups.length) {
+      return;
+    }
+    final TabController? old = _tabController;
+    final int selectedIndex = groups.indexWhere(
+      (group) => group.id == _selectedGroupId,
+    );
+    final int initialIndex = selectedIndex < 0 ? 0 : selectedIndex;
+    _tabController = TabController(
+      length: groups.length,
+      vsync: this,
+      initialIndex: initialIndex.clamp(0, groups.length - 1),
+    )..addListener(_handleTabChanged);
+    if (old != null) {
+      old.removeListener(_handleTabChanged);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        old.dispose();
+      });
+    }
+  }
+
+  void _handleTabChanged() {
+    final TabController? controller = _tabController;
+    if (controller == null) return;
+    final int index = controller.index;
+    if (index < 0 || index >= _groupIds.length) return;
+    final String id = _groupIds[index];
+    if (id != _selectedGroupId) {
+      setState(() => _selectedGroupId = id);
+    }
+  }
+
+  void _syncSelectedTab(int selectedIndex) {
+    final TabController? controller = _tabController;
+    if (controller == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || controller != _tabController) return;
+      if (controller.index != selectedIndex) {
+        controller.animateTo(selectedIndex);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,8 +125,7 @@ class _HomeContentState extends State<HomeContent> {
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
         children: [
-          M3ECard(
-            variant: M3ECardVariant.filled,
+          Card.filled(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -106,23 +158,16 @@ class _HomeContentState extends State<HomeContent> {
 
     final bool homeActive = TickerMode.of(context);
     final List<FavoriteGroup> groups = repository.favoriteGroups;
+    _groupIds = groups.map((group) => group.id).toList();
+    _ensureTabController(groups);
     final int selectedIndex = groups.indexWhere(
       (group) => group.id == _selectedGroupId,
     );
-    final int pageIndex = groups.isEmpty
-        ? 0
-        : (selectedIndex < 0 ? 0 : selectedIndex).clamp(0, groups.length - 1);
+    final int pageIndex = selectedIndex < 0 ? 0 : selectedIndex;
+    _syncSelectedTab(pageIndex);
     final Color unselectedTabColor =
         Theme.of(context).tabBarTheme.unselectedLabelColor ??
         Theme.of(context).colorScheme.onSurfaceVariant;
-    final List<Widget> groupViews = [
-      for (int index = 0; index < groups.length; index++)
-        _GroupRoutesView(
-          key: PageStorageKey<String>(groups[index].id),
-          group: groups[index],
-          active: homeActive && index == pageIndex,
-        ),
-    ];
 
     return Column(
       children: [
@@ -137,31 +182,17 @@ class _HomeContentState extends State<HomeContent> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: groups.length > 1
-                    ? ClipRect(
-                        child: M3ETabs(
-                          selectedIndex: pageIndex,
-                          scrollable: true,
-                          alignment: M3ETabsAlignment.leading,
-                          onTabSelected: (int index) {
-                            setState(() => _selectedGroupId = groups[index].id);
-                          },
-                          tabs: [
-                            for (final FavoriteGroup group in groups)
-                              M3ETab(label: group.name),
-                          ],
-                        ),
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: Text(
-                            groups.isEmpty ? '' : groups.first.name,
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                        ),
-                      ),
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  dividerColor: Colors.transparent,
+                  dividerHeight: 0,
+                  tabs: [
+                    for (final FavoriteGroup group in groups)
+                      Tab(text: group.name),
+                  ],
+                ),
               ),
               M3EIconButton(
                 tooltip: settings.text('管理群組', 'Manage groups'),
@@ -184,17 +215,17 @@ class _HomeContentState extends State<HomeContent> {
           ),
         ),
         Expanded(
-          child: groups.length > 1
-              ? M3ETabsView(
-                  selectedIndex: pageIndex,
-                  onTabSelected: (int index) {
-                    setState(() => _selectedGroupId = groups[index].id);
-                  },
-                  children: groupViews,
-                )
-              : groupViews.isEmpty
-              ? const SizedBox.shrink()
-              : groupViews.first,
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              for (int index = 0; index < groups.length; index++)
+                _GroupRoutesView(
+                  key: PageStorageKey<String>(groups[index].id),
+                  group: groups[index],
+                  active: homeActive && index == pageIndex,
+                ),
+            ],
+          ),
         ),
       ],
     );
@@ -319,7 +350,8 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 112),
                     itemCount: entries.length,
-                    separatorBuilder: (context, index) => const M3EDivider(),
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final FavoriteEntry entry = entries[index];
                       final RouteEntry route = repository.routeByKey(
@@ -480,20 +512,41 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
       }
     }
 
-    return M3EListItem(
-      leading: SizedBox(
-        width: 64,
-        child: Text(
-          widget.route.route,
-          style: Theme.of(context).textTheme.titleLarge,
+    return InkWell(
+      onTap: widget.onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 64,
+              child: Text(
+                widget.route.route,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${settings.text('往', 'to')} ${widget.route.dest.get(settings.language)}',
+                  ),
+                  Text(
+                    '${stop?.displayName(settings.language) ?? widget.route.orig.get(settings.language)} · ${widget.route.companiesLabel(settings.language)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (trailing != null) ...[const SizedBox(width: 8), trailing],
+          ],
         ),
       ),
-      headline:
-          '${settings.text('往', 'to')} ${widget.route.dest.get(settings.language)}',
-      supportingText:
-          '${stop?.displayName(settings.language) ?? widget.route.orig.get(settings.language)} · ${widget.route.companiesLabel(settings.language)}',
-      trailing: trailing,
-      onTap: widget.onTap,
     );
   }
 }

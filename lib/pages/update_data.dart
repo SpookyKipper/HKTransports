@@ -145,27 +145,29 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
 
   Future<void> _deleteKmb() async {
     final AppSettings settings = context.read<AppSettings>();
-    final bool? confirmed = await M3EDialog.show<bool>(
-      context,
-      dialog: M3EDialog(
-        title: settings.text('刪除九巴轉乘資料', 'Delete KMB interchange data'),
-        content: Text(
-          settings.text(
-            '這些是非必要資料，下次使用時會重新下載。',
-            'This is optional data and will be downloaded again when needed.',
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(settings.text('刪除九巴轉乘資料', 'Delete KMB interchange data')),
+          content: Text(
+            settings.text(
+              '這些是非必要資料，下次使用時會重新下載。',
+              'This is optional data and will be downloaded again when needed.',
+            ),
           ),
-        ),
-        actions: [
-          M3EButton.text(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(settings.text('取消', 'Cancel')),
-          ),
-          M3EButton.text(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(settings.text('刪除', 'Delete')),
-          ),
-        ],
-      ),
+          actions: [
+            M3EButton.text(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(settings.text('取消', 'Cancel')),
+            ),
+            M3EButton.text(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(settings.text('刪除', 'Delete')),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true || !mounted) return;
     await const BbiService().clearCache();
@@ -175,7 +177,9 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
   }
 
   void _showMessage(String message) {
-    M3ESnackbar.show(context, message: message);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _nextRefreshText(AppSettings settings, BusRepository repository) {
@@ -303,15 +307,16 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          M3EListItem(
-            variant: M3ECardVariant.filled,
-            leading: const Icon(Icons.schedule),
-            headline: settings.text('下次自動更新', 'Next automatic refresh'),
-            supportingText: _nextRefreshText(settings, repository),
-            trailing: Text(
-              settings.text(
-                '每 ${settings.autoUpdateHours} 小時',
-                'Every ${settings.autoUpdateHours}h',
+          Card.filled(
+            child: ListTile(
+              leading: const Icon(Icons.schedule),
+              title: Text(settings.text('下次自動更新', 'Next automatic refresh')),
+              subtitle: Text(_nextRefreshText(settings, repository)),
+              trailing: Text(
+                settings.text(
+                  '每 ${settings.autoUpdateHours} 小時',
+                  'Every ${settings.autoUpdateHours}h',
+                ),
               ),
             ),
           ),
@@ -321,8 +326,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          M3ECard(
-            variant: M3ECardVariant.filled,
+          Card.filled(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -391,8 +395,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
           ),
           if (kmbEnabled) ...[
             const SizedBox(height: 16),
-            M3ECard(
-              variant: M3ECardVariant.filled,
+            Card.filled(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(

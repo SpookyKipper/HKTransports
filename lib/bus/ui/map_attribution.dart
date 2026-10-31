@@ -2,7 +2,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
-import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MapAttribution extends StatefulWidget {
@@ -46,13 +45,11 @@ class _MapAttributionState extends State<MapAttribution> {
                 ),
               SizedBox.square(
                 dimension: 30,
-                child: M3EIconButton(
+                child: IconButton(
                   onPressed: () => setState(() => _expanded = !_expanded),
                   icon: const Icon(Icons.info, size: 18),
-                  variant: M3EIconButtonVariant.standard,
-                  size: M3EIconButtonSize.xs,
-                  visualSize: const Size(30, 30),
-                  inflateHitTarget: false,
+                  padding: const EdgeInsets.all(4),
+                  constraints: const BoxConstraints(),
                 ),
               ),
             ],
