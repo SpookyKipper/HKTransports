@@ -129,21 +129,31 @@ class _ServiceSection extends StatelessWidget {
           ),
         ),
         for (final MapEntry<String, List<String>?> entry in entries)
-          ListTile(
-            selected:
-                serviceMatches &&
-                _isCurrent(entry.key, entry.value, currentTime),
-            title: Text(
-              entry.value == null
-                  ? _formatTime(entry.key)
-                  : '${_formatTime(entry.key)} - ${_formatTime(entry.value![0])}',
-            ),
-            trailing: entry.value == null
-                ? null
-                : Text(
-                    '${(int.tryParse(entry.value![1]) ?? 0) ~/ 60} ${settings.text('分鐘', 'min')}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+          Builder(
+            builder: (context) {
+              final bool isCurrent =
+                  serviceMatches &&
+                  _isCurrent(entry.key, entry.value, currentTime);
+              final ColorScheme scheme = Theme.of(context).colorScheme;
+              return ListTile(
+                selected: isCurrent,
+                title: Text(
+                  entry.value == null
+                      ? _formatTime(entry.key)
+                      : '${_formatTime(entry.key)} - ${_formatTime(entry.value![0])}',
+                ),
+                trailing: entry.value == null
+                    ? null
+                    : Text(
+                        '${(int.tryParse(entry.value![1]) ?? 0) ~/ 60} ${settings.text('分鐘', 'min')}',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: isCurrent ? scheme.primary : null,
+                              fontWeight: isCurrent ? FontWeight.w700 : null,
+                            ),
+                      ),
+              );
+            },
           ),
       ],
     );
