@@ -129,10 +129,10 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
       children: [
         WebViewWidget(controller: _webViewController!),
         if (_loading)
-          const Positioned(
-            top: 8,
-            right: 8,
-            child: M3ELoadingIndicator(size: 24),
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: Center(child: M3ELoadingIndicator(size: 24)),
+            ),
           ),
         if (_failed)
           Positioned.fill(
