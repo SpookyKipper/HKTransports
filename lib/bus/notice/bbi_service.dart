@@ -188,6 +188,18 @@ class BbiService {
     return total;
   }
 
+  Future<DateTime?> storedUpdatedAt() async {
+    final Directory dir = await _kmbDirectory();
+    if (!await dir.exists()) return null;
+    DateTime? latest;
+    await for (final FileSystemEntity entity in dir.list()) {
+      if (entity is! File || entity.path.endsWith('.tmp')) continue;
+      final DateTime modified = (await entity.stat()).modified;
+      if (latest == null || modified.isAfter(latest)) latest = modified;
+    }
+    return latest;
+  }
+
   String _directionFor(RouteEntry route, BusCompany company) {
     final String? bound = route.boundFor(company);
     return bound == 'I' ? 'B' : 'F';
