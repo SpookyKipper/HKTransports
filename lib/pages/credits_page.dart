@@ -38,13 +38,6 @@ class CreditsPage extends StatelessWidget {
             subtitle: settings.text('原網站', 'Original website'),
             url: 'https://hkbus.app',
           ),
-          _LinkTile(
-            icon: Icons.people_outline,
-            title: settings.text('貢獻者', 'Contributors'),
-            subtitle: settings.text('完整名單', 'Full list'),
-            url:
-                'https://github.com/hkbus/hk-independent-bus-eta/graphs/contributors',
-          ),
           const Divider(),
           _SectionTitle(settings.text('資料來源', 'Data sources')),
           _LinkTile(
