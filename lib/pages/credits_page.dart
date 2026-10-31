@@ -95,16 +95,20 @@ class CreditsPage extends StatelessWidget {
           const Divider(),
           _SectionTitle(settings.text('其他', 'Other')),
           _LinkTile(
-            icon: Icons.campaign_outlined,
-            title: settings.text('通知', 'Notices'),
-            subtitle: 'notice.hkbus.app',
-            url: 'https://notice.hkbus.app',
+            icon: Icons.traffic_outlined,
+            title: settings.text('交通快訊（運輸署）', 'Traffic news (TD)'),
+            subtitle: 'www.td.gov.hk',
+            url: 'https://www.td.gov.hk/tc/special_news/trafficnews.xml',
           ),
           _LinkTile(
             icon: Icons.traffic_outlined,
-            title: settings.text('交通快訊', 'Traffic news'),
-            subtitle: settings.text('運輸署', 'Transport Department'),
-            url: 'https://www.td.gov.hk/tc/special_news/trafficnews.xml',
+            title: settings.text(
+              '交通快訊（DATA.GOV.HK）',
+              'Traffic news (DATA.GOV.HK)',
+            ),
+            subtitle: 'resource.data.one.gov.hk',
+            url:
+                'https://resource.data.one.gov.hk/td/en/specialtrafficnews.xml?date=1',
           ),
           ListTile(
             leading: const Icon(Icons.description_outlined),
