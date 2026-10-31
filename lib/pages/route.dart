@@ -200,6 +200,7 @@ class _RoutePageState extends State<_RoutePage> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: RouteMap(
               key: _mapKey,
+              route: route,
               stations: mapStations,
               onStationTap: _onMapStationTap,
             ),
