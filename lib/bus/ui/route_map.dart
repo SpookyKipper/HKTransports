@@ -8,7 +8,6 @@ import 'package:hktransports/bus/data/route_waypoints.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/map_attribution.dart';
-import 'package:http/http.dart' as http;
 import 'package:maplibre/maplibre.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -38,14 +37,10 @@ class RouteMap extends StatefulWidget {
 
 class RouteMapState extends State<RouteMap>
     with SingleTickerProviderStateMixin {
-  static const String _baseStyleUrl =
-      'https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/vt/basemap/WGS84/resources/styles/root.json';
   static const String _basemapTiles =
-      'https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/vt/basemap/WGS84/tile/{z}/{y}/{x}.pbf';
-  static const String _labelStyleBase =
-      'https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/label/hk';
+      'https://mapapi.geodata.gov.hk/gs/api/v1.0.0/xyz/basemap/WGS84/{z}/{x}/{y}.png';
   static const String _labelTilesBase =
-      'https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/label/hk';
+      'https://mapapi.geodata.gov.hk/gs/api/v1.0.0/xyz/label/hk';
 
   static final Map<String, String> _styleCache = {};
   static const String _routeSourceId = 'route-path';
@@ -486,96 +481,56 @@ class RouteMapState extends State<RouteMap>
     final String? cached = _styleCache[lang];
     if (cached != null) return cached;
 
-    final Uri baseUri = Uri.parse(_baseStyleUrl);
-    final Uri labelUri = Uri.parse(
-      '$_labelStyleBase/$lang/WGS84/resources/styles/root.json',
-    );
-    final List<http.Response> responses = await Future.wait([
-      http.get(baseUri).timeout(const Duration(seconds: 30)),
-      http.get(labelUri).timeout(const Duration(seconds: 30)),
-    ]);
-    if (responses.any((http.Response response) => response.statusCode != 200)) {
-      throw Exception('Unable to load map style');
-    }
-    final dynamic baseJson = jsonDecode(utf8.decode(responses[0].bodyBytes));
-    final dynamic labelJson = jsonDecode(utf8.decode(responses[1].bodyBytes));
-    if (baseJson is! Map || labelJson is! Map) {
-      throw const FormatException('Invalid map style');
-    }
-
-    final Map<String, dynamic> base = _map(baseJson);
-    final Map<String, dynamic> label = _map(labelJson);
-    final Map<String, dynamic> baseSources = _map(base['sources']);
-    final Map<String, dynamic> labelSources = _map(label['sources']);
-    final Map<String, dynamic> baseSource = _map(baseSources['esri']);
-    final Map<String, dynamic> labelSource = _map(labelSources['esri']);
-
-    baseSource
-      ..remove('url')
-      ..['tiles'] = <String>[_basemapTiles]
-      ..['maxzoom'] = 15
-      ..['attribution'] = zh
-          ? "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer'>&copy; 地圖由地政總署提供</a>"
-          : "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer'>&copy; Map provided by Lands Department</a>";
-    labelSource
-      ..remove('url')
-      ..['tiles'] = <String>[
-        '$_labelTilesBase/$lang/WGS84/tile/{z}/{y}/{x}.pbf',
-      ]
-      ..['maxzoom'] = 15
-      ..['attribution'] = zh
-          ? '&copy; 地圖標籤由 GeoData Hong Kong 提供'
-          : '&copy; Map labels by GeoData Hong Kong';
-
-    final List<dynamic> baseLayers = base['layers'] is List
-        ? base['layers'] as List<dynamic>
-        : const [];
-    final List<dynamic> labelLayers = label['layers'] is List
-        ? label['layers'] as List<dynamic>
-        : const [];
-    final List<Map<String, dynamic>> layers = [
-      <String, dynamic>{
-        'id': 'background',
-        'type': 'background',
-        'paint': <String, dynamic>{'background-color': _mapBackgroundColor},
+    final String basemapAttribution = zh
+        ? "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer'>&copy; 地圖由地政總署提供</a>"
+        : "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer'>&copy; Map provided by Lands Department</a>";
+    final String labelAttribution = zh
+        ? '&copy; 地圖標籤由 GeoData Hong Kong 提供'
+        : '&copy; Map labels by GeoData Hong Kong';
+    final Map<String, dynamic> style = <String, dynamic>{
+      'version': 8,
+      'name': 'HKTransports',
+      'sources': <String, dynamic>{
+        'basemap': <String, dynamic>{
+          'type': 'raster',
+          'tiles': <String>[_basemapTiles],
+          'tileSize': 256,
+          'minzoom': 10,
+          'maxzoom': 20,
+          'attribution': basemapAttribution,
+        },
+        'labels': <String, dynamic>{
+          'type': 'raster',
+          'tiles': <String>['$_labelTilesBase/$lang/WGS84/{z}/{x}/{y}.png'],
+          'tileSize': 256,
+          'minzoom': 10,
+          'maxzoom': 20,
+          'attribution': labelAttribution,
+        },
       },
-    ];
-    for (final dynamic value in baseLayers) {
-      if (value is! Map) continue;
-      final Map<String, dynamic> layer = _map(value);
-      if (layer['id'] == 'mainland_mask/0/1') {
-        final Map<String, dynamic> paint = _map(layer['paint']);
-        paint['fill-color'] = _mapBackgroundColor;
-        layer['paint'] = paint;
-      }
-      layers.add(layer);
-    }
-    for (int index = 0; index < labelLayers.length; index++) {
-      final dynamic value = labelLayers[index];
-      if (value is! Map) continue;
-      final Map<String, dynamic> layer = _map(value);
-      layer['id'] = 'labels/${layer['id'] ?? 'layer-$index'}';
-      if (layer.containsKey('source')) layer['source'] = 'labels';
-      layers.add(layer);
-    }
-
-    base['sources'] = <String, dynamic>{
-      'esri': baseSource,
-      'labels': labelSource,
+      'layers': <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'background',
+          'type': 'background',
+          'paint': <String, dynamic>{'background-color': _mapBackgroundColor},
+        },
+        <String, dynamic>{
+          'id': 'basemap',
+          'type': 'raster',
+          'source': 'basemap',
+          'paint': <String, dynamic>{'raster-fade-duration': 300},
+        },
+        <String, dynamic>{
+          'id': 'labels',
+          'type': 'raster',
+          'source': 'labels',
+          'paint': <String, dynamic>{'raster-fade-duration': 300},
+        },
+      ],
     };
-    base['layers'] = layers;
-    base['glyphs'] = labelUri
-        .resolve(label['glyphs']?.toString() ?? '')
-        .toString()
-        .replaceAll('%7B', '{')
-        .replaceAll('%7D', '}');
-    if (base['sprite'] != null) {
-      base['sprite'] = baseUri.resolve(base['sprite'].toString()).toString();
-    }
-    base['name'] = 'HKTransports';
-    final String style = jsonEncode(base);
-    _styleCache[lang] = style;
-    return style;
+    final String encoded = jsonEncode(style);
+    _styleCache[lang] = encoded;
+    return encoded;
   }
 
   void _retryStyle() {
@@ -649,7 +604,7 @@ class RouteMapState extends State<RouteMap>
                     initStyle: style,
                     initCenter: _initialCenter(),
                     initZoom: 11,
-                    minZoom: 8,
+                    minZoom: 10,
                     maxZoom: 18,
                     gestures: const MapGestures.all(rotate: true, pitch: false),
                   ),
@@ -750,12 +705,5 @@ class RouteMapState extends State<RouteMap>
   String _hex(Color color) {
     final int value = color.toARGB32() & 0xFFFFFF;
     return '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
-  }
-
-  Map<String, dynamic> _map(dynamic value) {
-    if (value is! Map) return <String, dynamic>{};
-    return value.map(
-      (dynamic key, dynamic value) => MapEntry(key.toString(), value),
-    );
   }
 }
