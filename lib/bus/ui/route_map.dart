@@ -599,16 +599,20 @@ class RouteMapState extends State<RouteMap> {
                     unawaited(_onStyleLoaded(style));
                   },
                   onEvent: _onMapEvent,
-                  children: const [
-                    SourceAttribution(
-                      showMapLibre: false,
-                      alignment: Alignment.bottomRight,
+                  children: [
+                    MediaQuery.removePadding(
+                      context: context,
+                      removeBottom: true,
+                      child: const SourceAttribution(
+                        showMapLibre: false,
+                        alignment: Alignment.bottomRight,
+                      ),
                     ),
                   ],
                 ),
                 Positioned(
                   right: 44,
-                  bottom: 8,
+                  bottom: 14,
                   child: IgnorePointer(
                     child: Image.asset(
                       'assets/images/landsd.png',
