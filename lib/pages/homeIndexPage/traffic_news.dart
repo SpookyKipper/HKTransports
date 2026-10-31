@@ -53,54 +53,51 @@ class _TrafficNewsState extends State<TrafficNews> {
                 ? null
                 : _at(item.title!, languageIndex);
             final String description = _at(item.description, languageIndex);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: M3ECard(
-                variant: M3ECardVariant.filled,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          item.status <= 2
-                              ? Icon(
-                                  Icons.warning_amber,
-                                  color: Theme.of(context).colorScheme.error,
-                                )
-                              : const Icon(Icons.info_outline),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              title ?? description,
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (title != null) ...[
-                        const SizedBox(height: 8),
-                        Text(description),
-                      ],
-                      if (item.date.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerRight,
+            return Card.filled(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        item.status <= 2
+                            ? Icon(
+                                Icons.warning_amber,
+                                color: Theme.of(context).colorScheme.error,
+                              )
+                            : const Icon(Icons.info_outline),
+                        const SizedBox(width: 12),
+                        Expanded(
                           child: Text(
-                            item.date,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
+                            title ?? description,
+                            style: Theme.of(context).textTheme.titleSmall,
                           ),
                         ),
                       ],
+                    ),
+                    if (title != null) ...[
+                      const SizedBox(height: 8),
+                      Text(description),
                     ],
-                  ),
+                    if (item.date.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          item.date,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             );

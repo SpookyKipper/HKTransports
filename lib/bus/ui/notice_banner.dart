@@ -43,15 +43,14 @@ class _NoticeBannerState extends State<NoticeBanner> {
         ? notice.link(settings.language)
         : notice.url;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: M3EListItem(
-        variant: M3ECardVariant.filled,
+    return Card.filled(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
         leading: Icon(
           notice.icon == 'warning' ? Icons.warning_amber : Icons.info_outline,
         ),
-        headline: content.first,
-        supportingText: content.length > 1 ? content.skip(1).join('\n') : null,
+        title: Text(content.first),
+        subtitle: content.length > 1 ? Text(content.skip(1).join('\n')) : null,
         trailing: M3EIconButton(
           tooltip: settings.text('關閉通知', 'Dismiss notice'),
           icon: const Icon(Icons.close),

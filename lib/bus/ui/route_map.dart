@@ -667,7 +667,7 @@ class RouteMapState extends State<RouteMap>
                       padding: const EdgeInsets.all(12),
                       radius: 18,
                       rotationOffset: 0,
-                      child: M3ETooltip(
+                      child: Tooltip(
                         message: settings.text('重置地圖方向', 'Reset north'),
                         child: DecoratedBox(
                           decoration: BoxDecoration(

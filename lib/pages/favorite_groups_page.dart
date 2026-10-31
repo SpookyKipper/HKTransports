@@ -81,13 +81,15 @@ class FavoriteGroupsPage extends StatelessWidget {
                     onReorder: repository.reorderCustomGroups,
                     itemBuilder: (context, index) {
                       final FavoriteGroup group = groups[index];
-                      return M3EListItem(
+                      return ListTile(
                         key: ValueKey(group.id),
                         leading: const Icon(Icons.star_outline),
-                        headline: group.name,
-                        supportingText: settings.text(
-                          '${repository.entriesInGroup(group).length} 個收藏',
-                          '${repository.entriesInGroup(group).length} favourites',
+                        title: Text(group.name),
+                        subtitle: Text(
+                          settings.text(
+                            '${repository.entriesInGroup(group).length} 個收藏',
+                            '${repository.entriesInGroup(group).length} favourites',
+                          ),
                         ),
                         onTap: () async {
                           final String? name = await promptFavoriteGroupName(
@@ -132,24 +134,26 @@ class FavoriteGroupsPage extends StatelessWidget {
     FavoriteGroup group,
   ) async {
     final AppSettings settings = context.read<AppSettings>();
-    final bool? confirmed = await M3EDialog.show<bool>(
-      context,
-      dialog: M3EDialog(
-        title: settings.text('刪除群組', 'Delete group'),
-        content: Text(
-          settings.text('確定刪除「${group.name}」？', 'Delete "${group.name}"?'),
-        ),
-        actions: [
-          M3EButton.text(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(settings.text('取消', 'Cancel')),
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(settings.text('刪除群組', 'Delete group')),
+          content: Text(
+            settings.text('確定刪除「${group.name}」？', 'Delete "${group.name}"?'),
           ),
-          M3EButton.text(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(settings.text('刪除', 'Delete')),
-          ),
-        ],
-      ),
+          actions: [
+            M3EButton.text(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(settings.text('取消', 'Cancel')),
+            ),
+            M3EButton.text(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(settings.text('刪除', 'Delete')),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed == true) {
       repository.deleteFavoriteGroup(group.id);

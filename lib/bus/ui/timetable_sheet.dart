@@ -5,10 +5,9 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/official_links.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
-class TimetableSheet extends StatefulWidget {
+class TimetableSheet extends StatelessWidget {
   const TimetableSheet({
     super.key,
     required this.route,
@@ -19,52 +18,37 @@ class TimetableSheet extends StatefulWidget {
   final int initialStopIndex;
 
   @override
-  State<TimetableSheet> createState() => _TimetableSheetState();
-}
-
-class _TimetableSheetState extends State<TimetableSheet> {
-  int _selectedIndex = 0;
-
-  @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final bool showNotices =
-        widget.route.companies.contains(BusCompany.kmb) ||
-        widget.route.companies.contains(BusCompany.ctb);
-    final int tabCount = showNotices ? 3 : 2;
-    final int selectedIndex = _selectedIndex.clamp(0, tabCount - 1);
-    return SizedBox(
-      height: MediaQuery.sizeOf(context).height * 0.85,
-      child: Column(
-        children: [
-          M3ETabs(
-            selectedIndex: selectedIndex,
-            onTabSelected: (int index) {
-              setState(() => _selectedIndex = index);
-            },
-            tabs: [
-              M3ETab(label: settings.text('時間表', 'Timetable')),
-              M3ETab(label: settings.text('車程', 'Journey')),
-              if (showNotices) M3ETab(label: settings.text('通告', 'Notices')),
-            ],
-          ),
-          Expanded(
-            child: M3ETabsView(
-              selectedIndex: selectedIndex,
-              onTabSelected: (int index) {
-                setState(() => _selectedIndex = index);
-              },
-              children: [
-                _TimetableTab(route: widget.route),
-                _JourneyTab(
-                  route: widget.route,
-                  initialStopIndex: widget.initialStopIndex,
-                ),
-                if (showNotices) ProprietaryNoticesTab(route: widget.route),
+        route.companies.contains(BusCompany.kmb) ||
+        route.companies.contains(BusCompany.ctb);
+    return DefaultTabController(
+      length: showNotices ? 3 : 2,
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.85,
+        child: Column(
+          children: [
+            TabBar(
+              dividerColor: Colors.transparent,
+              dividerHeight: 0,
+              tabs: [
+                Tab(text: settings.text('時間表', 'Timetable')),
+                Tab(text: settings.text('車程', 'Journey')),
+                if (showNotices) Tab(text: settings.text('通告', 'Notices')),
               ],
             ),
-          ),
-        ],
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _TimetableTab(route: route),
+                  _JourneyTab(route: route, initialStopIndex: initialStopIndex),
+                  if (showNotices) ProprietaryNoticesTab(route: route),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -151,11 +135,13 @@ class _ServiceSection extends StatelessWidget {
                   serviceMatches &&
                   _isCurrent(entry.key, entry.value, currentTime);
               final ColorScheme scheme = Theme.of(context).colorScheme;
-              return M3EListItem(
+              return ListTile(
                 selected: isCurrent,
-                headline: entry.value == null
-                    ? _formatTime(entry.key)
-                    : '${_formatTime(entry.key)} - ${_formatTime(entry.value![0])}',
+                title: Text(
+                  entry.value == null
+                      ? _formatTime(entry.key)
+                      : '${_formatTime(entry.key)} - ${_formatTime(entry.value![0])}',
+                ),
                 trailing: entry.value == null
                     ? null
                     : Text(
@@ -266,13 +252,16 @@ class _JourneyTabState extends State<_JourneyTab> {
             ? null
             : estimate.cumulativeMinutes[stopIndex - _startSeq];
         final ColorScheme scheme = Theme.of(context).colorScheme;
-        return M3EListItem(
+        return ListTile(
           selected: isStart,
           leading: Icon(
             isStart ? Icons.radio_button_checked : Icons.radio_button_unchecked,
             color: beforeStart ? scheme.outline : null,
           ),
-          headline: stop.displayName(settings.language),
+          title: Text(
+            stop.displayName(settings.language),
+            style: beforeStart ? TextStyle(color: scheme.outline) : null,
+          ),
           trailing: isStart
               ? Text(settings.text('起點', 'Start'))
               : minutes == null

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -39,7 +38,7 @@ class CreditsPage extends StatelessWidget {
             subtitle: settings.text('原網站', 'Original website'),
             url: 'https://hkbus.app',
           ),
-          const M3EDivider(),
+          const Divider(),
           _SectionTitle(settings.text('資料來源', 'Data sources')),
           _LinkTile(
             icon: Icons.data_object,
@@ -73,7 +72,7 @@ class CreditsPage extends StatelessWidget {
             url:
                 'https://data.gov.hk/en-data/dataset/hk-td-tis_3-routes-and-fares-of-public-transport',
           ),
-          const M3EDivider(),
+          const Divider(),
           _SectionTitle(settings.text('地圖', 'Map')),
           _LinkTile(
             icon: Icons.map_outlined,
@@ -90,7 +89,7 @@ class CreditsPage extends StatelessWidget {
             subtitle: settings.text('地圖標籤', 'Map labels'),
             url: 'https://portal.csdi.gov.hk',
           ),
-          const M3EDivider(),
+          const Divider(),
           _SectionTitle(settings.text('其他', 'Other')),
           _LinkTile(
             icon: Icons.traffic_outlined,
@@ -108,9 +107,9 @@ class CreditsPage extends StatelessWidget {
             url:
                 'https://resource.data.one.gov.hk/td/en/specialtrafficnews.xml?date=1',
           ),
-          M3EListItem(
+          ListTile(
             leading: const Icon(Icons.description_outlined),
-            headline: settings.text('開源授權', 'Open source licenses'),
+            title: Text(settings.text('開源授權', 'Open source licenses')),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/licenses'),
           ),
@@ -149,10 +148,10 @@ class _LinkTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return M3EListItem(
+    return ListTile(
       leading: Icon(icon),
-      headline: title,
-      supportingText: subtitle,
+      title: Text(title),
+      subtitle: Text(subtitle),
       trailing: const Icon(Icons.open_in_new),
       onTap: () =>
           launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
