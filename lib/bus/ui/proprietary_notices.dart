@@ -611,10 +611,9 @@ class _BbiDialogState extends State<_BbiDialog> {
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       itemCount: entries.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         return _BbiCard(entry: entries[index], leg: _leg);
       },
@@ -633,7 +632,7 @@ class _BbiCard extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
     final ThemeData theme = Theme.of(context);
     return Card.outlined(
-      margin: EdgeInsets.zero,
+      margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
