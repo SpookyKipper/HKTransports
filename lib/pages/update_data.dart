@@ -122,11 +122,6 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                       '${settings.text('上次更新', 'Last update')}: '
                       '${DateFormat('yyyy-MM-dd HH:mm').format(repository.lastUpdate!)}',
                     ),
-                  if (repository.md5 != null)
-                    Text(
-                      'MD5: ${repository.md5}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
                   FutureBuilder<List<int>>(
                     future: Future.wait([
                       repository.updater.dataSizeBytes(),
