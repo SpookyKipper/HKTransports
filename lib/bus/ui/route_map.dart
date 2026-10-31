@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:hktransports/bus/data/route_waypoints.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:http/http.dart' as http;
@@ -20,10 +21,12 @@ class RouteMapStation {
 class RouteMap extends StatefulWidget {
   const RouteMap({
     super.key,
+    required this.route,
     required this.stations,
     required this.onStationTap,
   });
 
+  final RouteEntry route;
   final List<RouteMapStation> stations;
   final ValueChanged<int> onStationTap;
 
@@ -42,14 +45,23 @@ class RouteMapState extends State<RouteMap> {
       'https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/label/hk';
 
   static final Map<String, String> _styleCache = {};
+  static const String _routeSourceId = 'route-path';
+  static const String _routeLayerId = 'route-path-line';
 
   MapLibreMapController? _controller;
   Future<String>? _styleFuture;
+  Future<Map<String, dynamic>?>? _waypointsFuture;
   final List<Circle> _circles = [];
   bool? _isChinese;
   bool _styleLoaded = false;
   int? _pendingFocusIndex;
   int? _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _waypointsFuture = RouteWaypoints.fetch(widget.route);
+  }
 
   @override
   void didChangeDependencies() {
@@ -156,17 +168,6 @@ class RouteMapState extends State<RouteMap> {
       for (final RouteMapStation station in validStations)
         LatLng(station.stop.lat, station.stop.lng),
     ];
-    if (points.length > 1) {
-      await controller.addLine(
-        LineOptions(
-          geometry: points,
-          lineColor: routeColor,
-          lineWidth: 4,
-          lineJoin: 'round',
-          lineOpacity: 0.9,
-        ),
-      );
-    }
 
     final List<CircleOptions> circles = [
       for (final RouteMapStation station in validStations)
@@ -197,6 +198,81 @@ class RouteMapState extends State<RouteMap> {
         await _updateCircleSelection(controller, _selectedIndex!);
       }
     }
+    await _drawRouteLine(controller, routeColor, points);
+  }
+
+  Future<void> _drawRouteLine(
+    MapLibreMapController controller,
+    String color,
+    List<LatLng> stopPoints,
+  ) async {
+    final Map<String, dynamic>? waypoints = await _waypointsFuture;
+    if (!mounted || !identical(_controller, controller)) return;
+    final Map<String, dynamic> fallback = _fallbackRouteGeoJson(stopPoints);
+    if (waypoints == null) {
+      await _setRouteLine(controller, fallback, color);
+      return;
+    }
+    try {
+      await _setRouteLine(controller, waypoints, color);
+    } catch (error) {
+      debugPrint('Unable to draw route waypoints: $error');
+      if (!mounted || !identical(_controller, controller)) return;
+      await _setRouteLine(controller, fallback, color);
+    }
+  }
+
+  Future<void> _setRouteLine(
+    MapLibreMapController controller,
+    Map<String, dynamic> geoJson,
+    String color,
+  ) async {
+    try {
+      await controller.removeLayer(_routeLayerId);
+    } catch (_) {
+      // The layer does not exist on a fresh style.
+    }
+    try {
+      await controller.removeSource(_routeSourceId);
+    } catch (_) {
+      // The source does not exist on a fresh style.
+    }
+    await controller.addGeoJsonSource(_routeSourceId, geoJson);
+    await controller.addLineLayer(
+      _routeSourceId,
+      _routeLayerId,
+      LineLayerProperties(
+        lineColor: color,
+        lineWidth: 4,
+        lineJoin: 'round',
+        lineOpacity: 0.9,
+      ),
+    );
+  }
+
+  Map<String, dynamic> _fallbackRouteGeoJson(List<LatLng> points) {
+    if (points.length < 2) {
+      return <String, dynamic>{
+        'type': 'FeatureCollection',
+        'features': <dynamic>[],
+      };
+    }
+    return <String, dynamic>{
+      'type': 'FeatureCollection',
+      'features': <dynamic>[
+        <String, dynamic>{
+          'type': 'Feature',
+          'properties': <String, dynamic>{},
+          'geometry': <String, dynamic>{
+            'type': 'LineString',
+            'coordinates': <List<double>>[
+              for (final LatLng point in points)
+                <double>[point.longitude, point.latitude],
+            ],
+          },
+        },
+      ],
+    };
   }
 
   Future<void> _fitCamera(List<LatLng> points) async {
