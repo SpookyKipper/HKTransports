@@ -110,9 +110,7 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(
-                      value: total == null ? null : downloaded / total,
-                    ),
+                    const M3ELoadingIndicator(size: 36),
                     const SizedBox(height: 12),
                     Text(settings.text('正在載入通告', 'Loading notice')),
                   ],

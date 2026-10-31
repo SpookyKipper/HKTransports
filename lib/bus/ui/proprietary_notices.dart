@@ -515,7 +515,7 @@ class _BbiDialogState extends State<_BbiDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const CircularProgressIndicator(),
+              const M3ELoadingIndicator(),
               const SizedBox(height: 12),
               Text(
                 settings.text(

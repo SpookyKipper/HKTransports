@@ -5,6 +5,7 @@ import 'package:hktransports/packageMods/chat_bubbles/one.dart';
 import 'package:hktransports/packageMods/chat_bubbles/three.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:go_router/go_router.dart';
 import 'functions/ui.dart';
 
@@ -36,11 +37,7 @@ class MultiplatWidgets {
     if (themeTemplate == "cupertino") {
       return CupertinoButton(onPressed: onPressed, child: child);
     } else {
-      return ElevatedButton(
-        onPressed: onPressed,
-        style: style,
-        child: child,
-      );
+      return ElevatedButton(onPressed: onPressed, style: style, child: child);
     }
   }
 
@@ -185,10 +182,7 @@ class MultiplatWidgets {
         // color: color,
       );
     } else {
-      return CircularProgressIndicator(
-        // strokeWidth: 2.0,
-        // valueColor: AlwaysStoppedAnimation<Color>(color),
-      );
+      return M3ELoadingIndicator(size: size);
     }
   }
 
@@ -314,9 +308,6 @@ class MultiplatWidgets {
 
 final w = MultiplatWidgets(); // UI Elements based on platform
 
-
-
-
 class InvertedColorWidget extends StatelessWidget {
   final Widget child;
 
@@ -332,7 +323,7 @@ class InvertedColorWidget extends StatelessWidget {
       -1, 0, 0, 0, 255, // Red channel
       0, -1, 0, 0, 255, // Green channel
       0, 0, -1, 0, 255, // Blue channel
-      0, 0, 0, 1, 0,   // Alpha channel (remains unchanged)
+      0, 0, 0, 1, 0, // Alpha channel (remains unchanged)
     ];
 
     return ColorFiltered(
@@ -354,7 +345,7 @@ class GrayscaleWidget extends StatelessWidget {
       0.2126, 0.7152, 0.0722, 0, 0, // Red channel
       0.2126, 0.7152, 0.0722, 0, 0, // Green channel
       0.2126, 0.7152, 0.0722, 0, 0, // Blue channel
-      0, 0, 0, 1, 0,                // Alpha channel (remains unchanged)
+      0, 0, 0, 1, 0, // Alpha channel (remains unchanged)
     ];
 
     return ColorFiltered(
@@ -363,4 +354,3 @@ class GrayscaleWidget extends StatelessWidget {
     );
   }
 }
-
