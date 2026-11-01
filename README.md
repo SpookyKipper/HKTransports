@@ -63,6 +63,7 @@ All optional operator requests are made directly from your device. No proxy serv
 
 ### Interface
 
+- Material 3 Expressive interface with responsive, tactile controls.
 - Chinese and English interface.
 - Light, dark and system themes, including dynamic colour options.
 - Adjustable text size and page transitions.
