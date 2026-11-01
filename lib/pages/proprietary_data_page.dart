@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/page_bar.dart';
+import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -123,6 +124,9 @@ class ProprietaryDataPage extends StatelessWidget {
     settings.setProprietarySource(source, value);
     if (!value && source == ProprietaryDataSource.kmb) {
       await const BbiService().clearCache();
+    }
+    if (!value && source == ProprietaryDataSource.citybus) {
+      await const CitybusRouteNameService().clearCache();
     }
   }
 }
