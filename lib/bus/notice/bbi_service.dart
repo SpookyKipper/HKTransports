@@ -137,7 +137,7 @@ class BbiService {
           route: routeNumber,
           destination: _clean(value['direction']),
           stop: _clean(value['stopName']),
-          discount: _citybusDiscount(value, zh),
+          discount: citybusDiscountLabel(value, zh),
           timeLimit: _minutes(value['timeLimit'], zh),
           consecutive: '',
           remark: _clean(value['remark']),
@@ -242,45 +242,47 @@ class BbiService {
     return '';
   }
 
-  String _citybusDiscount(Map<dynamic, dynamic> entry, bool zh) {
-    final String code = entry['discount']?.toString() ?? '';
-    final Map<dynamic, dynamic> amount = entry['discountAmount'] is Map
-        ? entry['discountAmount'] as Map
-        : const {};
-    final Map<dynamic, dynamic> fare = entry['totalFare'] is Map
-        ? entry['totalFare'] as Map
-        : const {};
-    switch (code) {
-      case 'L2':
-        return zh ? '次程免費' : 'Second leg free';
-      case 'FR':
-        return zh
-            ? '減收 \$${_money(amount['adult'])}'
-            : 'Discount \$${_money(amount['adult'])}';
-      case 'TF':
-        return zh
-            ? '兩程優惠車資合共 \$${_money(fare['adult'])}'
-            : 'Combined fare \$${_money(fare['adult'])}';
-      default:
-        return code;
-    }
-  }
-
   String _minutes(dynamic value, bool zh) {
     final String raw = _clean(value);
     if (raw.isEmpty) return '';
     return zh ? '$raw 分鐘' : '$raw min';
   }
+}
 
-  String _money(dynamic value) {
-    final String raw = value?.toString().trim() ?? '';
-    if (raw.isEmpty) return '—';
-    final double? amount = double.tryParse(raw);
-    if (amount == null) return raw;
-    return amount == amount.truncateToDouble()
-        ? amount.toStringAsFixed(0)
-        : amount.toStringAsFixed(1);
+String citybusDiscountLabel(Map<dynamic, dynamic> entry, bool zh) {
+  final String code = entry['discount']?.toString() ?? '';
+  final Map<dynamic, dynamic> amount = entry['discountAmount'] is Map
+      ? entry['discountAmount'] as Map
+      : const {};
+  final Map<dynamic, dynamic> fare = entry['totalFare'] is Map
+      ? entry['totalFare'] as Map
+      : const {};
+  switch (code) {
+    case 'L1':
+      return zh ? '首程免費' : 'First leg free';
+    case 'L2':
+      return zh ? '次程免費' : 'Second leg free';
+    case 'FR':
+      return zh
+          ? '減收 \$${_money(amount['adult'])}'
+          : 'Discount \$${_money(amount['adult'])}';
+    case 'TF':
+      return zh
+          ? '兩程優惠車資合共 \$${_money(fare['adult'])}'
+          : 'Combined fare \$${_money(fare['adult'])}';
+    default:
+      return code;
   }
+}
+
+String _money(dynamic value) {
+  final String raw = value?.toString().trim() ?? '';
+  if (raw.isEmpty) return '—';
+  final double? amount = double.tryParse(raw);
+  if (amount == null) return raw;
+  return amount == amount.truncateToDouble()
+      ? amount.toStringAsFixed(0)
+      : amount.toStringAsFixed(1);
 }
 
 List<List<String>> _readKmbRecords(List<String> args) {
