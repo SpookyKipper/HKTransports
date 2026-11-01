@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hktransports/app/app_transition_page.dart';
 
 /// A page that fades in, but uses the user's chosen transition when popped.
 ///
@@ -18,10 +19,17 @@ class FadeForwardPage<T> extends Page<T> {
   Route<T> createRoute(BuildContext context) => _FadeForwardPageRoute<T>(this);
 }
 
-class _FadeForwardPageRoute<T> extends PageRoute<T> {
+class _FadeForwardPageRoute<T> extends PageRoute<T>
+    implements FadeOutOnNextPush {
   _FadeForwardPageRoute(FadeForwardPage<T> page) : super(settings: page);
 
   FadeForwardPage<T> get _page => settings as FadeForwardPage<T>;
+  bool _fadeOutOnNextPush = false;
+
+  @override
+  void prepareFadeOut() {
+    _fadeOutOnNextPush = true;
+  }
 
   @override
   Duration get transitionDuration => const Duration(milliseconds: 200);
@@ -68,6 +76,9 @@ class _FadeForwardPageRoute<T> extends PageRoute<T> {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
+    if (_fadeOutOnNextPush) {
+      return buildFadeOutTransition(secondaryAnimation, child);
+    }
     if (animation.status == AnimationStatus.forward) {
       return FadeTransition(opacity: animation, child: child);
     }

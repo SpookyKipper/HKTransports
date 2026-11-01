@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:hktransports/app/app_transition_page.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_data_updater.dart';
@@ -371,6 +372,7 @@ class _RoutePageState extends State<_RoutePage> {
                 final String stopQuery = stopId == null
                     ? ''
                     : '&stop=${Uri.encodeQueryComponent(stopId)}';
+                fadeCurrentRouteOut(context);
                 context.pushReplacement(
                   '/route/${reverse.slug}?fade=1$stopQuery',
                 );
