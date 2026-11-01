@@ -686,32 +686,17 @@ class _BbiCard extends StatelessWidget {
                 ),
               ),
             ],
-            if (entry.detail.isNotEmpty)
-              Align(
-                alignment: Alignment.centerRight,
-                child: M3EButton.text(
-                  onPressed: () => _showDetail(context, settings),
-                  child: Text(settings.text('詳情', 'Details')),
+            if (entry.detail.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                entry.detail,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+            ],
           ],
         ),
-      ),
-    );
-  }
-
-  void _showDetail(BuildContext context, AppSettings settings) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(settings.text('詳情', 'Details')),
-        content: SingleChildScrollView(child: Text(entry.detail)),
-        actions: [
-          M3EButton.text(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(settings.text('關閉', 'Close')),
-          ),
-        ],
       ),
     );
   }
