@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/journey/journey_time.dart';
@@ -8,6 +9,7 @@ import 'package:hktransports/bus/ui/official_links.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TimetableSheet extends StatelessWidget {
   const TimetableSheet({
@@ -326,7 +328,7 @@ class _RemarksTab extends StatefulWidget {
 class _RemarksTabState extends State<_RemarksTab> {
   static const CitybusRemarksService _service = CitybusRemarksService();
 
-  Future<String?>? _future;
+  Future<List<CitybusRemarkLine>?>? _future;
   bool _lastEnabled = false;
   String _lastLanguage = '';
 
@@ -343,7 +345,7 @@ class _RemarksTabState extends State<_RemarksTab> {
     _future = _load(settings);
   }
 
-  Future<String?>? _load(AppSettings settings) {
+  Future<List<CitybusRemarkLine>?>? _load(AppSettings settings) {
     if (!settings.isProprietaryEnabled(ProprietaryDataSource.citybus)) {
       return null;
     }
@@ -372,48 +374,113 @@ class _RemarksTabState extends State<_RemarksTab> {
         ),
       );
     }
-    final Future<String?>? future = _future;
+    final Future<List<CitybusRemarkLine>?>? future = _future;
     if (future == null) {
       return const Center(child: M3ELoadingIndicator());
     }
-    return FutureBuilder<String?>(
+    return FutureBuilder<List<CitybusRemarkLine>?>(
       future: future,
-      builder: (BuildContext context, AsyncSnapshot<String?> snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: M3ELoadingIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    settings.text('無法載入備註', 'Unable to load remarks'),
-                    textAlign: TextAlign.center,
+      builder:
+          (
+            BuildContext context,
+            AsyncSnapshot<List<CitybusRemarkLine>?> snapshot,
+          ) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: M3ELoadingIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        settings.text('無法載入備註', 'Unable to load remarks'),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      M3EButton.text(
+                        onPressed: _retry,
+                        child: Text(settings.text('重試', 'Retry')),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  M3EButton.text(
-                    onPressed: _retry,
-                    child: Text(settings.text('重試', 'Retry')),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-        final String remarks = snapshot.data?.trim() ?? '';
-        if (remarks.isEmpty) {
-          return Center(child: Text(settings.text('沒有備註', 'No remarks')));
-        }
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          children: [
-            Text(remarks, style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        );
-      },
+                ),
+              );
+            }
+            final List<CitybusRemarkLine> remarks =
+                snapshot.data ?? const <CitybusRemarkLine>[];
+            if (remarks.isEmpty) {
+              return Center(child: Text(settings.text('沒有備註', 'No remarks')));
+            }
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              children: [_RemarksContent(lines: remarks)],
+            );
+          },
     );
+  }
+}
+
+class _RemarksContent extends StatefulWidget {
+  const _RemarksContent({required this.lines});
+
+  final List<CitybusRemarkLine> lines;
+
+  @override
+  State<_RemarksContent> createState() => _RemarksContentState();
+}
+
+class _RemarksContentState extends State<_RemarksContent> {
+  final List<TapGestureRecognizer> _recognizers = <TapGestureRecognizer>[];
+
+  @override
+  void dispose() {
+    for (final TapGestureRecognizer recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    for (final TapGestureRecognizer recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+
+    final ThemeData theme = Theme.of(context);
+    final TextStyle? base = theme.textTheme.bodyMedium;
+    final List<InlineSpan> spans = <InlineSpan>[];
+    for (int index = 0; index < widget.lines.length; index++) {
+      if (index > 0) spans.add(const TextSpan(text: '\n'));
+      final CitybusRemarkLine line = widget.lines[index];
+      for (final CitybusRemarkRun run in line.runs) {
+        TapGestureRecognizer? recognizer;
+        final String? href = run.href;
+        if (href != null && href.isNotEmpty) {
+          final Uri? uri = Uri.tryParse(href);
+          if (uri != null) {
+            recognizer = TapGestureRecognizer()
+              ..onTap = () =>
+                  launchUrl(uri, mode: LaunchMode.externalApplication);
+            _recognizers.add(recognizer);
+          }
+        }
+        final TextStyle? style = base?.copyWith(
+          fontWeight: run.bold ? FontWeight.bold : null,
+          fontStyle: run.italic ? FontStyle.italic : null,
+          decoration: run.underline || recognizer != null
+              ? TextDecoration.underline
+              : null,
+          color: recognizer != null ? theme.colorScheme.primary : null,
+        );
+        spans.add(
+          TextSpan(text: run.text, style: style, recognizer: recognizer),
+        );
+      }
+    }
+    return Text.rich(TextSpan(style: base, children: spans));
   }
 }
