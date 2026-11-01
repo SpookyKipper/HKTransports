@@ -58,6 +58,7 @@ class RouteMapState extends State<RouteMap>
   static const String _stationLayerId = 'route-stations-layer';
   static const String _arrowImageName = 'route-direction-arrow';
   static const double _stationHitRadius = 26;
+  static const double _stationFocusSpan = 0.0012;
   static const String _mapBackgroundColor = '#F5F2EA';
   static const String _userLocationSourceId = 'user-location';
   static const String _userLocationLayerId = 'user-location-layer';
@@ -417,7 +418,11 @@ class RouteMapState extends State<RouteMap>
     if (!mounted || !identical(_mapController, controller)) return;
     final double bearing = controller.getCamera().bearing;
     await controller.fitBounds(
-      bounds: _boundsAround(station.stop.lat, station.stop.lng, 0.005),
+      bounds: _boundsAround(
+        station.stop.lat,
+        station.stop.lng,
+        _stationFocusSpan,
+      ),
       bearing: bearing,
       padding: const EdgeInsets.all(24),
       nativeDuration: const Duration(milliseconds: 900),
