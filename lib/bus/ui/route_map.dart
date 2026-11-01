@@ -72,10 +72,16 @@ class RouteMapState extends State<RouteMap>
   DateTime _lastPulseUpdate = DateTime.fromMillisecondsSinceEpoch(0);
   bool _stationSourceWriting = false;
   bool _stationSourceDirty = false;
+  late final Future<void> _minimumLoadingTime;
 
   @override
   void initState() {
     super.initState();
+    // Keep the map placeholder visible for at least 300ms after page launch,
+    // even when the style and route data are already cached.
+    _minimumLoadingTime = Future<void>.delayed(
+      const Duration(milliseconds: 300),
+    );
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -207,6 +213,7 @@ class RouteMapState extends State<RouteMap>
   Future<String> _prepareMap(Future<String> styleFuture) async {
     final String style = await styleFuture;
     await _waypointsFuture;
+    await _minimumLoadingTime;
     return style;
   }
 
