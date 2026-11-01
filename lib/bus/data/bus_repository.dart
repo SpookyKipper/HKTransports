@@ -40,6 +40,7 @@ class BusRepository extends ChangeNotifier {
   List<String>? _savedRoutes;
   List<String>? _recentRoutes;
   List<FavoriteGroup>? _customGroups;
+  List<String>? _favoriteGroupOrder;
   Timer? _autoTimer;
   bool _checking = false;
 
@@ -332,14 +333,28 @@ class BusRepository extends ChangeNotifier {
 
   List<FavoriteGroup> get favoriteGroups {
     _customGroups ??= _readFavoriteGroups();
-    return [
-      FavoriteGroup(
+    _favoriteGroupOrder ??= _readStringList('favoriteGroupOrder');
+    final Map<String, FavoriteGroup> byId = {
+      FavoriteGroup.favoritesId: FavoriteGroup(
         id: FavoriteGroup.favoritesId,
         name: settings.text('常用', 'Favourites'),
         routes: [...savedRoutes],
       ),
-      ..._customGroups!,
-    ];
+      for (final FavoriteGroup group in _customGroups!) group.id: group,
+    };
+    final List<FavoriteGroup> ordered = [];
+    final Set<String> added = {};
+    for (final String id in _favoriteGroupOrder!) {
+      final FavoriteGroup? group = byId[id];
+      if (group != null && added.add(id)) ordered.add(group);
+    }
+    if (added.add(FavoriteGroup.favoritesId)) {
+      ordered.insert(0, byId[FavoriteGroup.favoritesId]!);
+    }
+    for (final FavoriteGroup group in _customGroups!) {
+      if (added.add(group.id)) ordered.add(group);
+    }
+    return ordered;
   }
 
   FavoriteGroup? favoriteGroupById(String id) {
@@ -405,6 +420,7 @@ class BusRepository extends ChangeNotifier {
     );
     _customGroups = [..._customGroups!, group];
     _saveFavoriteGroups();
+    _saveFavoriteGroupOrder(favoriteGroups);
     notifyListeners();
     return group;
   }
@@ -420,16 +436,14 @@ class BusRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  void reorderCustomGroups(int oldIndex, int newIndex) {
-    _customGroups ??= _readFavoriteGroups();
-    if (oldIndex < 0 || oldIndex >= _customGroups!.length) return;
-    final List<FavoriteGroup> groups = [..._customGroups!];
+  void reorderFavoriteGroups(int oldIndex, int newIndex) {
+    final List<FavoriteGroup> groups = [...favoriteGroups];
+    if (oldIndex < 0 || oldIndex >= groups.length) return;
     if (newIndex > oldIndex) newIndex -= 1;
     if (newIndex < 0 || newIndex >= groups.length) return;
     final FavoriteGroup group = groups.removeAt(oldIndex);
     groups.insert(newIndex, group);
-    _customGroups = groups;
-    _saveFavoriteGroups();
+    _saveFavoriteGroupOrder(groups);
     notifyListeners();
   }
 
@@ -437,7 +451,11 @@ class BusRepository extends ChangeNotifier {
     if (id == FavoriteGroup.favoritesId) return;
     _customGroups ??= _readFavoriteGroups();
     _customGroups = _customGroups!.where((group) => group.id != id).toList();
+    _favoriteGroupOrder = _favoriteGroupOrder
+        ?.where((groupId) => groupId != id)
+        .toList();
     _saveFavoriteGroups();
+    _saveFavoriteGroupOrder(favoriteGroups);
     notifyListeners();
   }
 
@@ -547,6 +565,14 @@ class BusRepository extends ChangeNotifier {
   }
 
   RouteEntry? routeByKey(String key) => _database?.routesByKey[key];
+
+  void _saveFavoriteGroupOrder(List<FavoriteGroup> groups) {
+    final List<String> ids = groups
+        .map((FavoriteGroup group) => group.id)
+        .toList();
+    _favoriteGroupOrder = ids;
+    sp.setString('favoriteGroupOrder', jsonEncode(ids));
+  }
 
   List<FavoriteGroup> _readFavoriteGroups() {
     final String? raw = sp.getString('favoriteGroups');

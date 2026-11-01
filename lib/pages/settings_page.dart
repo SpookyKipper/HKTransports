@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/location/location_service.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
@@ -50,6 +51,19 @@ class SettingsPage extends StatelessWidget {
             ),
             value: settings.dimMapInDarkMode,
             onChanged: settings.setDimMapInDarkMode,
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.my_location_outlined),
+            title: Text(settings.text('使用定位服務', 'Use location')),
+            subtitle: Text(
+              settings.text(
+                '在「附近」分頁顯示附近的路線，需要精確定位權限。',
+                'Show nearby routes in the Nearby tab. Precise location permission is required.',
+              ),
+            ),
+            value: settings.locationEnabled,
+            onChanged: (bool value) =>
+                _setLocationEnabled(context, settings, value),
           ),
           _DropdownSetting<PageTransitionStyle>(
             icon: Icons.animation,
@@ -189,6 +203,44 @@ class SettingsPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _setLocationEnabled(
+    BuildContext context,
+    AppSettings settings,
+    bool value,
+  ) async {
+    if (!value) {
+      settings.setLocationEnabled(false);
+      return;
+    }
+    settings.setLocationEnabled(true);
+    final LocationAccessStatus status = await const LocationService()
+        .requestAccess();
+    if (!context.mounted) return;
+    final String? message = switch (status) {
+      LocationAccessStatus.granted || LocationAccessStatus.unsupported => null,
+      LocationAccessStatus.serviceDisabled => settings.text(
+        '請在系統設定中開啟定位服務。',
+        'Turn on location services in system settings.',
+      ),
+      LocationAccessStatus.denied => settings.text(
+        '定位權限未授予，可在「附近」分頁重試。',
+        'Location permission was not granted. Retry from the Nearby tab.',
+      ),
+      LocationAccessStatus.deniedForever => settings.text(
+        '定位權限已被永久拒絕，請在應用程式設定中允許。',
+        'Location permission was permanently denied. Allow it in app settings.',
+      ),
+    };
+    if (status == LocationAccessStatus.unsupported) {
+      settings.setLocationEnabled(false);
+    }
+    if (message != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   String _etaFormatLabel(EtaFormat format, AppSettings settings) {

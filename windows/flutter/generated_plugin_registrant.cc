@@ -7,6 +7,7 @@
 #include "generated_plugin_registrant.h"
 
 #include <dynamic_color/dynamic_color_plugin_c_api.h>
+#include <geolocator_windows/geolocator_windows.h>
 #include <objectbox_flutter_libs/objectbox_flutter_libs_plugin.h>
 #include <protocol_handler_windows/protocol_handler_windows_plugin_c_api.h>
 #include <url_launcher_windows/url_launcher_windows.h>
@@ -14,6 +15,8 @@
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   DynamicColorPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("DynamicColorPluginCApi"));
+  GeolocatorWindowsRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("GeolocatorWindows"));
   ObjectboxFlutterLibsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("ObjectboxFlutterLibsPlugin"));
   ProtocolHandlerWindowsPluginCApiRegisterWithRegistrar(
