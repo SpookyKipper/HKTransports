@@ -529,10 +529,25 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(
-              width: 64,
-              child: Text(
-                widget.route.route,
-                style: Theme.of(context).textTheme.titleLarge,
+              width: 80,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.route.route,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Text(
+                    widget.route.companiesLabel(settings.language),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 8),
@@ -544,7 +559,8 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
                     '${settings.text('往', 'to')} ${widget.route.dest.get(settings.language)}',
                   ),
                   Text(
-                    '${stop?.displayName(settings.language) ?? widget.route.orig.get(settings.language)} · ${widget.route.companiesLabel(settings.language)}',
+                    stop?.displayName(settings.language) ??
+                        widget.route.orig.get(settings.language),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),

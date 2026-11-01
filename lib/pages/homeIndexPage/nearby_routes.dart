@@ -455,10 +455,25 @@ class _NearbyRouteTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(
-              width: 64,
-              child: Text(
-                route.route,
-                style: Theme.of(context).textTheme.titleLarge,
+              width: 80,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    route.route,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Text(
+                    route.companiesLabel(settings.language),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 8),
@@ -472,12 +487,6 @@ class _NearbyRouteTile extends StatelessWidget {
                   Text(
                     '${stop.displayName(settings.language)} · '
                     '${_distanceLabel(result.distanceMeters)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  Text(
-                    route.companiesLabel(settings.language),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
