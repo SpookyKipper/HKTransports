@@ -1,144 +1,143 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' hide AppBar;
-import 'package:hktransports/pages/homeIndexPage/home.dart';
-import 'package:hktransports/pages/homeIndexPage/traffic_news.dart';
-import 'package:one_ui/one_ui.dart';
-import 'package:spookyservices/helpers/language.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:spookyservices/widgets/widgets.dart';
-
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hktransports/app/page_bar.dart';
+import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:provider/provider.dart';
 
-class HomePageRoute extends StatefulWidget {
-  const HomePageRoute({super.key});
+class HomeShell extends StatefulWidget {
+  const HomeShell({super.key, required this.navigationShell});
+
+  final StatefulNavigationShell navigationShell;
 
   @override
-  State<HomePageRoute> createState() => _HomePageRouteState();
+  State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomePageRouteState extends State<HomePageRoute> with WindowListener {
-  Widget currentPage = HomePage();
-  int currentPageIndex = 0;
+class _HomeShellState extends State<HomeShell> {
+  int get _index => widget.navigationShell.currentIndex;
 
-  @override
-  void initState() {
-    super.initState();
-    windowManager.addListener(this);
-  }
-
-  @override
-  void onWindowClose() async {
-    bool _isPreventClose = await windowManager.isPreventClose();
-    if (_isPreventClose) {
-      showDialog(
-        context: context,
-        builder: (_) {
-          return AlertDialog(
-            title: Text('Are you sure you want to close this window?'),
-            actions: [
-              TextButton(child: Text('No'), onPressed: () {}),
-              TextButton(
-                child: Text('Yes'),
-                onPressed: () async {
-                  await windowManager.destroy();
-                },
-              ),
-            ],
-          );
-        },
-      );
-    }
+  void _selectPage(int index) {
+    widget.navigationShell.goBranch(index, initialLocation: index == _index);
   }
 
   @override
   Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final List<String> titles = [
+      settings.text('主頁', 'Home'),
+      settings.text('路線搜尋', 'Search routes'),
+      settings.text('交通快訊', 'Traffic news'),
+    ];
+
     return Scaffold(
-      // appBar: AppBar(
-      //   title: 'HKTransports',
-      //   // backgroundColor: uf.cLD(
-      //   //   context: context,
-      //   //   color: [
-      //   //     Theme.of(context).colorScheme.primary,
-      //   //     Theme.of(context).colorScheme.onPrimary,
-      //   //   ],
-      //   // ), // Add background color to the app bar
-      //   // foregroundColor: Colors.white.withValues(
-      //   //   alpha: 0.9,
-      //   // ), // Add foreground color to the app bar
-      //   // backButton: context.canPop(),
-      //   actions: [
-      //     CupertinoButton(
-      //       padding: EdgeInsets.only(left: 30),
-      //       onPressed: () {
-      //         context.push('/settings');
-      //       },
-      //       child: Row(
-      //         mainAxisSize: MainAxisSize.min,
-      //         children: [
-      //           Icon(
-      //             Icons.settings,
-      //             color: Colors.white.withValues(alpha: 0.9),
-      //             size: 24,
-      //           ),
-      //         ],
-      //       ),
-      //     ),
-      //   ],
-      // ),
-      body: OneUIView(
-        title: Text("HKTransports"),
-        initCollapsed: false,
+      extendBody: true,
+      appBar: buildPageBar(
+        context,
+        title: titles[_index],
         actions: [
-          Container(
-            child: CupertinoButton(
-              padding: EdgeInsets.only(right: 10),
-              onPressed: () {
-                context.push('/settings');
-              },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.settings,
-                    color: Colors.white.withValues(alpha: 0.9),
-                    size: 24,
+          M3EIconButton(
+            tooltip: settings.text('設定', 'Settings'),
+            variant: M3EIconButtonVariant.standard,
+            onPressed: () => context.push('/settings'),
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
+      ),
+      body: widget.navigationShell,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+          child: Center(
+            heightFactor: 1,
+            child: SizedBox(
+              height: 64,
+              child: M3EToolbar(
+                expanded: true,
+                size: M3EToolbarSize.medium,
+                elevation: 0,
+                screenOffset: 0,
+                safeArea: false,
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                actions: [
+                  M3EToolbarWidget(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _ToolbarDestination(
+                          icon: Icons.home_outlined,
+                          selectedIcon: Icons.home,
+                          label: settings.text('主頁', 'Home'),
+                          selected: _index == 0,
+                          onTap: () => _selectPage(0),
+                        ),
+                        _ToolbarDestination(
+                          icon: Icons.search,
+                          selectedIcon: Icons.search,
+                          label: settings.text('搜尋', 'Search'),
+                          selected: _index == 1,
+                          onTap: () => _selectPage(1),
+                        ),
+                        _ToolbarDestination(
+                          icon: Icons.campaign_outlined,
+                          selectedIcon: Icons.campaign,
+                          label: settings.text('快訊', 'News'),
+                          selected: _index == 2,
+                          onTap: () => _selectPage(2),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-        ],
-        child: currentPage,
-      ), // Use the HomePage widget
+        ),
+      ),
+    );
+  }
+}
 
-      bottomNavigationBar: OneUIBottomNavigationBar(
-        currentIndex: currentPageIndex,
-        items: <OneUIBottomNavigationBarItem>[
-          OneUIBottomNavigationBarItem(
-            // icon: Icon(Icons.home),
-            label: lh.lt("主頁", "Home"),
-          ),
-          OneUIBottomNavigationBarItem(
-            // icon: Icon(Icons.search),
-            label: lh.lt("搜尋", "Search"),
-          ),
-          OneUIBottomNavigationBarItem(
-            // icon: Icon(Icons.article),
-            label: lh.lt("交通快訊", "Traffic News"),
-          ),
-        ],
-        onTap: (int index) {
-          setState(() {
-            currentPageIndex = index;
-            if (index == 0) {
-              currentPage = HomePage();
-            } else if (index == 1) {
-              currentPage = SizedBox.shrink();
-            } else if (index == 2) {
-              currentPage = TrafficNews();
-            }
-          });
-        },
+class _ToolbarDestination extends StatelessWidget {
+  const _ToolbarDestination({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: label,
+      child: TextButton.icon(
+        onPressed: onTap,
+        icon: Icon(selected ? selectedIcon : icon),
+        label: AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          child: selected ? Text(label) : const SizedBox(width: 0, height: 0),
+        ),
+        style: TextButton.styleFrom(
+          foregroundColor: selected
+              ? scheme.onSecondaryContainer
+              : scheme.onSurfaceVariant,
+          backgroundColor: selected
+              ? scheme.secondaryContainer
+              : Colors.transparent,
+          minimumSize: const Size(48, 48),
+          padding: EdgeInsets.symmetric(horizontal: selected ? 12 : 10),
+          shape: const StadiumBorder(),
+        ),
       ),
     );
   }

@@ -1,869 +1,1220 @@
 import 'dart:async';
+import 'dart:math' as math;
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:hktransports/app/app_transition_page.dart';
+import 'package:hktransports/app/page_bar.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hkbusapi/kmb/classes.dart';
-import 'package:hktransports/customWidgets/null_widget.dart';
-import 'package:hktransports/customWidgets/stacked_widgets.dart';
-import 'package:flutter/material.dart' hide AppBar;
-import 'package:hktransports/dataStore/objectbox.dart';
-import 'package:hktransports/functions/text.dart';
+import 'package:hktransports/bus/data/bus_data_updater.dart';
+import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/eta/eta_display.dart';
+import 'package:hktransports/bus/eta/eta_models.dart';
+import 'package:hktransports/bus/eta/eta_service.dart';
+import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/state/pinned_stops.dart';
+import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
+import 'package:hktransports/bus/ui/proprietary_notices.dart';
+import 'package:hktransports/bus/ui/route_map.dart';
+import 'package:hktransports/bus/ui/route_group_sheet.dart';
+import 'package:hktransports/bus/ui/timetable_sheet.dart';
+import 'package:hktransports/location/location_controller.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:one_ui/one_ui.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:spookyservices/widgets/widgets.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
-import '../functions/ui.dart';
-import '../multiplat_ui.dart';
+class RoutePageRoute extends StatelessWidget {
+  const RoutePageRoute({super.key, required this.slug, this.initialStopId});
 
-import 'package:hkbusapi/kmb/functions.dart' as kmb;
-import 'package:hkbusapi/universal/functions.dart';
-import 'package:hkbusapi/classes.dart';
-
-class RoutePageRoute extends StatefulWidget {
-  const RoutePageRoute({super.key});
+  final String slug;
+  final String? initialStopId;
 
   @override
-  State<RoutePageRoute> createState() => _RoutePageRouteState();
+  Widget build(BuildContext context) {
+    final BusRepository repository = context.watch<BusRepository>();
+    final RouteEntry? route = repository.routeBySlug(slug);
+    if (route == null) {
+      final AppSettings settings = context.watch<AppSettings>();
+      return Scaffold(
+        appBar: buildPageBar(context, title: settings.text('路線', 'Route')),
+        body: Center(child: Text(settings.text('找不到路線', 'Route not found'))),
+      );
+    }
+    return _RoutePage(
+      key: ValueKey(route.key),
+      route: route,
+      initialStopId: initialStopId,
+    );
+  }
 }
 
-class _RoutePageRouteState extends State<RoutePageRoute> {
-  String dest = "Loading...";
-  bool _showContent = false;
+class _RoutePage extends StatefulWidget {
+  const _RoutePage({super.key, required this.route, this.initialStopId});
+
+  final RouteEntry route;
+  final String? initialStopId;
+
+  @override
+  State<_RoutePage> createState() => _RoutePageState();
+}
+
+class _RoutePageState extends State<_RoutePage> {
+  static const double _stationGap = 3;
+  static const double _stationInnerRadius = 8;
+  static const double _autoFocusMaxDistanceMeters = 2000;
+
+  late final EtaService _etaService;
+  final Map<int, List<BusEta>?> _etas = {};
+  final Set<int> _loading = {};
+  final GlobalKey<RouteMapState> _mapKey = GlobalKey<RouteMapState>();
+  final Map<int, GlobalKey> _stationKeys = {};
+  Timer? _timer;
+  int? _expandedIndex;
+  bool _autoFocusAttempted = false;
+  bool _userSelectedStation = false;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(milliseconds: 10), () {
-      setState(() {
-        _showContent = true;
+    final AppSettings settings = context.read<AppSettings>();
+    _etaService = EtaService(language: settings.language);
+    final int initialIndex = widget.route.primaryStops.indexOf(
+      widget.initialStopId ?? '',
+    );
+    if (initialIndex >= 0) {
+      _expandedIndex = initialIndex;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _startRefresh(initialIndex);
+        _mapKey.currentState?.focusStation(initialIndex);
+        _scrollToStation(initialIndex);
       });
-    });
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _autoFocusNearestStation();
+      });
+    }
+  }
+
+  void _autoFocusNearestStation() {
+    if (_autoFocusAttempted || _userSelectedStation || !mounted) return;
+    _autoFocusAttempted = true;
+    if (!context.read<AppSettings>().locationEnabled) return;
+    final LocationController location = context.read<LocationController>();
+    unawaited(_focusNearestWhenPositionReady(location));
+  }
+
+  Future<void> _focusNearestWhenPositionReady(
+    LocationController location,
+  ) async {
+    final Position? position = await location.waitForPosition();
+    if (!mounted ||
+        position == null ||
+        _userSelectedStation ||
+        !context.read<AppSettings>().locationEnabled) {
+      return;
+    }
+    final ({int index, double distance})? nearest = _nearestStation(
+      position,
+      context.read<BusRepository>(),
+    );
+    if (nearest == null || nearest.distance > _autoFocusMaxDistanceMeters) {
+      return;
+    }
+    _applyStationFocus(nearest.index);
+  }
+
+  ({int index, double distance})? _nearestStation(
+    Position position,
+    BusRepository repository,
+  ) {
+    final List<String> stopIds = widget.route.primaryStops;
+    int? nearestIndex;
+    double nearestDistance = double.infinity;
+    for (int index = 0; index < stopIds.length; index++) {
+      final StopEntry? stop = repository.stopById(stopIds[index]);
+      if (stop == null) continue;
+      final double distance = _distanceMetersToPosition(position, stop);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    }
+    if (nearestIndex == null) return null;
+    return (index: nearestIndex, distance: nearestDistance);
+  }
+
+  void _applyStationFocus(int index) {
+    if (!mounted) return;
+    setState(() => _expandedIndex = index);
+    _startRefresh(index);
+    _mapKey.currentState?.focusStation(index);
+    _scrollToStation(index);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final AppSettings settings = context.read<AppSettings>();
+    _etaService.setLanguage(settings.language);
   }
 
   @override
   void dispose() {
-    // Clean up resources
+    _timer?.cancel();
     super.dispose();
   }
 
+  void _startRefresh(int index) {
+    _timer?.cancel();
+    _fetch(index);
+    final AppSettings settings = context.read<AppSettings>();
+    _timer = Timer.periodic(
+      Duration(seconds: settings.refreshSeconds),
+      (_) => _fetch(index),
+    );
+  }
+
+  Future<void> _fetch(int index) async {
+    if (_loading.contains(index)) return;
+    setState(() => _loading.add(index));
+    final List<BusEta> etas = await _etaService.fetchRouteStop(
+      widget.route,
+      index,
+    );
+    if (!mounted) return;
+    setState(() {
+      _loading.remove(index);
+      _etas[index] = etas;
+    });
+  }
+
+  void _onExpansionChanged(int index, bool expanded) {
+    _userSelectedStation = true;
+    if (expanded) {
+      setState(() => _expandedIndex = index);
+      _startRefresh(index);
+      _mapKey.currentState?.focusStation(index);
+    } else {
+      setState(() {
+        _expandedIndex = null;
+        _loading.remove(index);
+      });
+      _timer?.cancel();
+    }
+  }
+
+  void _onMapStationTap(int index) {
+    _userSelectedStation = true;
+    if (_expandedIndex != index) {
+      _onExpansionChanged(index, true);
+    } else {
+      _mapKey.currentState?.focusStation(index);
+    }
+    _scrollToStation(index);
+  }
+
+  void _scrollToStation(int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>.delayed(const Duration(milliseconds: 300), () {
+        if (!mounted) return;
+        final BuildContext? stationContext =
+            _stationKeys[index]?.currentContext;
+        if (stationContext == null) return;
+        Scrollable.ensureVisible(
+          stationContext,
+          duration: const Duration(milliseconds: 300),
+          alignment: 0,
+        );
+      });
+    });
+  }
+
+  String? _correspondingStopId(
+    RouteEntry current,
+    RouteEntry reverse,
+    int selectedIndex,
+    BusRepository repository,
+  ) {
+    final List<String> currentStops = current.primaryStops;
+    final List<String> reverseStops = reverse.primaryStops;
+    if (selectedIndex < 0 || selectedIndex >= currentStops.length) {
+      return null;
+    }
+    final String selectedId = currentStops[selectedIndex];
+    if (reverseStops.contains(selectedId)) return selectedId;
+
+    final StopEntry? selected = repository.stopById(selectedId);
+    if (selected == null || reverseStops.isEmpty) return null;
+
+    final List<StopRef>? physical = repository.database?.stopMap[selectedId];
+    if (physical != null) {
+      final Set<String> physicalIds = <String>{
+        selectedId,
+        for (final StopRef ref in physical) ref.stopId,
+      };
+      for (final String stopId in reverseStops) {
+        if (physicalIds.contains(stopId)) return stopId;
+      }
+    }
+
+    final List<String> named = [
+      for (final String stopId in reverseStops)
+        if (_sameStopName(selected, repository.stopById(stopId))) stopId,
+    ];
+    final String? namedStop = _nearestStop(selected, named, repository);
+    if (namedStop != null) return namedStop;
+
+    return _nearestStop(selected, reverseStops, repository, maxMeters: 400);
+  }
+
+  bool _sameStopName(StopEntry current, StopEntry? other) {
+    if (other == null) return false;
+    String normalize(String value) =>
+        value.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+    return normalize(current.displayEn) == normalize(other.displayEn) ||
+        normalize(current.displayZh) == normalize(other.displayZh);
+  }
+
+  String? _nearestStop(
+    StopEntry selected,
+    Iterable<String> stopIds,
+    BusRepository repository, {
+    double? maxMeters,
+  }) {
+    String? nearestId;
+    double nearestDistance = double.infinity;
+    for (final String stopId in stopIds) {
+      final StopEntry? stop = repository.stopById(stopId);
+      if (stop == null) continue;
+      final double distance = _distanceMeters(selected, stop);
+      if (maxMeters != null && distance > maxMeters) continue;
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestId = stopId;
+      }
+    }
+    return nearestId;
+  }
+
+  double _distanceMeters(StopEntry a, StopEntry b) {
+    return _distanceMetersBetween(a.lat, a.lng, b.lat, b.lng);
+  }
+
+  double _distanceMetersToPosition(Position position, StopEntry stop) {
+    return _distanceMetersBetween(
+      position.latitude,
+      position.longitude,
+      stop.lat,
+      stop.lng,
+    );
+  }
+
+  double _distanceMetersBetween(
+    double lat1,
+    double lng1,
+    double lat2,
+    double lng2,
+  ) {
+    const double metersPerDegree = 111320;
+    final double midLat = (lat1 + lat2) / 2 * math.pi / 180;
+    final double dy = (lat1 - lat2) * metersPerDegree;
+    final double dx = (lng1 - lng2) * metersPerDegree * math.cos(midLat);
+    return math.sqrt(dx * dx + dy * dy);
+  }
+
   @override
   Widget build(BuildContext context) {
-    // final String route = GoRouter.of(context).routeInformationProvider.value.uri.queryParameters['route'] ?? 'N/A';
-    // final String bound = GoRouter.of(context).routeInformationProvider.value.uri.queryParameters['bound'] ?? 'N/A';
-    // final String servicetype = GoRouter.of(context).routeInformationProvider.value.uri.queryParameters['servicetype'] ?? 'N/A';
-
-    // dev, hot reloads break the URL so hard code it while testing
-    final String route = "290A";
-    final String bound = "I";
-    final String servicetype = "1";
-
-    void getDest() {
-      final KMBRoute routeData = kmb.getRoute(
-        route: route,
-        bound: bound,
-        servicetype: servicetype,
-      );
-      late final String dest;
-      final language = sp.getString("appLanguage") ?? "zh";
-      if (language == "en" && routeData.dest.length > 1) {
-        dest = tf.capitalizeWords(routeData.dest[2]);
-      } else {
-        dest = routeData.dest[0];
+    final AppSettings settings = context.watch<AppSettings>();
+    final BusRepository repository = context.watch<BusRepository>();
+    final PinnedStopsController pinned = context.watch<PinnedStopsController>();
+    final RouteEntry route = widget.route;
+    final List<String> stopIds = route.primaryStops;
+    final bool holiday = isHoliday(
+      repository.database?.holidays ?? const [],
+      hkNow(),
+    );
+    final List<RouteMapStation> mapStations = [];
+    for (int index = 0; index < stopIds.length; index++) {
+      final StopEntry? stop = repository.stopById(stopIds[index]);
+      if (stop != null) {
+        mapStations.add(RouteMapStation(index: index, stop: stop));
       }
-      setState(() {
-        this.dest = dest;
-      });
     }
 
-    if (dest == "Loading...") {
-      getDest();
-    }
-
-    /*   Get route data such as fares and GTFS ID */
-    final KMBRoute routeData = kmb.getRoute(
-      route: route,
-      bound: bound,
-      servicetype: servicetype,
-    );
-
-    final destUnformat = routeData.dest[2];
-    final origin = routeData.origin[2];
-
-    final data = getRouteData(
-      route,
-      int.parse(servicetype),
-      origin,
-      destUnformat,
-    );
-    final List<String>? fares = data.fares;
-    final String? gtfsId = data.gtfsId;
-    print("GTFS ID: $gtfsId");
-    print("Fares: $fares");
-    /* End get route data */
-
-    /* Timetable dialog */
-    String language = sp.getString("appLanguage") ?? "zh";
-    if (language == "zh") {
-      language = "tc";
-    } else {
-      language = "en";
-    }
-
-    void showTimetableDialog() async {
-      // final webview = await WebviewWindow.create(
-      //   configuration: CreateConfiguration(
-      //     windowHeight: 1385,
-      //     windowWidth: 804,
-      //     title: "時間表 Timetable - $route $origin → $dest",
-      //     titleBarTopPadding: Platform.isMacOS ? 20 : 0,
-      //   ),
-      // );
-      // // 💡 Set up the onClose handler
-      // webview.onClose.whenComplete(() {
-      //   debugPrint("Webview window is closing, but the app stays open!");
-      //   // Note: We are NOT calling exit(0) here.
-      //   // The plugin handles the window destruction.
-      // });
-
-      // webview.launch(
-      //   "https://smd.hkemobility.gov.hk/ptheadway/getPTheadway/$gtfsId/1/$language",
-      // );
-      final String gtfsBound = bound == "I" ? "2" : "1";
-      WebViewController _controller = WebViewController()
-        ..enableZoom(false)
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setNavigationDelegate(
-          NavigationDelegate(
-            onProgress: (int progress) {
-              // Update loading bar.
-            },
-            onPageStarted: (String url) {},
-            onPageFinished: (String url) {},
-            onHttpError: (HttpResponseError error) {},
-            onWebResourceError: (WebResourceError error) {},
-            onNavigationRequest: (NavigationRequest request) {
-              return NavigationDecision.navigate;
-            },
+    final RouteEntry? reverse = repository.findReverse(route);
+    return Scaffold(
+      appBar: buildPageBar(
+        context,
+        title: route.route,
+        titleTrailing: _RouteTitleMeta(
+          company: route.companiesLabel(settings.language),
+          special: route.isSpecial ? settings.text('特別班', 'Special') : null,
+        ),
+        subtitleWidget: CitybusRouteNameSubtitle(
+          route: route,
+          language: settings.language,
+          enabled: settings.isProprietaryEnabled(ProprietaryDataSource.citybus),
+          text:
+              '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+          marqueeWhenOverflow: true,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-        )
-        ..loadRequest(
-          Uri.parse(
-            "https://smd.hkemobility.gov.hk/ptheadway/getPTheadway/$gtfsId/$gtfsBound/$language",
-          ),
-        )
-        ..setBackgroundColor(Colors.transparent)
-        //         ..runJavaScript("""
-        //           span = document.createElement("span");
-        // span.innerHTML = "a";
-        // document.body.appendChild(span);
-        //           """)
-        ..setHorizontalScrollBarEnabled(false);
-
-      showOneUIDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return OneUIAlertDialog(
-            title: Text("時間表 Timetable"),
-            content: SizedBox(
-              width: MediaQuery.of(context).size.width, // 80% of screen width
-              child: Theme.of(context).brightness == Brightness.dark
-                  ? InvertedColorWidget(
-                      child: GrayscaleWidget(
-                        child: WebViewWidget(controller: _controller),
-                      ),
-                    )
-                  : GrayscaleWidget(
-                      child: WebViewWidget(controller: _controller),
-                    ),
+        ),
+        actions: [
+          if (reverse != null)
+            M3EIconButton(
+              tooltip: settings.text('對頭線', 'Reverse route'),
+              variant: M3EIconButtonVariant.standard,
+              onPressed: () {
+                final String? stopId = _expandedIndex == null
+                    ? null
+                    : _correspondingStopId(
+                        route,
+                        reverse,
+                        _expandedIndex!,
+                        repository,
+                      );
+                final String stopQuery = stopId == null
+                    ? ''
+                    : '&stop=${Uri.encodeQueryComponent(stopId)}';
+                fadeCurrentRouteOut(context);
+                context.pushReplacement(
+                  '/route/${reverse.slug}?fade=1$stopQuery',
+                );
+              },
+              icon: const Icon(Icons.swap_horiz),
             ),
-            actions: [
-              OneUIDialogAction(
-                child: Text("Close"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+          M3EIconButton(
+            tooltip: settings.text('時間表', 'Timetable'),
+            variant: M3EIconButtonVariant.standard,
+            onPressed: () =>
+                _showTimetable(context, route, _expandedIndex ?? 0),
+            icon: const Icon(Icons.schedule),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, _stationGap),
+            child: RouteMap(
+              key: _mapKey,
+              route: route,
+              stations: mapStations,
+              onStationTap: _onMapStationTap,
+            ),
+          ),
+          _RouteUpdateNotice(route: route),
+          Expanded(
+            child: M3ERefreshIndicator.contained(
+              onRefresh: () async {
+                final int? index = _expandedIndex;
+                if (index != null) await _fetch(index);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(_stationInnerRadius),
+                  ),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    cacheExtent: 12000,
+                    itemCount: stopIds.length,
+                    itemBuilder: (context, index) {
+                      final bool isExpanded = _expandedIndex == index;
+                      return KeyedSubtree(
+                        key: _stationKeys.putIfAbsent(index, () => GlobalKey()),
+                        child: M3EExpandableItem(
+                          key: ValueKey<String>(
+                            '${stopIds[index]}|'
+                            '${_etas[index]?.length ?? -1}|'
+                            '${_loading.contains(index)}',
+                          ),
+                          index: index,
+                          totalCount: stopIds.length,
+                          isExpanded: isExpanded,
+                          decoration: M3EExpandableStyle(
+                            outerRadius: index == 0 ? _stationInnerRadius : 24,
+                            innerRadius: _stationInnerRadius,
+                            hoverRadius: 24,
+                            pressedRadius: 24,
+                            gap: _stationGap,
+                            elevation: 0,
+                            expandedStateFill: false,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            headerPadding: const EdgeInsets.all(16),
+                            bodyPadding: const EdgeInsets.fromLTRB(
+                              16,
+                              0,
+                              16,
+                              16,
+                            ),
+                            iconPlacement: M3EExpandableIconPlacement.right,
+                            expandIcon: null,
+                            collapseIcon: null,
+                            useInkWell: false,
+                          ),
+                          expandMotion: const M3ESpring(
+                            stiffness: 300,
+                            damping: 0.9,
+                          ),
+                          collapseMotion: const M3ESpring(
+                            stiffness: 320,
+                            damping: 0.9,
+                          ),
+                          onToggle: () =>
+                              _onExpansionChanged(index, !isExpanded),
+                          headerBuilder: (context, index, progress) =>
+                              _buildStopHeader(
+                                context,
+                                repository,
+                                route,
+                                stopIds,
+                                index,
+                                holiday,
+                                isExpanded,
+                                () => _onExpansionChanged(index, !isExpanded),
+                              ),
+                          bodyBuilder: (context, index, progress) {
+                            if (progress <= 0) {
+                              return const SizedBox.shrink();
+                            }
+                            return Opacity(
+                              opacity: progress.clamp(0.0, 1.0),
+                              child: _buildStopBody(
+                                context,
+                                route,
+                                stopIds,
+                                index,
+                                pinned,
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
-            ],
-          );
-        },
-      );
-    }
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    /* End timetable dialog */
+  Widget _buildStopHeader(
+    BuildContext context,
+    BusRepository repository,
+    RouteEntry route,
+    List<String> stopIds,
+    int index,
+    bool holiday,
+    bool expanded,
+    VoidCallback onToggle,
+  ) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final String stopId = stopIds[index];
+    final StopEntry? stop = repository.stopById(stopId);
+    final String name = stop?.displayName(settings.language) ?? stopId;
+    final String? fare = route.fareAt(index, holiday: holiday);
+    final String? normalFare = route.fareAt(index, holiday: false);
+    final String? code = stop?.stationCode;
+    final String? platform = stop?.platformCode;
+    final bool isTerminus = index == stopIds.length - 1;
 
-    /* More info dialog*/
-    void showMoreInfoDialog() {
-      showOneUIDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return OneUIAlertDialog(
-            title: Text("Route Information"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 40,
+            height: 48,
+            child: Center(
+              child: Text(
+                '${index + 1}',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Button(
-                  text: "時間表 Timetable",
-                  onPressed: () => {showTimetableDialog()},
-                ),
-              ],
-            ),
-            actions: [
-              OneUIDialogAction(
-                child: Text("Close"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
-    }
-    /* End more info dialog */
-
-    return Scaffold(
-      // appBar: OneUIAppBar(
-      //   title: Text('$route - $dest'),
-
-      //   // backgroundColor: uf.cLD(
-      //   //   context: context,
-      //   //   color: [
-      //   //     Theme.of(context).colorScheme.primary,
-      //   //     Theme.of(context).colorScheme.onPrimary,
-      //   //   ],
-      //   // ), // Add background color to the app bar
-      //   // foregroundColor: Colors.white.withValues(
-      //   //   alpha: 0.9,
-      //   // ), // Add foreground color to the app bar
-      //   // backButton: context.canPop(),
-      // ),
-      body: true
-          ? OneUIView(
-              title: Text('$route - $dest'),
-              initCollapsed: true,
-              actions: [
-                CupertinoButton(
-                  // padding: EdgeInsets.only(left: 30),
-                  onPressed: showMoreInfoDialog,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Colors.white.withValues(alpha: 0.9),
-                        size: 24,
+                Text(name),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    if (isTerminus)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          settings.text('總站', 'Terminus'),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimaryContainer,
+                              ),
+                        ),
                       ),
-                    ],
-                  ),
+                    if (fare != null)
+                      Text(
+                        '${settings.text('車費', 'Fare')} \$$fare',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      )
+                    else if (normalFare != null)
+                      Text(
+                        '${settings.text('車費', 'Fare')} \$$normalFare',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    if (code != null)
+                      Text(
+                        '${settings.text('站碼', 'Code')} $code',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                    if (platform != null)
+                      Text(
+                        '${settings.text('月台', 'Platform')} $platform',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                  ],
                 ),
               ],
-              child: FutureBuilder(
-                future: kmb.getRouteStops(
-                  route: route,
-                  bound: bound,
-                  servicetype: servicetype,
-                ),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: w.loadingIcon(context: context));
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(child: Text('No data available'));
-                  } else {
-                    // Data is available, build the ListView
-                    final stops = snapshot.data!;
-                    return RoutePage(
-                      routeStops: stops,
-                      route: route,
-                      servicetype: servicetype,
-                      bound: bound,
-                      fares: fares,
-                      gtfsId: gtfsId,
-                    ); // Replace with actual data handling
-                  }
-                },
-              ),
-            )
-          : Center(
-              child: w.loadingIcon(context: context),
-            ), // Use the RoutePage widget
-    );
-  }
-}
-
-class RoutePage extends StatelessWidget {
-  final List<KMBRouteStop> routeStops;
-  final String route;
-  final String servicetype;
-  final String bound;
-  final String? gtfsId;
-  final List<String>? fares;
-
-  const RoutePage({
-    super.key,
-    required this.routeStops,
-    required this.route,
-    required this.servicetype,
-    required this.bound,
-    this.gtfsId,
-    this.fares,
-  });
-
-  List<StationTile> getStopListUI() {
-    return routeStops.map((routeStop) {
-      return StationTile(
-        stopSeq: routeStop.seq,
-        stationName: sp.getString("appLanguage") == "en"
-            ? routeStop.stop.name[2]
-            : routeStop.stop.name[0],
-        stopid: routeStop.stop.stopid,
-        price: 1,
-        route: route,
-        servicetype: servicetype,
-        bound: bound,
-      );
-    }).toList();
-  }
-
-  List<LatLng> getStopLatLngs() {
-    return routeStops.map((routeStop) {
-      return LatLng(routeStop.stop.lat, routeStop.stop.lng);
-    }).toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Column(
-          children: [
-            SizedBox(
-              height: constraints.maxHeight * 0.4,
-              child: //nullWidget(),
-              Maptiler(
-                latlng: LatLng(22.3193, 114.1694),
-                markerPoints: getStopLatLngs(),
-                markerWidget: Image(
-                  image: AssetImage("assets/images/mapMarkers/kmb.png"),
-                ),
-              ),
             ),
-            Divider(height: 0.025),
-            SizedBox(
-              height: constraints.maxHeight * 0.6 - 0.025,
-              child: ListView(children: getStopListUI()),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class Maptiler extends StatelessWidget {
-  const Maptiler({
-    super.key,
-    required this.latlng,
-    this.markerWidget,
-    this.markerPoints,
-  });
-
-  final LatLng latlng;
-  final Widget? markerWidget;
-  final List<LatLng>? markerPoints;
-
-  // final _mapController = MapController();
-
-  @override
-  Widget build(BuildContext context) {
-    if (!((markerWidget != null && markerPoints != null) ||
-        (markerWidget == null && markerPoints == null))) {
-      throw Exception(
-        "Either both markerWidget and markerPoints should be provided, or neither should be provided.",
-      );
-    }
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    // FlutterDisplayMode.active.then((mode) {
-    //   print("Current active mode: ${mode.width}x${mode.height} @ ${mode.refreshRate}Hz");
-    // });
-    return FlutterMap(
-      // mapController: _mapController,
-      options: MapOptions(
-        initialZoom: 11.5,
-        initialCenter: latlng,
-        maxZoom: 22,
-        minZoom: 10.5,
-        cameraConstraint: CameraConstraint.contain(
-          bounds: LatLngBounds(
-            LatLng(22.05729, 113.75606), // Southwest coordinates
-            LatLng(22.60008, 114.487967), // Northeast coordinates
           ),
-        ),
-        interactionOptions: InteractionOptions(
-          cursorKeyboardRotationOptions:
-              CursorKeyboardRotationOptions.disabled(),
-          enableMultiFingerGestureRace: false,
-        ),
+          const SizedBox(width: 4),
+          M3EIconButton(
+            tooltip: settings.text(
+              expanded ? '收起' : '展開',
+              expanded ? 'Collapse' : 'Expand',
+            ),
+            variant: M3EIconButtonVariant.standard,
+            size: M3EIconButtonSize.xs,
+            inflateHitTarget: false,
+            onPressed: onToggle,
+            icon: AnimatedRotation(
+              turns: expanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: const Icon(Icons.expand_more),
+            ),
+          ),
+        ],
       ),
-      children: [
-        TileLayer(
-          urlTemplate:
-              "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Tomtom/baseMap/${uf.getCurrentThemeSetting() == 1 ? "main" : "night"}/{z}/{x}/{y}${sp.getString("appLanguage") == "en" ? "?language=en" : "?language=zh-TW"}",
-          userAgentPackageName: 'com.spookysrv.hktransports',
-          maxNativeZoom: 22,
-        ),
-        if (sp.getBool('trafficLayer') ?? false)
-          TileLayer(
-            // traffic status
-            urlTemplate:
-                "https://apiproxy.spookysrv.com/HKTransports/MapTiles/Tomtom/traffic/{z}/{x}/{y}",
-            userAgentPackageName: 'com.spookysrv.hktransports',
-            maxNativeZoom: 22,
-            minZoom: 13.5, // only show when close enough   15.25
-          ),
-        if (markerWidget != null && markerPoints != null)
-          MarkerLayer(
-            markers: [
-              for (var point in markerPoints!)
-                Marker(
-                  point: point,
-                  width: 38,
-                  height: 38,
-                  child: markerWidget!,
-                  alignment: Alignment.topCenter,
-                ),
-            ],
-          ),
+    );
+  }
 
-        Transform.scale(
-          alignment: screenHeight > 1200
-              ? Alignment.bottomRight
-              : Alignment.topLeft,
-          scale: screenWidth > 1200 ? 0.8 : 0.65,
-          child: SimpleAttributionWidget(
-            source: SizedBox(
-              height: 20,
-              child: Row(
-                children: [
-                  if (screenHeight <= 1200) copyrightInfoButton(context),
-                  ElevatedButton(
-                    onPressed: () => launchUrl(
-                      Uri.parse(
-                        "https://www.tomtom.com/legal/en_gb/product-attributions/",
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      "© TomTom",
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => launchUrl(
-                      Uri.parse("https://www.openstreetmap.org/copyright"),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      "© OpenStreetMap",
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ),
-                  if (screenHeight > 1200) copyrightInfoButton(context),
-                ],
+  Widget _buildStopBody(
+    BuildContext context,
+    RouteEntry route,
+    List<String> stopIds,
+    int index,
+    PinnedStopsController pinned,
+  ) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final BusRepository repository = context.watch<BusRepository>();
+    final bool isPinned = pinned.contains(route.key, index);
+    final Color secondaryColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final Map<String, int> stopIndexByCode = {};
+    for (int i = 0; i < stopIds.length; i++) {
+      final String? code = repository.stopById(stopIds[i])?.stationCode;
+      if (code != null) {
+        stopIndexByCode.putIfAbsent(code, () => i);
+      }
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _EtaList(
+          route: route,
+          loading: _loading.contains(index),
+          etas: _etas[index],
+          showCompany: route.companies.length > 1,
+          atOrigin: index == 0,
+          stopIndex: index,
+          stopIndexByCode: stopIndexByCode,
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            children: [
+              M3EIconButton(
+                tooltip: settings.text('收藏此站', 'Favourite this stop'),
+                icon: const Icon(Icons.star_border),
+                selectedIcon: const Icon(Icons.star),
+                isSelected: repository.isEntryInAnyGroup(route.key, index),
+                variant: M3EIconButtonVariant.standard,
+                size: M3EIconButtonSize.xs,
+                inflateHitTarget: false,
+                onPressed: () =>
+                    showRouteGroupSheet(context, route, stopSeq: index),
               ),
-            ),
-            alignment: screenHeight > 1200
-                ? Alignment.bottomRight
-                : Alignment.topLeft,
-            backgroundColor: Colors.white12,
+              M3EIconButton(
+                tooltip: isPinned
+                    ? settings.text('取消釘選', 'Unpin station')
+                    : settings.text('釘選', 'Pin station'),
+                icon: const Icon(Icons.push_pin_outlined),
+                selectedIcon: const Icon(Icons.push_pin),
+                isSelected: isPinned,
+                variant: M3EIconButtonVariant.standard,
+                size: M3EIconButtonSize.xs,
+                inflateHitTarget: false,
+                onPressed: () => pinned.toggle(
+                  PinnedStation(routeKey: route.key, seq: index),
+                ),
+              ),
+              M3EButton.icon(
+                onPressed: () =>
+                    _showStopInfo(context, route, stopIds[index], index),
+                style: M3EButtonStyle.text,
+                icon: Icon(Icons.info_outline, color: secondaryColor),
+                label: Text(
+                  settings.text('車站資訊', 'Stop information'),
+                  style: TextStyle(color: secondaryColor),
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
+
+  void _showStopInfo(
+    BuildContext context,
+    RouteEntry route,
+    String stopId,
+    int stopIndex,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        return _StopInfoSheet(
+          route: route,
+          stopId: stopId,
+          stopIndex: stopIndex,
+        );
+      },
+    );
+  }
+
+  void _showTimetable(BuildContext context, RouteEntry route, int stopIndex) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        return TimetableSheet(route: route, initialStopIndex: stopIndex);
+      },
+    );
+  }
 }
 
-Widget copyrightInfoButton(context) {
-  return ElevatedButton(
-    onPressed: () => showOneUIDialog(
+class _RouteTitleMeta extends StatelessWidget {
+  const _RouteTitleMeta({required this.company, this.special});
+
+  final String company;
+  final String? special;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (company.isNotEmpty)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 140),
+            child: Text(
+              company,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        if (company.isNotEmpty && special != null) const SizedBox(width: 8),
+        if (special != null) _RouteSpecialTag(label: special!),
+      ],
+    );
+  }
+}
+
+class _RouteSpecialTag extends StatelessWidget {
+  const _RouteSpecialTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: scheme.onPrimaryContainer,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EtaList extends StatelessWidget {
+  const _EtaList({
+    required this.route,
+    required this.loading,
+    required this.etas,
+    required this.showCompany,
+    required this.atOrigin,
+    required this.stopIndex,
+    required this.stopIndexByCode,
+  });
+
+  final RouteEntry route;
+  final bool loading;
+  final List<BusEta>? etas;
+  final bool showCompany;
+  final bool atOrigin;
+  final int stopIndex;
+  final Map<String, int> stopIndexByCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final List<BusEta> visible = (etas ?? const [])
+        .where(
+          (eta) => eta.eta != null || eta.remark(settings.language).isNotEmpty,
+        )
+        .toList();
+
+    if (loading && visible.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Center(child: M3ELoadingIndicator(size: 24)),
+      );
+    }
+    if (visible.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          settings.text('暫無到站資料', 'No arrival data'),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (int index = 0; index < visible.length; index++)
+          _EtaLine(
+            route: route,
+            eta: visible[index],
+            first: index == 0,
+            showCompany: showCompany,
+            atOrigin: atOrigin,
+            stopIndex: stopIndex,
+            stopIndexByCode: stopIndexByCode,
+          ),
+      ],
+    );
+  }
+}
+
+class _EtaLine extends StatelessWidget {
+  const _EtaLine({
+    required this.route,
+    required this.eta,
+    required this.first,
+    required this.showCompany,
+    required this.atOrigin,
+    required this.stopIndex,
+    required this.stopIndexByCode,
+  });
+
+  final RouteEntry route;
+  final BusEta eta;
+  final bool first;
+  final bool showCompany;
+  final bool atOrigin;
+  final int stopIndex;
+  final Map<String, int> stopIndexByCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final Color color = first
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+    final DateTime? time = eta.eta;
+    final String remark = eta.remark(settings.language);
+    final String company = route.companyLabel(eta.company, settings.language);
+
+    if (time == null) {
+      final String message = showCompany && eta.isDelayedJourney
+          ? '$company · $remark'
+          : remark;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          message,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color),
+        ),
+      );
+    }
+
+    final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
+    final String clock = DateFormat('HH:mm').format(hkTime);
+    final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
+    final String? departed = departedEtaLabel(eta, settings);
+    final String wait = minutes < 1
+        ? atOrigin
+              ? settings.text('即場開出', 'Departing now')
+              : settings.text('即將到達', 'Arriving')
+        : '$minutes ${settings.text('分鐘', 'min')}';
+
+    final String parts = departed != null
+        ? '$clock  $departed'
+        : switch (settings.etaFormat) {
+            EtaFormat.diff => wait,
+            EtaFormat.exact => clock,
+            EtaFormat.mixed => '$clock  $wait',
+          };
+    final bool showDelayedEta =
+        departed != null ||
+        eta.canShowDelayedEta(
+          stopIndex: stopIndex,
+          stopIndexByCode: stopIndexByCode,
+          minutes: minutes,
+        );
+    if (!showDelayedEta) {
+      final String message = remark.isEmpty
+          ? settings.text('延誤', 'Delayed')
+          : remark;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Tooltip(
+              message: settings.text(
+                '預計時間不準確',
+                'Estimated time may be inaccurate',
+              ),
+              child: M3EButton.text(
+                onPressed: () =>
+                    _showDelayedEtaDialog(context, settings, parts, message),
+                size: M3EButtonSize.xs,
+                decoration: M3EButtonDecoration.styleFrom(
+                  foregroundColor: color,
+                  minimumSize: const Size(28, 20),
+                  padding: EdgeInsets.zero,
+                ),
+                child: const Icon(Icons.info_outline, size: 16),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                showCompany ? '$company · $message' : message,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: color),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    final String via = eta.company == BusCompany.nlb
+        ? eta.dest(settings.language).trim()
+        : '';
+    final List<String> segments = [
+      parts,
+      if (showCompany) company,
+      if (remark.isNotEmpty) remark,
+      if (eta.scheduled && remark.isEmpty) settings.text('預定班次', 'Scheduled'),
+      if (via.isNotEmpty) via,
+    ];
+
+    final TextStyle? style = first
+        ? Theme.of(context).textTheme.titleMedium?.copyWith(color: color)
+        : Theme.of(context).textTheme.bodyMedium?.copyWith(color: color);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Text(segments.join(' · '), style: style),
+    );
+  }
+
+  void _showDelayedEtaDialog(
+    BuildContext context,
+    AppSettings settings,
+    String etaText,
+    String message,
+  ) {
+    showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
-        return OneUIAlertDialog(
-          title: Text("Map Data Copyright Information"),
-          content: Text(
-            "© 1992 - 2025 TomTom. All rights reserved. This material is proprietary and the subject of copyright protection, database right protection and other intellectual property rights owned by TomTom or its suppliers. The use of this material is subject to the terms of a license agreement. Any unauthorized copying or disclosure of this material will lead to criminal and civil liabilities.\n\nData Source © 2025 TomTom\n\nBased on https://www.tomtom.com/legal/en_gb/product-attributions/",
+      builder: (BuildContext dialogContext) {
+        final ThemeData theme = Theme.of(dialogContext);
+        return AlertDialog(
+          title: Text(settings.text('預計到站時間', 'Estimated arrival')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(etaText, style: theme.textTheme.headlineSmall),
+              const SizedBox(height: 12),
+              Text(
+                settings.text(
+                  '此預計時間未必準確。',
+                  'This estimated time may not be accurate.',
+                ),
+              ),
+              if (message.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ],
           ),
           actions: [
-            OneUIDialogAction(
-              child: Text("Close"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+            M3EButton.text(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(settings.text('關閉', 'Close')),
             ),
           ],
         );
       },
-    ),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-    ),
-    child: Icon(
-      Icons.info_outline,
-      size: 18,
-      color: Colors.white.withValues(alpha: 0.7),
-    ),
-  );
-}
-
-class EtaRow extends StatelessWidget {
-  final String time;
-  final int seconds;
-  final int minutes;
-  final String? remarks;
-  final int etaSeq;
-  final int stopSeq;
-  final DateTime? timestamp;
-
-  const EtaRow({
-    super.key,
-    required this.time,
-    required this.seconds,
-    required this.minutes,
-    this.remarks,
-    required this.etaSeq,
-    required this.stopSeq,
-    this.timestamp,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 2.5, top: 2.5),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (seconds > 55)
-            Row(
-              children: [
-                Text(
-                  " $time ",
-                  style: TextStyle(fontSize: 14.5),
-                  strutStyle: StrutStyle(forceStrutHeight: true),
-                ),
-                SizedBox(width: 5),
-                Text(
-                  minutes.toString(),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: etaSeq == 1
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.85),
-                  ),
-                  strutStyle: StrutStyle(forceStrutHeight: true),
-                ),
-                SizedBox(width: 3),
-                Text(
-                  "分鐘",
-                  style: TextStyle(fontSize: 13.5),
-                  strutStyle: StrutStyle(forceStrutHeight: true),
-                ),
-                SizedBox(width: 5),
-              ],
-            ),
-          if (seconds <= 55) SizedBox(width: 4),
-          if (seconds <= 55 && seconds > 11)
-            Text(
-              stopSeq == 1 ? "準備出車  " : "即將到達  ",
-              style: TextStyle(
-                fontSize: 16,
-                // fontWeight: FontWeight.bold,
-                color: etaSeq == 1
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.secondaryFixedDim,
-              ),
-              strutStyle: StrutStyle(forceStrutHeight: true),
-            ),
-          if (seconds <= 11 && seconds > -7)
-            Text(
-              stopSeq == 1 ? "已出車  " : "已到達  ",
-              style: TextStyle(
-                fontSize: 16,
-                // fontWeight: FontWeight.bold,
-                color: etaSeq == 1
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.secondaryFixedDim,
-              ),
-              // strutStyle: StrutStyle(forceStrutHeight: true),
-            ),
-          if (seconds <= -7 && seconds >= -75)
-            Text(
-              "正在離開  ",
-              style: TextStyle(
-                fontSize: 16,
-                // fontWeight: FontWeight.bold,
-                color: etaSeq == 1
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.secondaryFixedDim,
-              ),
-              // strutStyle: StrutStyle(forceStrutHeight: true),
-            ),
-          if (seconds < -75 &&
-              timestamp != DateTime.fromMillisecondsSinceEpoch(0))
-            Text(
-              "已離開，請等候下一班車  ",
-              style: TextStyle(
-                fontSize: 16,
-                // fontWeight: FontWeight.bold,
-                color: etaSeq == 1
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.secondaryFixedDim,
-              ),
-              // strutStyle: StrutStyle(forceStrutHeight: true),
-            ),
-          if (timestamp == DateTime.fromMillisecondsSinceEpoch(0))
-            Text(
-              remarks ?? "",
-              style: TextStyle(
-                fontSize: 16,
-                // fontWeight: FontWeight.bold,
-                color: etaSeq == 1
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.secondaryFixedDim,
-              ),
-              strutStyle: StrutStyle(forceStrutHeight: true),
-            ),
-          if (timestamp != DateTime.fromMillisecondsSinceEpoch(0))
-            Text(
-              remarks ?? "",
-              style: TextStyle(
-                fontSize: 13.5,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-              strutStyle: StrutStyle(forceStrutHeight: true),
-            ),
-        ],
-      ),
     );
   }
 }
 
-class StationTile extends StatefulWidget {
-  const StationTile({
-    super.key,
-    required this.stopSeq,
-    required this.stationName,
-    required this.price,
-    required this.stopid,
+String? _citybusStopId(RouteEntry route, String stopId, int stopIndex) {
+  if (!route.companies.contains(BusCompany.ctb)) return null;
+  final String? citybusId = route.stopIdAt(BusCompany.ctb, stopIndex);
+  if (citybusId != null && citybusId.isNotEmpty) return citybusId;
+  final List<String>? citybusStops = route.stops[BusCompany.ctb];
+  if (citybusStops != null && citybusStops.contains(stopId)) {
+    return stopId;
+  }
+  return null;
+}
+
+class _StopInfoSheet extends StatelessWidget {
+  const _StopInfoSheet({
     required this.route,
-    required this.servicetype,
-    required this.bound,
+    required this.stopId,
+    required this.stopIndex,
   });
 
-  final int stopSeq;
-  final String stopid;
-  final String route;
-  final String bound;
-  final String servicetype;
-  final String stationName;
-  final double price;
-
-  @override
-  State<StationTile> createState() => _StationTileState();
-}
-
-class _StationTileState extends State<StationTile> {
-  DateTime? _lastFetched;
-  List<Widget> _etarows = [];
-  bool _hasFetchedOnce = false;
-  Timer? _refreshTimer;
-
-  Future<void> fetchEta() async {
-    // await Future.delayed(Duration(milliseconds: 1000)); // Simulate network delay
-    setState(() {
-      _etarows = [w.loadingIcon(context: context)];
-    });
-    final List<KMBEta> etas = await kmb.getEta(
-      stopid: widget.stopid,
-      route: widget.route,
-      servicetype: widget.servicetype,
-      bound: widget.bound,
-    );
-    // print("ETA FETCHED: $etas");
-    setState(() {
-      _lastFetched = DateTime.now();
-      _hasFetchedOnce = true;
-      if (etas.isEmpty) {
-        _etarows = [
-          Text(
-            "暫無資料 No Data",
-            style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
-          ),
-        ];
-      } else {
-        _etarows = etas.map((eta) {
-          DateTime now = DateTime.now();
-          Duration difference = eta.eta.difference(now);
-          int seconds = difference.inSeconds;
-          int minutes = difference.inMinutes;
-
-          return EtaRow(
-            time: DateFormat('HH:mm').format(eta.eta.toLocal()),
-            seconds: seconds,
-            minutes: minutes,
-            remarks: eta.remarks.isEmpty
-                ? null
-                : sp.getString("appLanguage") == "en"
-                ? eta.remarks[2]
-                : eta.remarks[0],
-            etaSeq: eta.etaSeq,
-            stopSeq: widget.stopSeq,
-            timestamp: eta.eta,
-          );
-        }).toList();
-      }
-    });
-  }
-
-  void _startAutoRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(Duration(seconds: 17), (timer) {
-      fetchEta();
-    });
-  }
-
-  void _stopAutoRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = null;
-  }
-
-  @override
-  void dispose() {
-    _stopAutoRefresh();
-    super.dispose();
-  }
+  final RouteEntry route;
+  final String stopId;
+  final int stopIndex;
 
   @override
   Widget build(BuildContext context) {
-    final String originalName = widget.stationName;
-    final RegExp platformRegex = RegExp(r'\([A-Z][0-9]{1,2}\)');
-    final RegExp stationCodeRegex = RegExp(r' \([A-Z]{2}[0-9]{3}\)');
+    final AppSettings settings = context.watch<AppSettings>();
+    final BusRepository repository = context.watch<BusRepository>();
+    final StopEntry? stop = repository.stopById(stopId);
+    final BusCompany? company = route.primaryCompany;
+    final List<String> physicalIds = company == null
+        ? const []
+        : repository.physicalStopIds(company, stopId);
+    final String? citybusStopId = _citybusStopId(route, stopId, stopIndex);
+    final List<RouteStopRef> routes = [];
+    final Set<String> seenRoutes = {};
+    for (final String physicalId in physicalIds) {
+      for (final RouteStopRef ref in repository.routesAtStop(physicalId)) {
+        if (seenRoutes.add(ref.route.key)) routes.add(ref);
+      }
+    }
 
-    final String? stationCode = stationCodeRegex
-        .firstMatch(originalName)
-        ?.group(0); // Check KMB station code
-    final String? platformCode = platformRegex
-        .firstMatch(originalName)
-        ?.group(0); // check KMB platform code
-    final String processedName = tf
-        .capitalizeWords(
-          originalName
-              .replaceFirst("$stationCode", "")
-              .replaceFirst("$platformCode", ""),
-        )
-        .replaceAll("Bbi", "BBI");
-    // format station name
-
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Theme.of(context).dividerColor),
-        ),
-      ),
-      child: ExpansionTile(
-        title: Row(
-          children: [
-            SizedBox(
-              width: 30,
-              child: Center(
-                child: Text(
-                  widget.stopSeq.toString(),
-                  style: TextStyle(fontSize: 20),
-                ),
-              ),
-            ),
-            SizedBox(width: 20),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                stackedWidgets(
-                  nullWidget(),
-                  Text(processedName, style: TextStyle(fontSize: 18.5)),
-                  Row(
-                    children: [
-                      Text(
-                        "車費 \$${widget.price}",
-                        style: TextStyle(fontSize: 15),
-                      ),
-
-                      if (stationCode != null)
-                        Text(
-                          " • 站碼 ${stationCode.replaceFirst(" (", "").replaceFirst(")", "")}",
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
-                      if (platformCode != null)
-                        Text(
-                          " • 月台 ${platformCode.replaceFirst("(", "").replaceFirst(")", "")}",
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.75,
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
         children: [
           ListTile(
-            title: Padding(
-              padding: EdgeInsets.only(left: 10, bottom: 11),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _etarows.isNotEmpty
-                    ? _etarows
-                    : [w.loadingIcon(context: context)],
-              ),
+            title: Text(stop?.displayName(settings.language) ?? stopId),
+            subtitle: Text(
+              [
+                if (stop?.stationCode != null)
+                  '${settings.text('站碼', 'Code')} ${stop!.stationCode}',
+                if (stop?.platformCode != null)
+                  '${settings.text('月台', 'Platform')} ${stop!.platformCode}',
+              ].join('  '),
             ),
           ),
+          if (stop != null)
+            Wrap(
+              spacing: 8,
+              children: [
+                M3EButton.icon(
+                  onPressed: () => launchUrl(
+                    Uri.parse(
+                      'https://www.google.com/maps/?q=${stop.lat},${stop.lng}',
+                    ),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  style: M3EButtonStyle.text,
+                  icon: const Icon(Icons.map_outlined),
+                  label: Text(settings.text('地圖', 'Map')),
+                ),
+                M3EButton.icon(
+                  onPressed: () => launchUrl(
+                    Uri.parse(
+                      'https://www.google.com/maps/dir/?api=1'
+                      '&destination=${stop.lat},${stop.lng}&travelmode=walking',
+                    ),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  style: M3EButtonStyle.text,
+                  icon: const Icon(Icons.directions_walk),
+                  label: Text(settings.text('步行路線', 'Walking directions')),
+                ),
+              ],
+            ),
+          if (citybusStopId != null) CitybusStopNotices(stopId: citybusStopId),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              settings.text('本站路線', 'Routes at this stop'),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
+          if (routes.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(settings.text('沒有其他路線', 'No other routes')),
+            )
+          else
+            for (final RouteStopRef ref in routes)
+              ListTile(
+                title: Text(
+                  '${ref.route.route} ${settings.text('往', 'to')} ${ref.route.dest.get(settings.language)}',
+                ),
+                subtitle: Text(
+                  '${ref.route.orig.get(settings.language)} · ${ref.route.companiesLabel(settings.language)}',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/route/${ref.route.slug}');
+                },
+              ),
         ],
-        onExpansionChanged: (expanded) {
-          if (expanded) {
-            final now = DateTime.now();
-            if (!_hasFetchedOnce ||
-                _lastFetched == null ||
-                now.difference(_lastFetched!).inSeconds >= 10) {
-              fetchEta();
-            }
-            _startAutoRefresh();
-          } else {
-            _stopAutoRefresh();
-          }
-        },
+      ),
+    );
+  }
+}
+
+class _RouteUpdateNotice extends StatefulWidget {
+  const _RouteUpdateNotice({required this.route});
+
+  final RouteEntry route;
+
+  @override
+  State<_RouteUpdateNotice> createState() => _RouteUpdateNoticeState();
+}
+
+class _RouteUpdateNoticeState extends State<_RouteUpdateNotice> {
+  DateTime? _updatedAt;
+  bool _checked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _check();
+  }
+
+  Future<void> _check() async {
+    final BusRepository repository = context.read<BusRepository>();
+    final DateTime? updated = await repository.updater.fetchRouteUpdatedAt(
+      widget.route,
+    );
+    if (!mounted) return;
+    setState(() {
+      _updatedAt = updated;
+      _checked = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_checked || _updatedAt == null) return const SizedBox.shrink();
+    final BusRepository repository = context.watch<BusRepository>();
+    final AppSettings settings = context.watch<AppSettings>();
+    final DateTime? local = repository.lastUpdate;
+    if (local != null && !_updatedAt!.isAfter(local)) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Card.filled(
+        child: ListTile(
+          leading: const Icon(Icons.sync),
+          title: Text(settings.text('有較新的路線資料', 'Newer route data available')),
+          subtitle: Text(settings.text('點按更新', 'Tap to update')),
+          onTap: () async {
+            final bool updated = await repository.update(force: true);
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  updated
+                      ? settings.text('資料已更新', 'Data updated')
+                      : settings.text('更新失敗', 'Update failed'),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

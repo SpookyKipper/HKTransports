@@ -5,18 +5,25 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val targetPlatforms = (project.findProperty("target-platform") as? String)
+    ?.split(',')
+    ?.filter { it.isNotBlank() }
+    ?: listOf("android-arm64")
+
+val abiByTargetPlatform = mapOf(
+    "android-arm" to "armeabi-v7a",
+    "android-arm64" to "arm64-v8a",
+    "android-x64" to "x86_64",
+)
+
 android {
     namespace = "com.spookysrv.hktransports"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
     defaultConfig {
@@ -28,6 +35,13 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        ndk {
+            abiFilters.clear()
+            targetPlatforms
+                .mapNotNull { abiByTargetPlatform[it] }
+                .forEach { abiFilters.add(it) }
+        }
     }
 
     buildTypes {
@@ -36,6 +50,12 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
 }
 

@@ -1,87 +1,207 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:desktop_webview_window/desktop_webview_window.dart';
-import 'package:dynamik_theme/dynamik_theme.dart';
-import 'package:hktransports/dataStore/objectbox.dart';
-import 'package:hktransports/functions/app.dart';
-import 'package:hktransports/global/is_web_view.dart';
-import 'package:hktransports/objectBox/store.dart';
-import 'package:hktransports/pages/home.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:material_ui/material_ui.dart' as mui;
+import 'package:go_router/go_router.dart';
+import 'package:hktransports/app/app_theme.dart';
+import 'package:hktransports/app/app_transition_page.dart';
+import 'package:hktransports/app/fade_forward_page.dart';
+import 'package:hktransports/app/m3e_scope.dart';
+import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
+import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/eta/eta_service.dart';
+import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/notice/bbi_service.dart';
+import 'package:hktransports/bus/state/pinned_stops.dart';
+import 'package:hktransports/bus/ui/pinned_stops_bar.dart';
+import 'package:hktransports/location/location_controller.dart';
+import 'package:hktransports/objectBox/store.dart';
+import 'package:hktransports/pages/credits_page.dart';
+import 'package:hktransports/pages/favorite_groups_page.dart';
+import 'package:hktransports/pages/home.dart';
+import 'package:hktransports/pages/homeIndexPage/home.dart';
+import 'package:hktransports/pages/homeIndexPage/traffic_news.dart';
+import 'package:hktransports/pages/search_page.dart';
+import 'package:hktransports/pages/licenses_page.dart';
+import 'package:hktransports/pages/notice_viewer_page.dart';
+import 'package:hktransports/pages/proprietary_data_page.dart';
 import 'package:hktransports/pages/route.dart';
+import 'package:hktransports/pages/settings_page.dart';
 import 'package:hktransports/pages/update_data.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_handler/share_handler.dart';
-import 'functions/ui.dart';
-import 'package:spookyservices/spookyservices.dart' as ss;
-import 'package:spookyservices/theme/colors.dart' as theme;
+import 'package:provider/provider.dart';
 
-import 'pages/settings_page.dart';
+Page<void> _page(
+  BuildContext context,
+  GoRouterState state,
+  Widget child, {
+  LocalKey? key,
+}) {
+  return AppTransitionPage<void>(
+    key: key ?? state.pageKey,
+    style: context.read<AppSettings>().transitionStyle,
+    child: child,
+  );
+}
 
-import 'package:go_router/go_router.dart';
-
-import 'package:hkbusapi/hkbusapi.dart';
-
-// import 'package:flutter_localizations/flutter_localizations.dart';
-
-final _router = GoRouter(
+final GoRouter _router = GoRouter(
   routes: [
-    GoRoute(path: '/', builder: (context, state) => const HomePageRoute()),
+    StatefulShellRoute.indexedStack(
+      pageBuilder: (context, state, navigationShell) => _page(
+        context,
+        state,
+        HomeShell(navigationShell: navigationShell),
+        key: const ValueKey<String>('home-shell'),
+      ),
+      branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (context, state) => const HomeContent(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/search',
+              builder: (context, state) => const SearchPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/news',
+              builder: (context, state) => const TrafficNews(),
+            ),
+          ],
+        ),
+      ],
+    ),
     GoRoute(
-      path: '/route',
-      builder: (context, state) => const RoutePageRoute(),
-      // pageBuilder: GoTransitions.cupertino.call,
+      path: '/route/:slug',
+      pageBuilder: (context, state) {
+        final String slug = state.pathParameters['slug'] ?? '';
+        final String? stopId = state.uri.queryParameters['stop'];
+        final bool fade = state.uri.queryParameters['fade'] == '1';
+        if (fade) {
+          final PageTransitionsBuilder reverseBuilder = transitionBuilderFor(
+            context.read<AppSettings>().transitionStyle,
+          );
+          return FadeForwardPage<void>(
+            key: state.pageKey,
+            reverseBuilder: reverseBuilder,
+            child: RoutePageRoute(slug: slug, initialStopId: stopId),
+          );
+        }
+        return _page(
+          context,
+          state,
+          RoutePageRoute(slug: slug, initialStopId: stopId),
+        );
+      },
     ),
     GoRoute(
       path: '/settings',
-      builder: (context, state) => const SettingsPageRoute(),
-      // pageBuilder: GoTransitions.cupertino.call,
+      pageBuilder: (context, state) =>
+          _page(context, state, const SettingsPageRoute()),
     ),
     GoRoute(
       path: '/updateData',
-      builder: (context, state) => const UpdateDataPageRoute(),
-      // pageBuilder: GoTransitions.cupertino.call,
+      pageBuilder: (context, state) =>
+          _page(context, state, const UpdateDataPageRoute()),
+    ),
+    GoRoute(
+      path: '/proprietaryData',
+      pageBuilder: (context, state) =>
+          _page(context, state, const ProprietaryDataPage()),
+    ),
+    GoRoute(
+      path: '/notice',
+      pageBuilder: (context, state) {
+        return CustomTransitionPage<void>(
+          key: state.pageKey,
+          transitionDuration: const Duration(milliseconds: 300),
+          reverseTransitionDuration: const Duration(milliseconds: 300),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return const OpenUpwardsPageTransitionsBuilder()
+                .buildTransitions<void>(
+                  null,
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                );
+          },
+          child: NoticeViewerPage(
+            url: state.uri.queryParameters['url'] ?? '',
+            title: state.uri.queryParameters['title'],
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/credits',
+      pageBuilder: (context, state) =>
+          _page(context, state, const CreditsPage()),
+    ),
+    GoRoute(
+      path: '/licenses',
+      pageBuilder: (context, state) =>
+          _page(context, state, const LicensesPage()),
+    ),
+    GoRoute(
+      path: '/favoriteGroups',
+      pageBuilder: (context, state) =>
+          _page(context, state, const FavoriteGroupsPage()),
     ),
   ],
 );
 
-void main(List<String> args) async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  ss.initSharedPreferencesSpookySrv();
 
-  // final isWebview = args.any((arg) => arg.startsWith('--webview-window-id'));
-  // if (isWebview) {
-  //   isWebViewChange(true);
-  //   if (runWebViewTitleBarWidget(args)) {
-  //     return;
-  //   }
-  // } else {
-  // not webview
   final Directory dir = await getApplicationDocumentsDirectory();
-  String path = dir.path;
-  final Directory dirAppdata = Directory(
-    "$path/hktransports/appdata",
-  ); // check if the appdata directory exists, if not create it
-  await dirAppdata.exists() ? null : await dirAppdata.create(recursive: true);
+  final String path = dir.path;
+  final Directory dirAppdata = Directory('$path/hktransports/appdata');
+  if (!await dirAppdata.exists()) {
+    await dirAppdata.create(recursive: true);
+  }
   await initObjectBox();
 
-  final Directory dirBusApiData = Directory(
-    "$path/hktransports/busapi",
-  ); // check if BusAPI the directory exists, if not create it
-  await dirBusApiData.exists()
-      ? null
-      : await dirBusApiData.create(recursive: true);
-  await initBusApiObjectBox(dir: "$path/hktransports/busapi");
+  final AppSettings settings = AppSettings();
+  if (!settings.isProprietaryEnabled(ProprietaryDataSource.kmb)) {
+    await const BbiService().clearCache();
+  }
+  if (!settings.isProprietaryEnabled(ProprietaryDataSource.citybus)) {
+    await const CitybusRouteNameService().clearCache();
+  }
+  final BusRepository repository = BusRepository(settings);
+  await repository.initialize();
+  final LocationController location = LocationController(settings);
 
-  // await FlutterDisplayMode.setHighRefreshRate();
-  // }
-  runApp(Phoenix(child: MyApp()));
-}
-
-bool isDarkMode(BuildContext context) {
-  return Theme.of(context).brightness == Brightness.dark;
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AppSettings>.value(value: settings),
+        ChangeNotifierProvider<BusRepository>.value(value: repository),
+        Provider<EtaService>(
+          create: (_) => EtaService(language: settings.language),
+        ),
+        ChangeNotifierProvider<PinnedStopsController>(
+          create: (_) => PinnedStopsController(),
+        ),
+        ChangeNotifierProvider<LocationController>.value(value: location),
+      ],
+      child: const MyApp(),
+    ),
+  );
+  repository.startAutoUpdate();
+  unawaited(location.ensureStarted());
 }
 
 class MyApp extends StatelessWidget {
@@ -89,175 +209,55 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DynamikTheme(
-      config: ThemeConfig(
-        useMaterial3: true,
-        // You can also generate color schemes from:
-        // https://m3.material.io/theme-builder#/custom
-        // lightScheme: ColorScheme.fromSeed(seedColor: Color(0xff6f65dc)),
-        // darkScheme: ColorScheme.fromSeed(
-        //   seedColor: Color(0xff6f65dc),
-        //   brightness: Brightness.dark,
-        // ),
-        lightScheme: theme.MaterialTheme.lightScheme(),
-        darkScheme: theme.MaterialTheme.darkScheme(),
-        // defaultThemeState: SimpleThemeType.dynamik.themeState,
-        defaultThemeState: ThemeState(
-          themeMode: ThemeMode.system,
-          colorMode: ColorMode.custom,
-        ),
-        builder: (themeData) {
-          // Add more customization on ThemeData.
-          return themeData.copyWith(
-            inputDecorationTheme: const InputDecorationTheme(
-              border: OutlineInputBorder(),
-            ),
-            pageTransitionsTheme: const PageTransitionsTheme(
-              builders: <TargetPlatform, PageTransitionsBuilder>{
-                // Set the predictive back transitions for Android.
-                TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-              },
-            ),
-          );
-        },
-      ),
-      builder: (theme, darkTheme, themeMode) {
-        return MaterialApp.router(
-          themeMode: themeMode,
-          theme: theme,
-          darkTheme: darkTheme,
-          debugShowCheckedModeBanner: false,
-          routerConfig: _router,
-          // localizationsDelegates: [
-          //   GlobalMaterialLocalizations.delegate,
-          //   GlobalWidgetsLocalizations.delegate,
-          //   GlobalCupertinoLocalizations.delegate,
-          // ],
-          // supportedLocales: [
-          //   Locale('en'), // English
-          //   Locale.fromSubtags(
-          //     languageCode: 'zh',
-          //     scriptCode: 'Hant',
-          //   ), // Chinese Traditional
-          // ],
-          // scaffoldMessengerKey: snackbarKey,
-        );
-        // MaterialApp(
-        //   themeMode: themeMode,
-        //   theme: theme,
-        //   darkTheme: darkTheme,
-        //   debugShowCheckedModeBanner: false,
-        //   home: MyHomePage(),
-        //   // scaffoldMessengerKey: snackbarKey,
-        // );
-      },
-    );
-  }
-}
-
-class MyAppState extends ChangeNotifier {}
-
-class MyHomePage extends StatefulWidget {
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  SharedMedia? media;
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    final handler = ShareHandlerPlatform.instance;
-    media = await handler.getInitialSharedMedia();
-
-    if (!mounted) return;
-
-    setState(() {
-      // _platformVersion = platformVersion;
-    });
-  }
-
-  // Main route
-  @override
-  void initState() {
-    super.initState();
-
-    void checkTheme() {
-      final int currentThemeMode = sp.getInt('themeMode') ?? 0;
-      if (currentThemeMode == 1) {
-        DynamikTheme.of(context).setThemeMode(ThemeMode.light);
-        ss.setDarkMode(false);
-      } else if (currentThemeMode == 2) {
-        DynamikTheme.of(context).setThemeMode(ThemeMode.dark);
-        ss.setDarkMode(true);
-      }
-    }
-
-    checkTheme();
-  }
-
-  var selectedIndex = 0;
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Scaffold(
-          body: Row(
-            children: [
-              Expanded(
-                child: Container(
-                  color: uf.cLD(
-                    context: context,
-                    color: [
-                      Theme.of(context).colorScheme.primaryContainer,
-                      Colors.black12,
-                    ],
-                  ), // Set the background color of the sidebar
-                  child: Center(
-                    child: SizedBox(
-                      width: 350,
-                      child: ListView(
-                        shrinkWrap: true,
-                        children: [
-                          Image.asset(
-                            'assets/images/logo.png',
-                            width: 150,
-                            height: 150,
-                          ),
-                          Center(
-                            child: Text(
-                              "HKTransports",
-                              style: TextStyle(fontSize: 30),
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          // Button(
-                          //   context: context,
-                          //   onPressed: () {
-                          //     Navigator.pushReplacement(
-                          //       context,
-                          //       MaterialPageRoute(
-                          //         builder: (context) => AuthPageRoute(),
-                          //       ),
-                          //     );
-                          //   },
-                          //   child: Text("Login"),
-                          // ),
-                          SizedBox(height: 10),
-                          Center(
-                            child: af.getVersionBuilder(
-                              builder: (res) =>
-                                  Text("Version: $res [EARLY ACCESS]"),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+    return Consumer<AppSettings>(
+      builder: (context, settings, child) {
+        return DynamicColorBuilder(
+          builder:
+              (mui.ColorScheme? lightDynamic, mui.ColorScheme? darkDynamic) {
+                final bool purple = settings.usesPurpleTheme;
+                final ColorScheme lightScheme = purple
+                    ? purpleLightScheme()
+                    : lightDynamic == null
+                    ? fallbackLightScheme()
+                    : flutterSchemeFromMaterialUi(lightDynamic);
+                final ColorScheme darkScheme = purple
+                    ? purpleDarkScheme()
+                    : darkDynamic == null
+                    ? fallbackDarkScheme()
+                    : flutterSchemeFromMaterialUi(darkDynamic);
+                return MaterialApp.router(
+                  title: 'HKTransports',
+                  debugShowCheckedModeBanner: false,
+                  themeMode: settings.themeMode,
+                  theme: buildAppTheme(lightScheme, settings.transitionStyle),
+                  darkTheme: buildAppTheme(
+                    darkScheme,
+                    settings.transitionStyle,
                   ),
-                ),
-              ),
-            ],
-          ),
+                  routerConfig: _router,
+                  builder: (context, child) {
+                    final MediaQueryData media = MediaQuery.of(context);
+                    final double systemScale = media.textScaler.scale(1);
+                    return AppColorSchemes(
+                      light: lightScheme,
+                      dark: darkScheme,
+                      child: M3EScope(
+                        scheme: Theme.of(context).colorScheme,
+                        child: MediaQuery(
+                          data: media.copyWith(
+                            textScaler: TextScaler.linear(
+                              systemScale * settings.textScale,
+                            ),
+                          ),
+                          child: PinnedStopsHost(
+                            child: child ?? const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
         );
       },
     );
