@@ -61,6 +61,7 @@ class _RoutePage extends StatefulWidget {
 class _RoutePageState extends State<_RoutePage> {
   static const double _stationGap = 3;
   static const double _stationInnerRadius = 8;
+  static const double _autoFocusMaxDistanceMeters = 2000;
 
   late final EtaService _etaService;
   final Map<int, List<BusEta>?> _etas = {};
@@ -114,15 +115,20 @@ class _RoutePageState extends State<_RoutePage> {
         !context.read<AppSettings>().locationEnabled) {
       return;
     }
-    final int? index = _nearestStationIndex(
+    final ({int index, double distance})? nearest = _nearestStation(
       position,
       context.read<BusRepository>(),
     );
-    if (index == null) return;
-    _applyStationFocus(index);
+    if (nearest == null || nearest.distance > _autoFocusMaxDistanceMeters) {
+      return;
+    }
+    _applyStationFocus(nearest.index);
   }
 
-  int? _nearestStationIndex(Position position, BusRepository repository) {
+  ({int index, double distance})? _nearestStation(
+    Position position,
+    BusRepository repository,
+  ) {
     final List<String> stopIds = widget.route.primaryStops;
     int? nearestIndex;
     double nearestDistance = double.infinity;
@@ -135,7 +141,8 @@ class _RoutePageState extends State<_RoutePage> {
         nearestIndex = index;
       }
     }
-    return nearestIndex;
+    if (nearestIndex == null) return null;
+    return (index: nearestIndex, distance: nearestDistance);
   }
 
   void _applyStationFocus(int index) {
