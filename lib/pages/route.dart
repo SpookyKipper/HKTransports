@@ -639,6 +639,7 @@ class _RoutePageState extends State<_RoutePage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _EtaList(
+          route: route,
           loading: _loading.contains(index),
           etas: _etas[index],
           showCompany: route.companies.length > 1,
@@ -790,6 +791,7 @@ class _RouteSpecialTag extends StatelessWidget {
 
 class _EtaList extends StatelessWidget {
   const _EtaList({
+    required this.route,
     required this.loading,
     required this.etas,
     required this.showCompany,
@@ -798,6 +800,7 @@ class _EtaList extends StatelessWidget {
     required this.stopIndexByCode,
   });
 
+  final RouteEntry route;
   final bool loading;
   final List<BusEta>? etas;
   final bool showCompany;
@@ -834,6 +837,7 @@ class _EtaList extends StatelessWidget {
       children: [
         for (int index = 0; index < visible.length; index++)
           _EtaLine(
+            route: route,
             eta: visible[index],
             first: index == 0,
             showCompany: showCompany,
@@ -848,6 +852,7 @@ class _EtaList extends StatelessWidget {
 
 class _EtaLine extends StatelessWidget {
   const _EtaLine({
+    required this.route,
     required this.eta,
     required this.first,
     required this.showCompany,
@@ -856,6 +861,7 @@ class _EtaLine extends StatelessWidget {
     required this.stopIndexByCode,
   });
 
+  final RouteEntry route;
   final BusEta eta;
   final bool first;
   final bool showCompany;
@@ -871,7 +877,7 @@ class _EtaLine extends StatelessWidget {
         : Theme.of(context).colorScheme.onSurfaceVariant;
     final DateTime? time = eta.eta;
     final String remark = eta.remark(settings.language);
-    final String company = eta.company.label(settings.language);
+    final String company = route.companyLabel(eta.company, settings.language);
 
     if (time == null) {
       final String message = showCompany && eta.isDelayedJourney

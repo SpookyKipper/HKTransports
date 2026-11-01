@@ -302,9 +302,40 @@ class RouteEntry {
     return list[index];
   }
 
+  String companyLabel(BusCompany company, String language) {
+    final String routeNumber = route.trim().toUpperCase();
+    final bool english = language == 'en';
+    if (company == BusCompany.ctb &&
+        (routeNumber.startsWith('A') || routeNumber.startsWith('NA'))) {
+      return english ? 'Cityflyer' : '城巴機場快線';
+    }
+    if (company == BusCompany.kmb && _isLongWinRoute(routeNumber)) {
+      return english ? 'Long Win Bus' : '龍運巴士';
+    }
+    return company.label(language);
+  }
+
+  bool _isLongWinRoute(String routeNumber) {
+    if (routeNumber.startsWith('A') ||
+        routeNumber.startsWith('NA') ||
+        routeNumber.startsWith('E') ||
+        routeNumber.startsWith('R') ||
+        routeNumber.startsWith('X') ||
+        routeNumber.startsWith('S')) {
+      return true;
+    }
+    return const <String>{
+      'N30',
+      'N31',
+      'N42',
+      'N42A',
+      'N64',
+    }.contains(routeNumber);
+  }
+
   String companiesLabel(String language) {
     return sortedCompanies
-        .map((company) => company.label(language))
+        .map((company) => companyLabel(company, language))
         .join(' + ');
   }
 }
