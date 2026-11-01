@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="HKTransports mark with HK lettering">
+  <title>HKTransports — Route with HK</title>
+  <defs>
+    <mask id="route-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#ffffff"/>
+      <circle cx="486" cy="747" r="84" fill="#000000"/>
+      <circle cx="716" cy="267" r="130" fill="#000000"/>
+    </mask>
+
+    <mask id="clock-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#ffffff"/>
+      <g fill="none" stroke="#000000" stroke-width="32" stroke-linecap="round">
+        <path d="M 716 267 L 716 205"/>
+        <path d="M 716 267 L 794 267"/>
+      </g>
+    </mask>
+  </defs>
+
+  <g transform="translate(-31.58 -35.23) scale(1.07935)">
+    <!-- Route -->
+    <path d="M 212 747 L 486 747 L 716 517 L 716 267"
+          fill="none" stroke="#5a4ecf" stroke-width="100"
+          stroke-linecap="round" stroke-linejoin="round" mask="url(#route-cut)"/>
+    <circle cx="486" cy="747" r="107" fill="none" stroke="#5a4ecf" stroke-width="46"/>
+    <circle cx="716" cy="267" r="130" fill="#5a4ecf" mask="url(#clock-cut)"/>
+
+    <!-- HK lettering -->
+    <g fill="none" stroke="#5a4ecf" stroke-width="66"
+       stroke-linecap="round" stroke-linejoin="round">
+      <!-- H -->
+      <path d="M 194 270 L 194 478"/>
+      <path d="M 314 270 L 314 478"/>
+      <path d="M 194 374 L 314 374"/>
+      <!-- K -->
+      <path d="M 410 270 L 410 478"/>
+      <path d="M 410 374 L 520 270"/>
+      <path d="M 410 374 L 520 478"/>
+    </g>
+  </g>
+</svg>
