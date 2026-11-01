@@ -33,7 +33,7 @@ extension BusCompanyInfo on BusCompany {
       case BusCompany.nlb:
         return '嶼巴';
       case BusCompany.gmb:
-        return '綠色小巴';
+        return '專線小巴';
       case BusCompany.lrtfeeder:
         return '港鐵巴士';
       case BusCompany.lightRail:
@@ -58,7 +58,7 @@ extension BusCompanyInfo on BusCompany {
       case BusCompany.nlb:
         return 'NLB';
       case BusCompany.gmb:
-        return 'Green minibus';
+        return 'GMB';
       case BusCompany.lrtfeeder:
         return 'MTR bus';
       case BusCompany.lightRail:
@@ -310,7 +310,7 @@ class RouteEntry {
       return english ? 'Cityflyer' : '城巴機場快線';
     }
     if (company == BusCompany.kmb && _isLongWinRoute(routeNumber)) {
-      return english ? 'Long Win Bus' : '龍運巴士';
+      return english ? 'LWB' : '龍運';
     }
     return company.label(language);
   }

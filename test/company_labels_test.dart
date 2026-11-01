@@ -35,7 +35,7 @@ void main() {
       expect(value.companiesLabel('en'), 'Citybus');
     });
 
-    test('shows Long Win Bus for KMB A/NA/E/R/X/S routes', () {
+    test('shows LWB for KMB A/NA/E/R/X/S routes', () {
       for (final String number in <String>[
         'A41',
         'NA41',
@@ -45,12 +45,12 @@ void main() {
         'S1',
       ]) {
         final RouteEntry value = route(number, const [BusCompany.kmb]);
-        expect(value.companiesLabel('zh'), '龍運巴士');
-        expect(value.companiesLabel('en'), 'Long Win Bus');
+        expect(value.companiesLabel('zh'), '龍運');
+        expect(value.companiesLabel('en'), 'LWB');
       }
     });
 
-    test('shows Long Win Bus for the listed KMB night routes', () {
+    test('shows LWB for the listed KMB night routes', () {
       for (final String number in <String>[
         'N30',
         'N31',
@@ -59,8 +59,8 @@ void main() {
         'N64',
       ]) {
         final RouteEntry value = route(number, const [BusCompany.kmb]);
-        expect(value.companiesLabel('zh'), '龍運巴士');
-        expect(value.companiesLabel('en'), 'Long Win Bus');
+        expect(value.companiesLabel('zh'), '龍運');
+        expect(value.companiesLabel('en'), 'LWB');
       }
     });
 
@@ -68,6 +68,12 @@ void main() {
       final RouteEntry value = route('N281', const [BusCompany.kmb]);
       expect(value.companiesLabel('zh'), '九巴');
       expect(value.companiesLabel('en'), 'KMB');
+    });
+
+    test('uses shortened GMB labels', () {
+      final RouteEntry value = route('46', const [BusCompany.gmb]);
+      expect(value.companiesLabel('zh'), '專線小巴');
+      expect(value.companiesLabel('en'), 'GMB');
     });
 
     test('does not override NLB routes', () {
