@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/bus/data/route_waypoints.dart';
@@ -40,7 +41,7 @@ class RouteMap extends StatefulWidget {
 }
 
 class RouteMapState extends State<RouteMap>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   static const String _baseStyleUrl =
       'https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/vt/basemap/WGS84/resources/styles/root.json';
   static const String _basemapTiles =
@@ -89,10 +90,15 @@ class RouteMapState extends State<RouteMap>
   bool _showUserLocation = false;
   bool _locating = false;
   bool _pendingLocate = false;
+  StreamSubscription<CompassEvent>? _compassSubscription;
+  double? _compassHeading;
+  double? _compassAccuracy;
+  DateTime _lastCompassUpdate = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Keep the map placeholder visible for at least 300ms after page launch,
     // even when the style and route data are already cached.
     _minimumLoadingTime = Future<void>.delayed(
@@ -133,6 +139,9 @@ class RouteMapState extends State<RouteMap>
     if (!settings.locationEnabled && _showUserLocation) {
       _showUserLocation = false;
       _userPosition = null;
+      _compassHeading = null;
+      _compassAccuracy = null;
+      _stopCompass();
       if (_layersReady) unawaited(_updateUserOverlaySources());
     }
     final bool zh = settings.isChinese;
@@ -148,12 +157,24 @@ class RouteMapState extends State<RouteMap>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _locationController?.removeListener(_handleLocationChanged);
     _locationController = null;
+    _stopCompass();
     _pulseController.dispose();
     _styleController = null;
     _mapController = null;
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (_showUserLocation) _startCompass();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _stopCompass();
+    }
   }
 
   void _handleLocationChanged() {
@@ -162,6 +183,54 @@ class RouteMapState extends State<RouteMap>
     if (position == null) return;
     _userPosition = position;
     if (_layersReady) unawaited(_updateUserOverlaySources());
+  }
+
+  void _startCompass() {
+    if (_compassSubscription != null) return;
+    try {
+      final Stream<CompassEvent>? events = FlutterCompass.events;
+      if (events == null) return;
+      _compassSubscription = events.listen(
+        (CompassEvent event) {
+          final double? heading = event.heading;
+          if (heading == null) return;
+          _compassHeading = (heading % 360 + 360) % 360;
+          _compassAccuracy = event.accuracy;
+          final DateTime now = DateTime.now();
+          if (now.difference(_lastCompassUpdate) <
+              const Duration(milliseconds: 100)) {
+            return;
+          }
+          _lastCompassUpdate = now;
+          if (_showUserLocation && _layersReady) {
+            unawaited(_updateUserDirectionSource());
+          }
+        },
+        onError: (Object error) {
+          _stopCompass();
+        },
+      );
+    } catch (_) {
+      _stopCompass();
+    }
+  }
+
+  void _stopCompass() {
+    _compassSubscription?.cancel();
+    _compassSubscription = null;
+  }
+
+  Future<void> _updateUserDirectionSource() async {
+    final StyleController? style = _styleController;
+    if (!_layersReady || style == null) return;
+    try {
+      await style.updateGeoJsonSource(
+        id: _userDirectionSourceId,
+        data: jsonEncode(_userDirectionGeoJson()),
+      );
+    } catch (error) {
+      debugPrint('Unable to update user direction overlay: $error');
+    }
   }
 
   Future<void> _locateUser() async {
@@ -176,6 +245,7 @@ class RouteMapState extends State<RouteMap>
       if (!mounted || position == null) return;
       _userPosition = position;
       _showUserLocation = true;
+      _startCompass();
       if (_layersReady) {
         await _updateUserOverlaySources();
         if (!mounted) return;
@@ -263,30 +333,41 @@ class RouteMapState extends State<RouteMap>
   }
 
   List<Geographic> _directionPoints(geo.Position position) {
-    if (!position.hasHeading) return const [];
+    final double? heading = _effectiveHeading(position);
+    if (heading == null) return const [];
     final double length =
         (position.hasAccuracy && position.accuracy > 0
             ? position.accuracy
             : 30.0) +
         20.0;
-    final double spread =
-        (position.hasHeadingAccuracy ? position.headingAccuracy : 20.0)
-            .clamp(12.0, 60.0)
-            .toDouble();
+    final double spread = _effectiveHeadingSpread(position);
     return <Geographic>[
       _destinationPoint(
         position.latitude,
         position.longitude,
         length,
-        position.heading - spread,
+        heading - spread,
       ),
       _destinationPoint(
         position.latitude,
         position.longitude,
         length,
-        position.heading + spread,
+        heading + spread,
       ),
     ];
+  }
+
+  double? _effectiveHeading(geo.Position position) {
+    if (_compassHeading != null) return _compassHeading;
+    return position.hasHeading ? position.heading : null;
+  }
+
+  double _effectiveHeadingSpread(geo.Position position) {
+    final double? compassAccuracy = _compassAccuracy;
+    final double value =
+        compassAccuracy ??
+        (position.hasHeadingAccuracy ? position.headingAccuracy : 20.0);
+    return value.clamp(12.0, 60.0).toDouble();
   }
 
   Map<String, dynamic> _userLocationGeoJson() {
@@ -331,7 +412,10 @@ class RouteMapState extends State<RouteMap>
 
   Map<String, dynamic> _userDirectionGeoJson() {
     final geo.Position? position = _userPosition;
-    if (!_showUserLocation || position == null || !position.hasHeading) {
+    final double? heading = position == null
+        ? null
+        : _effectiveHeading(position);
+    if (!_showUserLocation || position == null || heading == null) {
       return _emptyGeoJson();
     }
     final double length =
@@ -339,21 +423,18 @@ class RouteMapState extends State<RouteMap>
             ? position.accuracy
             : 30.0) +
         20.0;
-    final double spread =
-        (position.hasHeadingAccuracy ? position.headingAccuracy : 20.0)
-            .clamp(12.0, 60.0)
-            .toDouble();
+    final double spread = _effectiveHeadingSpread(position);
     final Geographic left = _destinationPoint(
       position.latitude,
       position.longitude,
       length,
-      position.heading - spread,
+      heading - spread,
     );
     final Geographic right = _destinationPoint(
       position.latitude,
       position.longitude,
       length,
-      position.heading + spread,
+      heading + spread,
     );
     return _polygonFeatureCollection(<List<double>>[
       <double>[position.longitude, position.latitude],
