@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_data_updater.dart';
@@ -16,6 +17,7 @@ import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:hktransports/bus/ui/route_map.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
 import 'package:hktransports/bus/ui/timetable_sheet.dart';
+import 'package:hktransports/location/location_controller.dart';
 import 'package:intl/intl.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -67,6 +69,8 @@ class _RoutePageState extends State<_RoutePage> {
   final Map<int, GlobalKey> _stationKeys = {};
   Timer? _timer;
   int? _expandedIndex;
+  bool _autoFocusAttempted = false;
+  bool _userSelectedStation = false;
 
   @override
   void initState() {
@@ -84,7 +88,62 @@ class _RoutePageState extends State<_RoutePage> {
         _mapKey.currentState?.focusStation(initialIndex);
         _scrollToStation(initialIndex);
       });
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _autoFocusNearestStation();
+      });
     }
+  }
+
+  void _autoFocusNearestStation() {
+    if (_autoFocusAttempted || _userSelectedStation || !mounted) return;
+    _autoFocusAttempted = true;
+    if (!context.read<AppSettings>().locationEnabled) return;
+    final LocationController location = context.read<LocationController>();
+    unawaited(_focusNearestWhenPositionReady(location));
+  }
+
+  Future<void> _focusNearestWhenPositionReady(
+    LocationController location,
+  ) async {
+    final Position? position = await location.waitForPosition();
+    if (!mounted ||
+        position == null ||
+        _userSelectedStation ||
+        !context.read<AppSettings>().locationEnabled) {
+      return;
+    }
+    final int? index = _nearestStationIndex(
+      position,
+      context.read<BusRepository>(),
+    );
+    if (index == null) return;
+    _applyStationFocus(index);
+  }
+
+  int? _nearestStationIndex(Position position, BusRepository repository) {
+    final List<String> stopIds = widget.route.primaryStops;
+    int? nearestIndex;
+    double nearestDistance = double.infinity;
+    for (int index = 0; index < stopIds.length; index++) {
+      final StopEntry? stop = repository.stopById(stopIds[index]);
+      if (stop == null) continue;
+      final double distance = _distanceMetersToPosition(position, stop);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    }
+    return nearestIndex;
+  }
+
+  void _applyStationFocus(int index) {
+    if (!mounted) return;
+    setState(() => _expandedIndex = index);
+    _startRefresh(index);
+    _mapKey.currentState?.focusStation(index);
+    _scrollToStation(index);
   }
 
   @override
@@ -125,6 +184,7 @@ class _RoutePageState extends State<_RoutePage> {
   }
 
   void _onExpansionChanged(int index, bool expanded) {
+    _userSelectedStation = true;
     if (expanded) {
       setState(() => _expandedIndex = index);
       _startRefresh(index);
@@ -139,6 +199,7 @@ class _RoutePageState extends State<_RoutePage> {
   }
 
   void _onMapStationTap(int index) {
+    _userSelectedStation = true;
     if (_expandedIndex != index) {
       _onExpansionChanged(index, true);
     } else {
@@ -231,10 +292,28 @@ class _RoutePageState extends State<_RoutePage> {
   }
 
   double _distanceMeters(StopEntry a, StopEntry b) {
+    return _distanceMetersBetween(a.lat, a.lng, b.lat, b.lng);
+  }
+
+  double _distanceMetersToPosition(Position position, StopEntry stop) {
+    return _distanceMetersBetween(
+      position.latitude,
+      position.longitude,
+      stop.lat,
+      stop.lng,
+    );
+  }
+
+  double _distanceMetersBetween(
+    double lat1,
+    double lng1,
+    double lat2,
+    double lng2,
+  ) {
     const double metersPerDegree = 111320;
-    final double midLat = (a.lat + b.lat) / 2 * math.pi / 180;
-    final double dy = (a.lat - b.lat) * metersPerDegree;
-    final double dx = (a.lng - b.lng) * metersPerDegree * math.cos(midLat);
+    final double midLat = (lat1 + lat2) / 2 * math.pi / 180;
+    final double dy = (lat1 - lat2) * metersPerDegree;
+    final double dx = (lng1 - lng2) * metersPerDegree * math.cos(midLat);
     return math.sqrt(dx * dx + dy * dy);
   }
 
