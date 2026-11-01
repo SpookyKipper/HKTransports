@@ -66,12 +66,18 @@ class _CitybusRouteNameSubtitleState extends State<CitybusRouteNameSubtitle> {
       future: future,
       builder: (BuildContext context, AsyncSnapshot<String?> snapshot) {
         final String routeName = snapshot.data?.trim() ?? '';
-        final String text = routeName.isEmpty
-            ? widget.text
-            : widget.text.isEmpty
-            ? routeName
-            : '${widget.text} · $routeName';
-        return _buildText(text);
+        if (routeName.isEmpty) return _buildText(widget.text);
+        if (widget.text.isEmpty) return _buildText(routeName);
+        if (widget.marqueeWhenOverflow) {
+          return _buildText('${widget.text} · $routeName');
+        }
+        return _RouteNameWithNote(
+          base: widget.text,
+          routeName: routeName,
+          style: widget.style,
+          maxLines: widget.maxLines,
+          overflow: widget.overflow,
+        );
       },
     );
   }
@@ -80,11 +86,96 @@ class _CitybusRouteNameSubtitleState extends State<CitybusRouteNameSubtitle> {
     if (widget.marqueeWhenOverflow) {
       return AutoMarqueeText(text: text, style: widget.style);
     }
-    return Text(
-      text,
+    return _RouteSubtitleText(
+      text: text,
       style: widget.style,
       maxLines: widget.maxLines,
       overflow: widget.overflow,
     );
+  }
+}
+
+class _RouteNameWithNote extends StatelessWidget {
+  const _RouteNameWithNote({
+    required this.base,
+    required this.routeName,
+    this.style,
+    this.maxLines,
+    this.overflow,
+  });
+
+  final String base;
+  final String routeName;
+  final TextStyle? style;
+  final int? maxLines;
+  final TextOverflow? overflow;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        if (!constraints.maxWidth.isFinite) {
+          return _RouteSubtitleText(
+            text: '$base · $routeName',
+            style: style,
+            maxLines: maxLines,
+            overflow: overflow,
+          );
+        }
+        final TextStyle effectiveStyle =
+            style ?? DefaultTextStyle.of(context).style;
+        final TextPainter painter = TextPainter(
+          text: TextSpan(text: '$base · $routeName', style: effectiveStyle),
+          maxLines: 1,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        if (painter.width <= constraints.maxWidth) {
+          return _RouteSubtitleText(
+            text: '$base · $routeName',
+            style: style,
+            maxLines: maxLines,
+            overflow: overflow,
+          );
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _RouteSubtitleText(
+              text: base,
+              style: style,
+              maxLines: maxLines,
+              overflow: overflow,
+            ),
+            _RouteSubtitleText(
+              text: routeName,
+              style: style,
+              maxLines: maxLines,
+              overflow: overflow,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _RouteSubtitleText extends StatelessWidget {
+  const _RouteSubtitleText({
+    required this.text,
+    this.style,
+    this.maxLines,
+    this.overflow,
+  });
+
+  final String text;
+  final TextStyle? style;
+  final int? maxLines;
+  final TextOverflow? overflow;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(text, style: style, maxLines: maxLines, overflow: overflow);
   }
 }
