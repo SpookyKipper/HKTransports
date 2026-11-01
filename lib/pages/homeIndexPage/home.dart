@@ -5,6 +5,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
+import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/notice_banner.dart';
 import 'package:hktransports/bus/ui/route_eta_view.dart';
 import 'package:hktransports/pages/homeIndexPage/nearby_routes.dart';
@@ -410,6 +411,9 @@ class _FavoriteRouteTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
+    final bool citybusEnabled = settings.isProprietaryEnabled(
+      ProprietaryDataSource.citybus,
+    );
     final List<String> stopIds = route.primaryStops;
     final StopEntry? stop = seq >= 0 && seq < stopIds.length
         ? repository.stopById(stopIds[seq])
@@ -455,8 +459,12 @@ class _FavoriteRouteTile extends StatelessWidget {
                   Text(
                     '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
                   ),
-                  Text(
-                    stop?.displayName(settings.language) ??
+                  CitybusRouteNameSubtitle(
+                    route: route,
+                    language: settings.language,
+                    enabled: citybusEnabled,
+                    text:
+                        stop?.displayName(settings.language) ??
                         route.orig.get(settings.language),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,

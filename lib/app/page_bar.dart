@@ -8,6 +8,7 @@ PreferredSizeWidget buildPageBar(
   required String title,
   Widget? titleTrailing,
   String? subtitle,
+  Widget? subtitleWidget,
   List<Widget>? actions,
 }) {
   final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -40,14 +41,16 @@ PreferredSizeWidget buildPageBar(
 
   return M3EAppBar.top(
     title: titleWidget,
-    subtitle: subtitle == null
-        ? null
-        : Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: subtitleStyle,
-          ),
+    subtitle:
+        subtitleWidget ??
+        (subtitle == null
+            ? null
+            : Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: subtitleStyle,
+              )),
     actions: actions,
     leading: Navigator.of(context).canPop()
         ? M3EIconButton(
