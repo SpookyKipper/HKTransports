@@ -7,8 +7,7 @@ class LicensesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const LicensePage(
       applicationName: 'HKTransports',
-      applicationLegalese:
-          'Based on HK Bus ETA by Law Wai Chun and contributors. GPL-3.0-only.',
+      applicationLegalese: 'This app is licensed under GPL-3.0',
     );
   }
 }
