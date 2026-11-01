@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hkbusapi/trafficnews/trafficnews.dart';
+import 'package:hktransports/bus/traffic/traffic_news_service.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:provider/provider.dart';
