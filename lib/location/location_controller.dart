@@ -111,7 +111,6 @@ class LocationController extends ChangeNotifier with WidgetsBindingObserver {
   }) async {
     if (_position != null) return _position;
     if (!_settings.locationEnabled) return null;
-    if (_access != LocationAccessStatus.granted) return null;
     await ensureStarted();
     if (_position != null) return _position;
     if (_access != LocationAccessStatus.granted || _subscription == null) {
