@@ -63,3 +63,4 @@ flutter_icons:
   image_path: "assets/images/logo.png"
   adaptive_icon_background: "#C5BEFF"
   adaptive_icon_foreground: "assets/images/logo_foreground.png"
+  adaptive_icon_foreground_inset: 20
