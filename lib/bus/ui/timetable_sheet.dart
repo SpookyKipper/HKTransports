@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/journey/journey_time.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/notice/citybus_remarks_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/official_links.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 class TimetableSheet extends StatelessWidget {
@@ -23,8 +25,9 @@ class TimetableSheet extends StatelessWidget {
     final bool showNotices =
         route.companies.contains(BusCompany.kmb) ||
         route.companies.contains(BusCompany.ctb);
+    final bool showRemarks = route.companies.contains(BusCompany.ctb);
     return DefaultTabController(
-      length: showNotices ? 3 : 2,
+      length: 2 + (showNotices ? 1 : 0) + (showRemarks ? 1 : 0),
       child: SizedBox(
         height: MediaQuery.sizeOf(context).height * 0.85,
         child: Column(
@@ -36,6 +39,7 @@ class TimetableSheet extends StatelessWidget {
                 Tab(text: settings.text('時間表', 'Timetable')),
                 Tab(text: settings.text('車程', 'Journey')),
                 if (showNotices) Tab(text: settings.text('通告', 'Notices')),
+                if (showRemarks) Tab(text: settings.text('備註', 'Remarks')),
               ],
             ),
             Expanded(
@@ -44,6 +48,7 @@ class TimetableSheet extends StatelessWidget {
                   _TimetableTab(route: route),
                   _JourneyTab(route: route, initialStopIndex: initialStopIndex),
                   if (showNotices) ProprietaryNoticesTab(route: route),
+                  if (showRemarks) _RemarksTab(route: route),
                 ],
               ),
             ),
@@ -307,4 +312,108 @@ String serviceIdLabel(String id, String language) {
   final List<String>? label = labels[id];
   if (label == null) return '${language == 'en' ? 'Service' : '服務'} $id';
   return language == 'en' ? label[1] : label[0];
+}
+
+class _RemarksTab extends StatefulWidget {
+  const _RemarksTab({required this.route});
+
+  final RouteEntry route;
+
+  @override
+  State<_RemarksTab> createState() => _RemarksTabState();
+}
+
+class _RemarksTabState extends State<_RemarksTab> {
+  static const CitybusRemarksService _service = CitybusRemarksService();
+
+  Future<String?>? _future;
+  bool _lastEnabled = false;
+  String _lastLanguage = '';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final AppSettings settings = context.read<AppSettings>();
+    final bool enabled = settings.isProprietaryEnabled(
+      ProprietaryDataSource.citybus,
+    );
+    if (enabled == _lastEnabled && settings.language == _lastLanguage) return;
+    _lastEnabled = enabled;
+    _lastLanguage = settings.language;
+    _future = _load(settings);
+  }
+
+  Future<String?>? _load(AppSettings settings) {
+    if (!settings.isProprietaryEnabled(ProprietaryDataSource.citybus)) {
+      return null;
+    }
+    return _service.fetchRemarks(widget.route.route, zh: settings.isChinese);
+  }
+
+  void _retry() {
+    final AppSettings settings = context.read<AppSettings>();
+    setState(() => _future = _load(settings));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    if (!settings.isProprietaryEnabled(ProprietaryDataSource.citybus)) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            settings.text(
+              '請在設定中啟用城巴專有 API 以查看備註。',
+              'Enable the Citybus proprietary API in Settings to view remarks.',
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+    final Future<String?>? future = _future;
+    if (future == null) {
+      return const Center(child: M3ELoadingIndicator());
+    }
+    return FutureBuilder<String?>(
+      future: future,
+      builder: (BuildContext context, AsyncSnapshot<String?> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: M3ELoadingIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    settings.text('無法載入備註', 'Unable to load remarks'),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  M3EButton.text(
+                    onPressed: _retry,
+                    child: Text(settings.text('重試', 'Retry')),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        final String remarks = snapshot.data?.trim() ?? '';
+        if (remarks.isEmpty) {
+          return Center(child: Text(settings.text('沒有備註', 'No remarks')));
+        }
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          children: [
+            Text(remarks, style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        );
+      },
+    );
+  }
 }
