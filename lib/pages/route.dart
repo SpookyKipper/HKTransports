@@ -360,6 +360,7 @@ class _RoutePageState extends State<_RoutePage> {
           enabled: settings.isProprietaryEnabled(ProprietaryDataSource.citybus),
           text:
               '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+          marqueeWhenOverflow: true,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
