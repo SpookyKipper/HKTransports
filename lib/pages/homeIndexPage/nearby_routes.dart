@@ -483,6 +483,10 @@ class _NearbyRouteTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize:
+                          (Theme.of(context).textTheme.bodySmall?.fontSize ??
+                              12) -
+                          1,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       height: 1.1,
                     ),
