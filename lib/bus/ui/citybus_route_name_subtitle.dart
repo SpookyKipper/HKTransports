@@ -12,6 +12,7 @@ class CitybusRouteNameSubtitle extends StatefulWidget {
     this.style,
     this.maxLines,
     this.overflow,
+    this.compactAppBar = false,
   });
 
   final RouteEntry route;
@@ -21,6 +22,7 @@ class CitybusRouteNameSubtitle extends StatefulWidget {
   final TextStyle? style;
   final int? maxLines;
   final TextOverflow? overflow;
+  final bool compactAppBar;
 
   @override
   State<CitybusRouteNameSubtitle> createState() =>
@@ -65,6 +67,13 @@ class _CitybusRouteNameSubtitleState extends State<CitybusRouteNameSubtitle> {
         final String routeName = snapshot.data?.trim() ?? '';
         if (routeName.isEmpty) return _buildText(widget.text);
         if (widget.text.isEmpty) return _buildText(routeName);
+        if (widget.compactAppBar) {
+          return _CompactRouteSubtitle(
+            base: widget.text,
+            routeName: routeName,
+            style: widget.style,
+          );
+        }
         return _RouteNameWithNote(
           base: widget.text,
           routeName: routeName,
@@ -84,6 +93,70 @@ class _CitybusRouteNameSubtitleState extends State<CitybusRouteNameSubtitle> {
       overflow: widget.overflow,
     );
   }
+}
+
+class _CompactRouteSubtitle extends StatelessWidget {
+  const _CompactRouteSubtitle({
+    required this.base,
+    required this.routeName,
+    this.style,
+  });
+
+  final String base;
+  final String routeName;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final String fullText = '$base · $routeName';
+        if (constraints.maxWidth.isFinite) {
+          final TextPainter painter = TextPainter(
+            text: TextSpan(
+              text: fullText,
+              style: style ?? DefaultTextStyle.of(context).style,
+            ),
+            maxLines: 1,
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+          )..layout();
+          if (painter.width <= constraints.maxWidth) {
+            return _RouteSubtitleText(
+              text: fullText,
+              style: style,
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+            );
+          }
+        }
+        final String compactName = stripCitybusPeakNotice(routeName);
+        final String compactText = compactName.isEmpty
+            ? base
+            : '$base · $compactName';
+        return _RouteSubtitleText(
+          text: compactText,
+          style: style,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+      },
+    );
+  }
+}
+
+String stripCitybusPeakNotice(String routeName) {
+  String text = routeName.trim();
+  text = text.replaceFirst(RegExp(r'繁忙時間\s*星期一至五'), '');
+  text = text.replaceFirst(
+    RegExp(r'peak only,?\s*monday to friday only', caseSensitive: false),
+    '',
+  );
+  text = text.replaceFirst(
+    RegExp(r'peak hours?,?\s*monday to friday', caseSensitive: false),
+    '',
+  );
+  return text.replaceFirst(RegExp(r'^[\s,，、·:：\-–—]+'), '').trim();
 }
 
 class _RouteNameWithNote extends StatelessWidget {

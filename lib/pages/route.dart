@@ -359,6 +359,7 @@ class _RoutePageState extends State<_RoutePage> {
           route: route,
           language: settings.language,
           enabled: settings.isProprietaryEnabled(ProprietaryDataSource.citybus),
+          compactAppBar: true,
           text:
               '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
           maxLines: 1,
