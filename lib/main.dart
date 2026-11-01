@@ -217,6 +217,7 @@ class MyApp extends StatelessWidget {
                     ? fallbackDarkScheme()
                     : flutterSchemeFromMaterialUi(darkDynamic);
                 return MaterialApp.router(
+                  title: 'HKTransports',
                   debugShowCheckedModeBanner: false,
                   themeMode: settings.themeMode,
                   theme: buildAppTheme(lightScheme, settings.transitionStyle),
