@@ -28,7 +28,7 @@ class OfficialLinks extends StatelessWidget {
               launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
           style: M3EButtonStyle.text,
           icon: const Icon(Icons.open_in_new),
-          label: Text(company.label(settings.language)),
+          label: Text(route.companyLabel(company, settings.language)),
         ),
       );
     }
