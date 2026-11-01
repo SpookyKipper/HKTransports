@@ -506,12 +506,6 @@ class _NearbyRouteTile extends StatelessWidget {
               const SizedBox(width: 8),
               RouteEtaView(route: route, seq: seq),
             ],
-            const SizedBox(width: 4),
-            Icon(
-              Icons.directions_walk,
-              size: 18,
-              color: Theme.of(context).colorScheme.primary,
-            ),
           ],
         ),
       ),
