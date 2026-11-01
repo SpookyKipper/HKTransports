@@ -83,6 +83,7 @@ class SettingsPage extends StatelessWidget {
           _SliderSetting(
             icon: Icons.format_size,
             title: settings.text('文字大小', 'Text size'),
+            footer: '${settings.textScalePercent}%',
             child: M3ESlider(
               min: 80,
               max: 160,
@@ -93,7 +94,6 @@ class SettingsPage extends StatelessWidget {
                 settings.setTextScalePercent(value.round());
               },
             ),
-            footer: '${settings.textScalePercent}%',
           ),
           _DropdownSetting<String>(
             icon: Icons.language,
@@ -121,6 +121,7 @@ class SettingsPage extends StatelessWidget {
           _SliderSetting(
             icon: Icons.refresh,
             title: settings.text('更新頻率', 'Refresh interval'),
+            footer: '${settings.refreshSeconds}s',
             child: M3ESlider(
               min: 5,
               max: 60,
@@ -131,7 +132,6 @@ class SettingsPage extends StatelessWidget {
                 settings.setRefreshSeconds(value.round());
               },
             ),
-            footer: '${settings.refreshSeconds}s',
           ),
           SwitchListTile(
             secondary: const Icon(Icons.filter_alt_outlined),

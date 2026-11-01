@@ -68,7 +68,7 @@ class UiFunctions {
     }
   }
 
-  get cLD => processColorLightDark;
+  Color Function({required List<Color> color, required BuildContext context}) get cLD => processColorLightDark;
 }
 
 final uf = UiFunctions();

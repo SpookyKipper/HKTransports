@@ -6,7 +6,7 @@ enum EtaFormat { diff, exact, mixed }
 enum ProprietaryDataSource { notice, kmb, citybus }
 
 extension ProprietaryDataSourceInfo on ProprietaryDataSource {
-  String get storageKey => 'proprietary.${name}';
+  String get storageKey => 'proprietary.$name';
 
   String label(AppSettings settings) {
     switch (this) {

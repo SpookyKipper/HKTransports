@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hktransports/app/app_transition_page.dart';
 import 'package:hktransports/app/page_bar.dart';
@@ -425,8 +426,7 @@ class _RoutePageState extends State<_RoutePage> {
                     top: Radius.circular(_stationInnerRadius),
                   ),
                   child: ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    cacheExtent: 12000,
+                    scrollCacheExtent: ScrollCacheExtent.pixels(12000), padding: const EdgeInsets.only(bottom: 24),
                     itemCount: stopIds.length,
                     itemBuilder: (context, index) {
                       final bool isExpanded = _expandedIndex == index;
