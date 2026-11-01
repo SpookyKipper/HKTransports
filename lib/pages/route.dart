@@ -14,6 +14,7 @@ import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
+import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:hktransports/bus/ui/route_map.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
@@ -353,8 +354,18 @@ class _RoutePageState extends State<_RoutePage> {
           company: route.companiesLabel(settings.language),
           special: route.isSpecial ? settings.text('特別班', 'Special') : null,
         ),
-        subtitle:
-            '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+        subtitleWidget: CitybusRouteNameSubtitle(
+          route: route,
+          language: settings.language,
+          enabled: settings.isProprietaryEnabled(ProprietaryDataSource.citybus),
+          text:
+              '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
         actions: [
           if (reverse != null)
             M3EIconButton(
