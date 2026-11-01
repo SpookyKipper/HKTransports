@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hktransports/app/auto_marquee_text.dart';
 import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 
@@ -12,6 +13,7 @@ class CitybusRouteNameSubtitle extends StatefulWidget {
     this.style,
     this.maxLines,
     this.overflow,
+    this.marqueeWhenOverflow = false,
   });
 
   final RouteEntry route;
@@ -21,6 +23,7 @@ class CitybusRouteNameSubtitle extends StatefulWidget {
   final TextStyle? style;
   final int? maxLines;
   final TextOverflow? overflow;
+  final bool marqueeWhenOverflow;
 
   @override
   State<CitybusRouteNameSubtitle> createState() =>
@@ -74,6 +77,9 @@ class _CitybusRouteNameSubtitleState extends State<CitybusRouteNameSubtitle> {
   }
 
   Widget _buildText(String text) {
+    if (widget.marqueeWhenOverflow) {
+      return AutoMarqueeText(text: text, style: widget.style);
+    }
     return Text(
       text,
       style: widget.style,
