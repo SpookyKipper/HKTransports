@@ -168,6 +168,14 @@ CitybusRemarkLine _styleSpecialLine(CitybusRemarkLine line) {
       ),
     ]);
   }
+  if (text.contains('路線備註') || lower.contains('routing remark')) {
+    return CitybusRemarkLine(<CitybusRemarkRun>[
+      CitybusRemarkRun(
+        text: text.contains('路線備註') ? '=== 以下備註由城巴提供 ===\n路線備註' : '=== Remarks here are from Citybus ===\nRouting Remark',
+        bold: true,
+      ),
+    ]);
+  }
   if (text == '成人收費' || lower == 'adult fare') {
     return CitybusRemarkLine(<CitybusRemarkRun>[
       for (final CitybusRemarkRun run in line.runs)
