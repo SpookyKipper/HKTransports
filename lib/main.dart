@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dynamic_color/dynamic_color.dart';
@@ -14,6 +15,7 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
 import 'package:hktransports/bus/ui/pinned_stops_bar.dart';
+import 'package:hktransports/location/location_controller.dart';
 import 'package:hktransports/objectBox/store.dart';
 import 'package:hktransports/pages/credits_page.dart';
 import 'package:hktransports/pages/favorite_groups_page.dart';
@@ -176,6 +178,7 @@ void main() async {
   }
   final BusRepository repository = BusRepository(settings);
   await repository.initialize();
+  final LocationController location = LocationController(settings);
 
   runApp(
     MultiProvider(
@@ -188,11 +191,13 @@ void main() async {
         ChangeNotifierProvider<PinnedStopsController>(
           create: (_) => PinnedStopsController(),
         ),
+        ChangeNotifierProvider<LocationController>.value(value: location),
       ],
       child: const MyApp(),
     ),
   );
   repository.startAutoUpdate();
+  unawaited(location.ensureStarted());
 }
 
 class MyApp extends StatelessWidget {

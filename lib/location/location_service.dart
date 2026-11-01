@@ -12,23 +12,11 @@ enum LocationAccessStatus {
 class LocationService {
   const LocationService();
 
-  Future<LocationAccessStatus> requestAccess() async {
+  Future<LocationAccessStatus> checkAccess() async {
     try {
       final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) return LocationAccessStatus.serviceDisabled;
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.whileInUse ||
-          permission == LocationPermission.always) {
-        return LocationAccessStatus.granted;
-      }
-      if (permission == LocationPermission.deniedForever) {
-        return LocationAccessStatus.deniedForever;
-      }
-      return LocationAccessStatus.denied;
+      return _statusFor(await Geolocator.checkPermission());
     } on MissingPluginException {
       return LocationAccessStatus.unsupported;
     } on UnsupportedError {
@@ -36,6 +24,29 @@ class LocationService {
     } catch (_) {
       return LocationAccessStatus.denied;
     }
+  }
+
+  Future<LocationAccessStatus> requestAccess() async {
+    final LocationAccessStatus current = await checkAccess();
+    if (current != LocationAccessStatus.denied) return current;
+    try {
+      return _statusFor(await Geolocator.requestPermission());
+    } on MissingPluginException {
+      return LocationAccessStatus.unsupported;
+    } on UnsupportedError {
+      return LocationAccessStatus.unsupported;
+    } catch (_) {
+      return LocationAccessStatus.denied;
+    }
+  }
+
+  Stream<Position> positionStream() {
+    return Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    );
   }
 
   Future<Position?> currentPosition() async {
@@ -61,5 +72,16 @@ class LocationService {
     try {
       await Geolocator.openLocationSettings();
     } catch (_) {}
+  }
+
+  LocationAccessStatus _statusFor(LocationPermission permission) {
+    if (permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always) {
+      return LocationAccessStatus.granted;
+    }
+    if (permission == LocationPermission.deniedForever) {
+      return LocationAccessStatus.deniedForever;
+    }
+    return LocationAccessStatus.denied;
   }
 }

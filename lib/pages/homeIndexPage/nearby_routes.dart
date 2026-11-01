@@ -9,6 +9,7 @@ import 'package:hktransports/bus/data/nearby_routes.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/route_eta_view.dart';
+import 'package:hktransports/location/location_controller.dart';
 import 'package:hktransports/location/location_service.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -145,7 +146,8 @@ class _NearbyRoutesViewState extends State<NearbyRoutesView>
       });
     }
 
-    final LocationAccessStatus access = await _location.requestAccess();
+    final LocationController location = context.read<LocationController>();
+    final LocationAccessStatus access = await location.requestAccess();
     if (!mounted || requestId != _requestId) return;
     if (access != LocationAccessStatus.granted) {
       setState(() {
@@ -155,7 +157,7 @@ class _NearbyRoutesViewState extends State<NearbyRoutesView>
       return;
     }
 
-    final Position? position = await _location.currentPosition();
+    final Position? position = await location.waitForPosition();
     if (!mounted || requestId != _requestId) return;
     if (!context.read<AppSettings>().locationEnabled) {
       setState(() => _loading = false);

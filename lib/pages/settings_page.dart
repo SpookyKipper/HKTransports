@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/location/location_controller.dart';
 import 'package:hktransports/location/location_service.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -215,7 +216,8 @@ class SettingsPage extends StatelessWidget {
       return;
     }
     settings.setLocationEnabled(true);
-    final LocationAccessStatus status = await const LocationService()
+    final LocationAccessStatus status = await context
+        .read<LocationController>()
         .requestAccess();
     if (!context.mounted) return;
     final String? message = switch (status) {
