@@ -40,26 +40,44 @@ class CitybusRemarksService {
   }) async {
     final String route = routeNumber.trim().toUpperCase();
     if (route.isEmpty) return null;
-    final String? infoKey = await _fetchInfoKey(route);
-    if (infoKey == null) return null;
+    final List<String> infoKeys = await _fetchInfoKeys(route);
+    if (infoKeys.isEmpty) return null;
 
-    final Uri uri = Uri.https(
-      'mobile.citybus.com.hk',
-      '/nwp3/getremark.php',
-      <String, String>{'info': 'CTB||$infoKey||', 'l': zh ? '0' : '1'},
-    );
-    final http.Response response = await http
-        .get(uri, headers: const <String, String>{'User-Agent': 'Mozilla/5.0'})
-        .timeout(_timeout);
-    if (response.statusCode != 200) {
-      throw HttpException(
-        'Citybus remarks request failed: ${response.statusCode}',
-      );
+    Object? lastError;
+    bool anySuccess = false;
+    for (final String infoKey in infoKeys) {
+      try {
+        final Uri uri = Uri.https(
+          'mobile.citybus.com.hk',
+          '/nwp3/getremark.php',
+          <String, String>{'info': 'CTB||$infoKey||', 'l': zh ? '0' : '1'},
+        );
+        final http.Response response = await http
+            .get(
+              uri,
+              headers: const <String, String>{'User-Agent': 'Mozilla/5.0'},
+            )
+            .timeout(_timeout);
+        if (response.statusCode != 200) {
+          lastError = HttpException(
+            'Citybus remarks request failed: ${response.statusCode}',
+          );
+          continue;
+        }
+        anySuccess = true;
+        final List<CitybusRemarkLine>? remarks = parseCitybusRemarks(
+          utf8.decode(response.bodyBytes),
+        );
+        if (remarks != null && remarks.isNotEmpty) return remarks;
+      } catch (error) {
+        lastError = error;
+      }
     }
-    return parseCitybusRemarks(utf8.decode(response.bodyBytes));
+    if (!anySuccess && lastError != null) throw lastError;
+    return null;
   }
 
-  Future<String?> _fetchInfoKey(String routeNumber) async {
+  Future<List<String>> _fetchInfoKeys(String routeNumber) async {
     final Uri uri = Uri.https(
       'www.citybus.com.hk',
       '/concessionApi/public/bbi/api/v1/route/en/$routeNumber',
@@ -67,11 +85,30 @@ class CitybusRemarksService {
     final http.Response response = await http
         .get(uri, headers: const <String, String>{'User-Agent': 'Mozilla/5.0'})
         .timeout(_timeout);
-    if (response.statusCode != 200) return null;
+    if (response.statusCode != 200) return const [];
     final dynamic decoded = jsonDecode(utf8.decode(response.bodyBytes));
-    if (decoded is! Map || decoded.isEmpty) return null;
-    return citybusRemarkInfoKey(decoded.keys.first.toString());
+    if (decoded is! Map || decoded.isEmpty) return const [];
+    return citybusRemarkInfoKeys(
+      decoded.keys.map((dynamic key) => key.toString()),
+    );
   }
+}
+
+/// Returns one remark lookup key per terminus, ignoring the B/F direction
+/// segment because it is removed before the remarks request is made.
+List<String> citybusRemarkInfoKeys(Iterable<String> concessionKeys) {
+  final List<String> result = <String>[];
+  final Set<String> termini = <String>{};
+  final Set<String> seen = <String>{};
+  for (final String concessionKey in concessionKeys) {
+    final List<String> parts = concessionKey.split('-');
+    if (parts.length < 4) continue;
+    final String terminus = parts[2];
+    if (!termini.add(terminus)) continue;
+    final String infoKey = '${parts[0]}-$terminus-${parts[3]}';
+    if (seen.add(infoKey)) result.add(infoKey);
+  }
+  return result;
 }
 
 String? citybusRemarkInfoKey(String concessionKey) {

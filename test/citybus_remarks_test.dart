@@ -12,6 +12,19 @@ void main() {
     expect(citybusRemarkInfoKey('798-B-TIK-1'), '798-TIK-1');
     expect(citybusRemarkInfoKey('798-F-FTC-1'), '798-FTC-1');
     expect(citybusRemarkInfoKey('invalid'), isNull);
+    expect(
+      citybusRemarkInfoKeys(<String>[
+        '798-B-TIK-1',
+        '798-F-FTC-1',
+        '798-B-TIK-2',
+        '798-F-FTC-2',
+      ]),
+      <String>['798-TIK-1', '798-FTC-1'],
+    );
+    expect(
+      citybusRemarkInfoKeys(<String>['798-B-TIK-1', '798-F-TIK-1']),
+      <String>['798-TIK-1'],
+    );
   });
 
   test('preserves formatting, links, and double newlines', () {
