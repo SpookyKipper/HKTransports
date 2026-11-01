@@ -524,7 +524,11 @@ class _CitybusRouteNameCacheCardState
             ),
             const SizedBox(height: 4),
             Text(
-              _bytes == null ? '…' : _formatBytes(_bytes!),
+              _bytes == null
+                  ? '${settings.text('大小', 'Size')}: ...'
+                  : '${settings.text('大小', 'Size')}: '
+                        '${_formatBytes(_bytes!)} · '
+                        '${settings.text('可刪除', 'Can be deleted')}',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
