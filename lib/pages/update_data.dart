@@ -522,6 +522,13 @@ class _CitybusRouteNameCacheCardState
               settings.text('城巴路線名稱快取', 'Citybus Route Name Cache'),
               style: theme.textTheme.titleMedium,
             ),
+            const SizedBox(height: 4),
+            Text(
+              _bytes == null ? '…' : _formatBytes(_bytes!),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
