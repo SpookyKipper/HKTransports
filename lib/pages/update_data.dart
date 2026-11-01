@@ -139,7 +139,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     if (!mounted) return;
     _showMessage(
       refreshed
-          ? settings.text('九巴轉乘資料已更新', 'KMB interchange data updated')
+          ? settings.text('九巴/龍運轉乘資料已更新', 'KMB/LWB interchange data updated')
           : settings.text('轉乘資料更新失敗', 'Interchange data update failed'),
     );
   }
@@ -150,7 +150,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(settings.text('刪除九巴轉乘資料', 'Delete KMB interchange data')),
+          title: Text(settings.text('刪除九巴/龍運轉乘資料', 'Delete KMB/LWB interchange data')),
           content: Text(
             settings.text(
               '這些是非必要資料，下次使用時會重新下載。',
@@ -406,7 +406,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      settings.text('九巴轉乘資料', 'KMB interchange data'),
+                      settings.text('九巴/龍運轉乘資料', 'KMB/LWB interchange data'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),

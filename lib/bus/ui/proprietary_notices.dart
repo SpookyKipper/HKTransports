@@ -347,7 +347,7 @@ class _BbiSection extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
     final bool kmb = company == BusCompany.kmb;
     final String title = kmb
-        ? settings.text('九巴轉乘優惠', 'KMB interchange discounts')
+        ? settings.text('九巴/龍運轉乘優惠', 'KMB/LWB interchange discounts')
         : settings.text('城巴轉乘優惠', 'Citybus interchange discounts');
 
     return Card.filled(
