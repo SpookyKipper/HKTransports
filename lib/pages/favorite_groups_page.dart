@@ -14,9 +14,7 @@ class FavoriteGroupsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
-    final List<FavoriteGroup> groups = repository.favoriteGroups
-        .where((group) => !group.isDefault)
-        .toList();
+    final List<FavoriteGroup> groups = repository.favoriteGroups;
 
     return Scaffold(
       appBar: buildPageBar(
@@ -36,62 +34,40 @@ class FavoriteGroupsPage extends StatelessWidget {
           ),
         ],
       ),
-      body: groups.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(settings.text('尚未建立群組', 'No custom groups yet')),
-                    const SizedBox(height: 12),
-                    M3EButton.icon(
-                      onPressed: () async {
-                        final String? name = await promptFavoriteGroupName(
-                          context,
-                        );
-                        if (name != null) {
-                          repository.createFavoriteGroup(name);
-                        }
-                      },
-                      icon: const Icon(Icons.add),
-                      label: Text(settings.text('新增群組', 'New group')),
-                    ),
-                  ],
-                ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text(
+              settings.text(
+                '附近 固定在最前；常用及其他群組可拖動排序。',
+                'Nearby stays first. Drag Favourites and other groups to reorder them.',
               ),
-            )
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: Text(
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          Expanded(
+            child: ReorderableListView.builder(
+              padding: const EdgeInsets.only(bottom: 24),
+              buildDefaultDragHandles: false,
+              itemCount: groups.length,
+              onReorder: repository.reorderFavoriteGroups,
+              itemBuilder: (context, index) {
+                final FavoriteGroup group = groups[index];
+                final bool isDefault = group.isDefault;
+                return ListTile(
+                  key: ValueKey(group.id),
+                  leading: Icon(isDefault ? Icons.star : Icons.star_outline),
+                  title: Text(group.name),
+                  subtitle: Text(
                     settings.text(
-                      '常用 固定在最前，其他群組可拖動排序。',
-                      'Favourites stays first. Drag the other groups to reorder them.',
+                      '${repository.entriesInGroup(group).length} 個收藏',
+                      '${repository.entriesInGroup(group).length} favourites',
                     ),
-                    style: Theme.of(context).textTheme.bodySmall,
                   ),
-                ),
-                Expanded(
-                  child: ReorderableListView.builder(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    buildDefaultDragHandles: false,
-                    itemCount: groups.length,
-                    onReorder: repository.reorderCustomGroups,
-                    itemBuilder: (context, index) {
-                      final FavoriteGroup group = groups[index];
-                      return ListTile(
-                        key: ValueKey(group.id),
-                        leading: const Icon(Icons.star_outline),
-                        title: Text(group.name),
-                        subtitle: Text(
-                          settings.text(
-                            '${repository.entriesInGroup(group).length} 個收藏',
-                            '${repository.entriesInGroup(group).length} favourites',
-                          ),
-                        ),
-                        onTap: () async {
+                  onTap: isDefault
+                      ? null
+                      : () async {
                           final String? name = await promptFavoriteGroupName(
                             context,
                             initial: group.name,
@@ -100,31 +76,32 @@ class FavoriteGroupsPage extends StatelessWidget {
                             repository.renameFavoriteGroup(group.id, name);
                           }
                         },
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            M3EIconButton(
-                              tooltip: settings.text('刪除群組', 'Delete group'),
-                              variant: M3EIconButtonVariant.standard,
-                              onPressed: () =>
-                                  _deleteGroup(context, repository, group),
-                              icon: const Icon(Icons.delete_outline),
-                            ),
-                            ReorderableDragStartListener(
-                              index: index,
-                              child: const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: Icon(Icons.drag_handle),
-                              ),
-                            ),
-                          ],
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!isDefault)
+                        M3EIconButton(
+                          tooltip: settings.text('刪除群組', 'Delete group'),
+                          variant: M3EIconButtonVariant.standard,
+                          onPressed: () =>
+                              _deleteGroup(context, repository, group),
+                          icon: const Icon(Icons.delete_outline),
                         ),
-                      );
-                    },
+                      ReorderableDragStartListener(
+                        index: index,
+                        child: const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Icon(Icons.drag_handle),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
+          ),
+        ],
+      ),
     );
   }
 

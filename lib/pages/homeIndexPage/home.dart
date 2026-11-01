@@ -11,6 +11,7 @@ import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
 import 'package:hktransports/bus/ui/notice_banner.dart';
+import 'package:hktransports/pages/homeIndexPage/nearby_routes.dart';
 import 'package:intl/intl.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -29,24 +30,26 @@ class _HomeContentState extends State<HomeContent>
   List<String> _groupIds = const [];
 
   @override
+  void initState() {
+    super.initState();
+    _selectedGroupId = context.read<AppSettings>().lastHomeTabId;
+  }
+
+  @override
   void dispose() {
     _tabController?.dispose();
     super.dispose();
   }
 
-  void _ensureTabController(List<FavoriteGroup> groups) {
-    if (_tabController != null && _tabController!.length == groups.length) {
+  void _ensureTabController(int length, int initialIndex) {
+    if (_tabController != null && _tabController!.length == length) {
       return;
     }
     final TabController? old = _tabController;
-    final int selectedIndex = groups.indexWhere(
-      (group) => group.id == _selectedGroupId,
-    );
-    final int initialIndex = selectedIndex < 0 ? 0 : selectedIndex;
     _tabController = TabController(
-      length: groups.length,
+      length: length,
       vsync: this,
-      initialIndex: initialIndex.clamp(0, groups.length - 1),
+      initialIndex: initialIndex.clamp(0, length - 1),
     )..addListener(_handleTabChanged);
     if (old != null) {
       old.removeListener(_handleTabChanged);
@@ -64,6 +67,7 @@ class _HomeContentState extends State<HomeContent>
     final String id = _groupIds[index];
     if (id != _selectedGroupId) {
       setState(() => _selectedGroupId = id);
+      context.read<AppSettings>().setLastHomeTabId(id);
     }
   }
 
@@ -158,12 +162,15 @@ class _HomeContentState extends State<HomeContent>
 
     final bool homeActive = TickerMode.of(context);
     final List<FavoriteGroup> groups = repository.favoriteGroups;
-    _groupIds = groups.map((group) => group.id).toList();
-    _ensureTabController(groups);
-    final int selectedIndex = groups.indexWhere(
-      (group) => group.id == _selectedGroupId,
+    _groupIds = <String>[
+      nearbyHomeTabId,
+      for (final FavoriteGroup group in groups) group.id,
+    ];
+    final int selectedIndex = _groupIds.indexOf(
+      _selectedGroupId ?? nearbyHomeTabId,
     );
     final int pageIndex = selectedIndex < 0 ? 0 : selectedIndex;
+    _ensureTabController(_groupIds.length, pageIndex);
     _syncSelectedTab(pageIndex);
     final Color unselectedTabColor =
         Theme.of(context).tabBarTheme.unselectedLabelColor ??
@@ -189,6 +196,7 @@ class _HomeContentState extends State<HomeContent>
                   dividerColor: Colors.transparent,
                   dividerHeight: 0,
                   tabs: [
+                    Tab(text: settings.text('附近', 'Nearby')),
                     for (final FavoriteGroup group in groups)
                       Tab(text: group.name),
                   ],
@@ -218,11 +226,12 @@ class _HomeContentState extends State<HomeContent>
           child: TabBarView(
             controller: _tabController,
             children: [
+              NearbyRoutesView(active: homeActive && pageIndex == 0),
               for (int index = 0; index < groups.length; index++)
                 _GroupRoutesView(
                   key: PageStorageKey<String>(groups[index].id),
                   group: groups[index],
-                  active: homeActive && index == pageIndex,
+                  active: homeActive && index + 1 == pageIndex,
                 ),
             ],
           ),

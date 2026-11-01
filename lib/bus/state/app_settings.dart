@@ -122,6 +122,9 @@ class AppSettings extends ChangeNotifier {
   bool _dimMapInDarkMode = true;
   bool _autoRenew = true;
   int _autoUpdateHours = 24;
+  bool _locationEnabled = false;
+  int _nearbyRadiusMeters = 200;
+  String? _lastHomeTabId;
   final Set<ProprietaryDataSource> _proprietarySources = {};
 
   AppThemeChoice get themeChoice => _themeChoice;
@@ -138,6 +141,9 @@ class AppSettings extends ChangeNotifier {
   bool get dimMapInDarkMode => _dimMapInDarkMode;
   bool get autoRenew => _autoRenew;
   int get autoUpdateHours => _autoUpdateHours;
+  bool get locationEnabled => _locationEnabled;
+  int get nearbyRadiusMeters => _nearbyRadiusMeters;
+  String? get lastHomeTabId => _lastHomeTabId;
   Set<ProprietaryDataSource> get proprietarySources =>
       Set.unmodifiable(_proprietarySources);
   bool isProprietaryEnabled(ProprietaryDataSource source) =>
@@ -179,6 +185,13 @@ class AppSettings extends ChangeNotifier {
     _dimMapInDarkMode = sp.getBool('dimMapInDarkMode') ?? true;
     _autoRenew = sp.getBool('autoRenew') ?? true;
     _autoUpdateHours = (sp.getInt('autoUpdateHours') ?? 24).clamp(1, 168);
+    _locationEnabled = sp.getBool('locationEnabled') ?? false;
+    _nearbyRadiusMeters = (sp.getInt('nearbyRadiusMeters') ?? 200).clamp(
+      20,
+      2000,
+    );
+    final String? lastTab = sp.getString('lastHomeTabId');
+    _lastHomeTabId = lastTab == null || lastTab.isEmpty ? null : lastTab;
     for (final ProprietaryDataSource source in ProprietaryDataSource.values) {
       if (sp.getBool(source.storageKey) ?? false) {
         _proprietarySources.add(source);
@@ -257,6 +270,28 @@ class AppSettings extends ChangeNotifier {
     if (_autoUpdateHours == next) return;
     _autoUpdateHours = next;
     sp.setInt('autoUpdateHours', next);
+    notifyListeners();
+  }
+
+  void setLocationEnabled(bool value) {
+    if (_locationEnabled == value) return;
+    _locationEnabled = value;
+    sp.setBool('locationEnabled', value);
+    notifyListeners();
+  }
+
+  void setNearbyRadiusMeters(int meters) {
+    final int next = meters.clamp(20, 2000);
+    if (_nearbyRadiusMeters == next) return;
+    _nearbyRadiusMeters = next;
+    sp.setInt('nearbyRadiusMeters', next);
+    notifyListeners();
+  }
+
+  void setLastHomeTabId(String id) {
+    if (_lastHomeTabId == id) return;
+    _lastHomeTabId = id;
+    sp.setString('lastHomeTabId', id);
     notifyListeners();
   }
 
