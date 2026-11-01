@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -77,17 +78,44 @@ class _SearchPageState extends State<SearchPage> {
                     final RouteEntry route = results[index];
                     return ListTile(
                       leading: SizedBox(
-                        width: 64,
-                        child: Text(
-                          route.route,
-                          style: Theme.of(context).textTheme.titleLarge,
+                        width: 80,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              route.route,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            Text(
+                              route.companiesLabel(settings.language),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                    height: 1.1,
+                                  ),
+                            ),
+                          ],
                         ),
                       ),
                       title: Text(
                         '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
                       ),
-                      subtitle: Text(
-                        '${route.orig.get(settings.language)} · ${route.companiesLabel(settings.language)}',
+                      subtitle: _SearchRouteSubtitle(
+                        key: ValueKey<String>(
+                          '${route.key}|${settings.language}|'
+                          '${settings.isProprietaryEnabled(ProprietaryDataSource.citybus)}',
+                        ),
+                        route: route,
+                        origin: route.orig.get(settings.language),
+                        language: settings.language,
+                        citybusEnabled: settings.isProprietaryEnabled(
+                          ProprietaryDataSource.citybus,
+                        ),
                       ),
                       trailing: route.isSpecial
                           ? Text(
@@ -161,6 +189,69 @@ class _SearchPageState extends State<SearchPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SearchRouteSubtitle extends StatefulWidget {
+  const _SearchRouteSubtitle({
+    super.key,
+    required this.route,
+    required this.origin,
+    required this.language,
+    required this.citybusEnabled,
+  });
+
+  final RouteEntry route;
+  final String origin;
+  final String language;
+  final bool citybusEnabled;
+
+  @override
+  State<_SearchRouteSubtitle> createState() => _SearchRouteSubtitleState();
+}
+
+class _SearchRouteSubtitleState extends State<_SearchRouteSubtitle> {
+  static const CitybusRouteNameService _service = CitybusRouteNameService();
+  Future<String?>? _routeNameFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SearchRouteSubtitle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.route.route != widget.route.route ||
+        oldWidget.language != widget.language ||
+        oldWidget.citybusEnabled != widget.citybusEnabled) {
+      _load();
+    }
+  }
+
+  void _load() {
+    if (!widget.citybusEnabled ||
+        !widget.route.companies.contains(BusCompany.ctb)) {
+      _routeNameFuture = null;
+      return;
+    }
+    _routeNameFuture = _service.routeName(widget.route.route, widget.language);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Future<String?>? future = _routeNameFuture;
+    if (future == null) return Text(widget.origin);
+    return FutureBuilder<String?>(
+      future: future,
+      builder: (BuildContext context, AsyncSnapshot<String?> snapshot) {
+        final String routeName = snapshot.data?.trim() ?? '';
+        return Text(
+          routeName.isEmpty ? widget.origin : '${widget.origin} · $routeName',
+        );
+      },
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/page_bar.dart';
+import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -298,6 +299,9 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     final bool kmbEnabled = settings.isProprietaryEnabled(
       ProprietaryDataSource.kmb,
     );
+    final bool citybusEnabled = settings.isProprietaryEnabled(
+      ProprietaryDataSource.citybus,
+    );
 
     return Scaffold(
       appBar: buildPageBar(
@@ -449,6 +453,10 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
               ),
             ),
           ],
+          if (citybusEnabled) ...[
+            const SizedBox(height: 16),
+            const _CitybusRouteNameCacheCard(),
+          ],
         ],
       ),
     );
@@ -463,4 +471,97 @@ String _formatBytes(int bytes) {
     return '${(bytes / 1024).toStringAsFixed(0)} KB';
   }
   return '$bytes B';
+}
+
+class _CitybusRouteNameCacheCard extends StatefulWidget {
+  const _CitybusRouteNameCacheCard();
+
+  @override
+  State<_CitybusRouteNameCacheCard> createState() =>
+      _CitybusRouteNameCacheCardState();
+}
+
+class _CitybusRouteNameCacheCardState
+    extends State<_CitybusRouteNameCacheCard> {
+  static const CitybusRouteNameService _service = CitybusRouteNameService();
+
+  int? _bytes;
+  int? _routes;
+  bool _deleting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    final List<Object> values = await Future.wait(<Future<Object>>[
+      _service.storedBytes(),
+      _service.storedRouteCount(),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _bytes = values[0] as int;
+      _routes = values[1] as int;
+    });
+  }
+
+  Future<void> _deleteCache() async {
+    setState(() => _deleting = true);
+    await _service.clearCache();
+    await _loadStats();
+    if (!mounted) return;
+    setState(() => _deleting = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final ThemeData theme = Theme.of(context);
+    return Card.filled(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              settings.text('城巴路線名稱快取', 'Citybus Route Name Cache'),
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              settings.text(
+                '僅儲存搜尋時載入的路線名稱，不是完整資料集。',
+                'Stores only route names loaded while searching. Not a complete dataset.',
+              ),
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            if (_bytes == null)
+              const M3ELoadingIndicator(size: 24)
+            else
+              Text(
+                settings.text(
+                  '${_routes ?? 0} 條路線 · ${_formatBytes(_bytes!)}',
+                  '${_routes ?? 0} routes · ${_formatBytes(_bytes!)}',
+                ),
+              ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: M3EButton.icon(
+                style: M3EButtonStyle.text,
+                onPressed: _deleting || (_bytes ?? 0) == 0
+                    ? null
+                    : _deleteCache,
+                icon: const Icon(Icons.delete_outline),
+                label: Text(settings.text('刪除', 'Delete')),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
