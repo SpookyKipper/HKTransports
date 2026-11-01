@@ -3,11 +3,14 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/bus/data/route_waypoints.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/map_attribution.dart';
+import 'package:hktransports/location/location_controller.dart';
+import 'package:hktransports/location/location_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:maplibre/maplibre.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -56,6 +59,13 @@ class RouteMapState extends State<RouteMap>
   static const String _arrowImageName = 'route-direction-arrow';
   static const double _stationHitRadius = 26;
   static const String _mapBackgroundColor = '#F5F2EA';
+  static const String _userLocationSourceId = 'user-location';
+  static const String _userLocationLayerId = 'user-location-layer';
+  static const String _userAccuracySourceId = 'user-accuracy';
+  static const String _userAccuracyLayerId = 'user-accuracy-layer';
+  static const String _userDirectionSourceId = 'user-direction';
+  static const String _userDirectionLayerId = 'user-direction-layer';
+  static const String _userColor = '#1E88E5';
 
   MapController? _mapController;
   StyleController? _styleController;
@@ -73,6 +83,11 @@ class RouteMapState extends State<RouteMap>
   bool _stationSourceWriting = false;
   bool _stationSourceDirty = false;
   late final Future<void> _minimumLoadingTime;
+  LocationController? _locationController;
+  geo.Position? _userPosition;
+  bool _showUserLocation = false;
+  bool _locating = false;
+  bool _pendingLocate = false;
 
   @override
   void initState() {
@@ -108,7 +123,18 @@ class RouteMapState extends State<RouteMap>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final bool zh = context.read<AppSettings>().isChinese;
+    final AppSettings settings = context.read<AppSettings>();
+    final LocationController location = context.read<LocationController>();
+    if (!identical(_locationController, location)) {
+      _locationController?.removeListener(_handleLocationChanged);
+      _locationController = location..addListener(_handleLocationChanged);
+    }
+    if (!settings.locationEnabled && _showUserLocation) {
+      _showUserLocation = false;
+      _userPosition = null;
+      if (_layersReady) unawaited(_updateUserOverlaySources());
+    }
+    final bool zh = settings.isChinese;
     if (_isChinese == zh) return;
     _isChinese = zh;
     _layersReady = false;
@@ -121,10 +147,44 @@ class RouteMapState extends State<RouteMap>
 
   @override
   void dispose() {
+    _locationController?.removeListener(_handleLocationChanged);
+    _locationController = null;
     _pulseController.dispose();
     _styleController = null;
     _mapController = null;
     super.dispose();
+  }
+
+  void _handleLocationChanged() {
+    if (!_showUserLocation) return;
+    final geo.Position? position = _locationController?.position;
+    if (position == null) return;
+    _userPosition = position;
+    if (_layersReady) unawaited(_updateUserOverlaySources());
+  }
+
+  Future<void> _locateUser() async {
+    if (_locating) return;
+    setState(() => _locating = true);
+    try {
+      final LocationController location = context.read<LocationController>();
+      final LocationAccessStatus access = await location.requestAccess();
+      if (!mounted || access != LocationAccessStatus.granted) return;
+      final geo.Position? position =
+          location.position ?? await location.waitForPosition();
+      if (!mounted || position == null) return;
+      _userPosition = position;
+      _showUserLocation = true;
+      if (_layersReady) {
+        await _updateUserOverlaySources();
+        if (!mounted) return;
+        await _fitUserLocation(position);
+      } else {
+        _pendingLocate = true;
+      }
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
   }
 
   void focusStation(int index) {
@@ -135,6 +195,218 @@ class RouteMapState extends State<RouteMap>
       return;
     }
     unawaited(_focusStationCamera(index));
+  }
+
+  Future<void> _updateUserOverlaySources() async {
+    final StyleController? style = _styleController;
+    if (!_layersReady || style == null) return;
+    try {
+      await Future.wait(<Future<void>>[
+        style.updateGeoJsonSource(
+          id: _userLocationSourceId,
+          data: jsonEncode(_userLocationGeoJson()),
+        ),
+        style.updateGeoJsonSource(
+          id: _userAccuracySourceId,
+          data: jsonEncode(_userAccuracyGeoJson()),
+        ),
+        style.updateGeoJsonSource(
+          id: _userDirectionSourceId,
+          data: jsonEncode(_userDirectionGeoJson()),
+        ),
+      ]);
+    } catch (error) {
+      debugPrint('Unable to update user location overlay: $error');
+    }
+  }
+
+  Future<void> _fitUserLocation(geo.Position position) async {
+    final MapController? controller = _mapController;
+    if (controller == null) return;
+    final List<Geographic> points = _userFitPoints(position);
+    final LngLatBounds bounds;
+    if (points.length == 1) {
+      bounds = _boundsAround(position.latitude, position.longitude, 0.001);
+    } else {
+      bounds = LngLatBounds.fromPoints(points);
+    }
+    await controller.fitBounds(
+      bounds: bounds,
+      bearing: controller.getCamera().bearing,
+      padding: const EdgeInsets.all(32),
+      nativeDuration: const Duration(milliseconds: 600),
+      webMaxDuration: const Duration(milliseconds: 600),
+    );
+  }
+
+  List<Geographic> _userFitPoints(geo.Position position) {
+    final List<Geographic> points = <Geographic>[
+      Geographic(lon: position.longitude, lat: position.latitude),
+      ..._accuracyPoints(position),
+      ..._directionPoints(position),
+    ];
+    return points;
+  }
+
+  List<Geographic> _accuracyPoints(geo.Position position) {
+    if (!position.hasAccuracy || position.accuracy <= 0) return const [];
+    return <Geographic>[
+      for (int index = 0; index < 8; index++)
+        _destinationPoint(
+          position.latitude,
+          position.longitude,
+          position.accuracy,
+          index * 45.0,
+        ),
+    ];
+  }
+
+  List<Geographic> _directionPoints(geo.Position position) {
+    if (!position.hasHeading) return const [];
+    final double length =
+        (position.hasAccuracy && position.accuracy > 0
+            ? position.accuracy
+            : 30.0) +
+        20.0;
+    final double spread =
+        (position.hasHeadingAccuracy ? position.headingAccuracy : 20.0)
+            .clamp(12.0, 60.0)
+            .toDouble();
+    return <Geographic>[
+      _destinationPoint(
+        position.latitude,
+        position.longitude,
+        length,
+        position.heading - spread,
+      ),
+      _destinationPoint(
+        position.latitude,
+        position.longitude,
+        length,
+        position.heading + spread,
+      ),
+    ];
+  }
+
+  Map<String, dynamic> _userLocationGeoJson() {
+    final geo.Position? position = _userPosition;
+    if (!_showUserLocation || position == null) return _emptyGeoJson();
+    return <String, dynamic>{
+      'type': 'FeatureCollection',
+      'features': <dynamic>[
+        <String, dynamic>{
+          'type': 'Feature',
+          'properties': <String, dynamic>{},
+          'geometry': <String, dynamic>{
+            'type': 'Point',
+            'coordinates': <double>[position.longitude, position.latitude],
+          },
+        },
+      ],
+    };
+  }
+
+  Map<String, dynamic> _userAccuracyGeoJson() {
+    final geo.Position? position = _userPosition;
+    if (!_showUserLocation ||
+        position == null ||
+        !position.hasAccuracy ||
+        position.accuracy <= 0) {
+      return _emptyGeoJson();
+    }
+    final List<List<double>> ring = <List<double>>[];
+    const int segments = 72;
+    for (int index = 0; index <= segments; index++) {
+      final Geographic point = _destinationPoint(
+        position.latitude,
+        position.longitude,
+        position.accuracy,
+        index * 360.0 / segments,
+      );
+      ring.add(<double>[point.lon, point.lat]);
+    }
+    return _polygonFeatureCollection(ring);
+  }
+
+  Map<String, dynamic> _userDirectionGeoJson() {
+    final geo.Position? position = _userPosition;
+    if (!_showUserLocation || position == null || !position.hasHeading) {
+      return _emptyGeoJson();
+    }
+    final double length =
+        (position.hasAccuracy && position.accuracy > 0
+            ? position.accuracy
+            : 30.0) +
+        20.0;
+    final double spread =
+        (position.hasHeadingAccuracy ? position.headingAccuracy : 20.0)
+            .clamp(12.0, 60.0)
+            .toDouble();
+    final Geographic left = _destinationPoint(
+      position.latitude,
+      position.longitude,
+      length,
+      position.heading - spread,
+    );
+    final Geographic right = _destinationPoint(
+      position.latitude,
+      position.longitude,
+      length,
+      position.heading + spread,
+    );
+    return _polygonFeatureCollection(<List<double>>[
+      <double>[position.longitude, position.latitude],
+      <double>[left.lon, left.lat],
+      <double>[right.lon, right.lat],
+      <double>[position.longitude, position.latitude],
+    ]);
+  }
+
+  Map<String, dynamic> _polygonFeatureCollection(List<List<double>> ring) {
+    return <String, dynamic>{
+      'type': 'FeatureCollection',
+      'features': <dynamic>[
+        <String, dynamic>{
+          'type': 'Feature',
+          'properties': <String, dynamic>{},
+          'geometry': <String, dynamic>{
+            'type': 'Polygon',
+            'coordinates': <dynamic>[ring],
+          },
+        },
+      ],
+    };
+  }
+
+  Map<String, dynamic> _emptyGeoJson() {
+    return <String, dynamic>{
+      'type': 'FeatureCollection',
+      'features': <dynamic>[],
+    };
+  }
+
+  Geographic _destinationPoint(
+    double latitude,
+    double longitude,
+    double distanceMeters,
+    double bearingDegrees,
+  ) {
+    const double earthRadius = 6371000;
+    final double bearing = bearingDegrees * math.pi / 180;
+    final double lat1 = latitude * math.pi / 180;
+    final double lon1 = longitude * math.pi / 180;
+    final double angularDistance = distanceMeters / earthRadius;
+    final double lat2 = math.asin(
+      math.sin(lat1) * math.cos(angularDistance) +
+          math.cos(lat1) * math.sin(angularDistance) * math.cos(bearing),
+    );
+    final double lon2 =
+        lon1 +
+        math.atan2(
+          math.sin(bearing) * math.sin(angularDistance) * math.cos(lat1),
+          math.cos(angularDistance) - math.sin(lat1) * math.sin(lat2),
+        );
+    return Geographic(lon: lon2 * 180 / math.pi, lat: lat2 * 180 / math.pi);
   }
 
   Future<void> _focusStationCamera(int index) async {
@@ -244,6 +516,14 @@ class RouteMapState extends State<RouteMap>
     if (!mounted || !identical(_styleController, style)) return;
     _layersReady = true;
 
+    if (_pendingLocate && _showUserLocation && _userPosition != null) {
+      _pendingLocate = false;
+      await _updateUserOverlaySources();
+      if (!mounted) return;
+      await _fitUserLocation(_userPosition!);
+      return;
+    }
+
     final int? pending = _pendingFocusIndex;
     if (pending != null) {
       _pendingFocusIndex = null;
@@ -331,6 +611,57 @@ class RouteMapState extends State<RouteMap>
     }
 
     await style.addSource(
+      GeoJsonSource(
+        id: _userAccuracySourceId,
+        data: jsonEncode(_userAccuracyGeoJson()),
+      ),
+    );
+    await style.addLayer(
+      FillStyleLayer(
+        id: _userAccuracyLayerId,
+        sourceId: _userAccuracySourceId,
+        paint: <String, Object>{
+          'fill-color': _userColor,
+          'fill-opacity': 0.16,
+          'fill-outline-color': _userColor,
+        },
+      ),
+    );
+
+    await style.addSource(
+      GeoJsonSource(
+        id: _userDirectionSourceId,
+        data: jsonEncode(_userDirectionGeoJson()),
+      ),
+    );
+    await style.addLayer(
+      FillStyleLayer(
+        id: _userDirectionLayerId,
+        sourceId: _userDirectionSourceId,
+        paint: <String, Object>{'fill-color': _userColor, 'fill-opacity': 0.22},
+      ),
+    );
+
+    await style.addSource(
+      GeoJsonSource(
+        id: _userLocationSourceId,
+        data: jsonEncode(_userLocationGeoJson()),
+      ),
+    );
+    await style.addLayer(
+      CircleStyleLayer(
+        id: _userLocationLayerId,
+        sourceId: _userLocationSourceId,
+        paint: <String, Object>{
+          'circle-radius': 7.0,
+          'circle-color': _userColor,
+          'circle-stroke-width': 2.5,
+          'circle-stroke-color': '#FFFFFF',
+        },
+      ),
+    );
+
+    await style.addSource(
       GeoJsonSource(id: _stationSourceId, data: jsonEncode(_stationGeoJson())),
     );
     await style.addLayer(
@@ -350,6 +681,9 @@ class RouteMapState extends State<RouteMap>
 
   Future<void> _removeLayers(StyleController style) async {
     for (final String layerId in <String>[
+      _userLocationLayerId,
+      _userDirectionLayerId,
+      _userAccuracyLayerId,
       _routeArrowLayerId,
       _routeLayerId,
       _stationLayerId,
@@ -360,7 +694,13 @@ class RouteMapState extends State<RouteMap>
         // Layer does not exist on a fresh style.
       }
     }
-    for (final String sourceId in <String>[_routeSourceId, _stationSourceId]) {
+    for (final String sourceId in <String>[
+      _userLocationSourceId,
+      _userDirectionSourceId,
+      _userAccuracySourceId,
+      _routeSourceId,
+      _stationSourceId,
+    ]) {
       try {
         await style.removeSource(sourceId);
       } catch (_) {
@@ -712,6 +1052,32 @@ class RouteMapState extends State<RouteMap>
                     padding: const EdgeInsets.fromLTRB(42, 0, 10, 10),
                   ),
                 ),
+                if (settings.locationEnabled)
+                  Positioned(
+                    right: 10,
+                    bottom: 48,
+                    child: Material(
+                      color: theme.scaffoldBackgroundColor,
+                      shape: const CircleBorder(),
+                      child: SizedBox.square(
+                        dimension: 30,
+                        child: IconButton(
+                          tooltip: settings.text('定位', 'My location'),
+                          onPressed: _locating ? null : _locateUser,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: _locating
+                              ? const SizedBox.square(
+                                  dimension: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.my_location, size: 18),
+                        ),
+                      ),
+                    ),
+                  ),
                 Positioned(
                   left: 10,
                   bottom: 10,
