@@ -486,7 +486,6 @@ class _CitybusRouteNameCacheCardState
   static const CitybusRouteNameService _service = CitybusRouteNameService();
 
   int? _bytes;
-  int? _routes;
   bool _deleting = false;
 
   @override
@@ -496,15 +495,9 @@ class _CitybusRouteNameCacheCardState
   }
 
   Future<void> _loadStats() async {
-    final List<Object> values = await Future.wait(<Future<Object>>[
-      _service.storedBytes(),
-      _service.storedRouteCount(),
-    ]);
+    final int bytes = await _service.storedBytes();
     if (!mounted) return;
-    setState(() {
-      _bytes = values[0] as int;
-      _routes = values[1] as int;
-    });
+    setState(() => _bytes = bytes);
   }
 
   Future<void> _deleteCache() async {
@@ -530,26 +523,8 @@ class _CitybusRouteNameCacheCardState
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            Text(
-              settings.text(
-                '僅儲存搜尋時載入的路線名稱，不是完整資料集。',
-                'Stores only route names loaded while searching. Not a complete dataset.',
-              ),
-              style: theme.textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            if (_bytes == null)
-              const M3ELoadingIndicator(size: 24)
-            else
-              Text(
-                settings.text(
-                  '${_routes ?? 0} 條路線 · ${_formatBytes(_bytes!)}',
-                  '${_routes ?? 0} routes · ${_formatBytes(_bytes!)}',
-                ),
-              ),
-            const SizedBox(height: 12),
             Align(
-              alignment: Alignment.centerRight,
+              alignment: Alignment.centerLeft,
               child: M3EButton.icon(
                 style: M3EButtonStyle.text,
                 onPressed: _deleting || (_bytes ?? 0) == 0
