@@ -114,7 +114,36 @@ List<CitybusRemarkLine>? parseCitybusRemarks(String source) {
   while (filtered.isNotEmpty && filtered.last.text.trim().isEmpty) {
     filtered.removeLast();
   }
-  return filtered.isEmpty ? null : filtered;
+  final List<CitybusRemarkLine> styled = <CitybusRemarkLine>[
+    for (final CitybusRemarkLine line in filtered) _styleSpecialLine(line),
+  ];
+  return styled.isEmpty ? null : styled;
+}
+
+CitybusRemarkLine _styleSpecialLine(CitybusRemarkLine line) {
+  final String text = line.text.trim();
+  final String lower = text.toLowerCase();
+  if (text.contains('車費備註') || lower.contains('fare remark')) {
+    return CitybusRemarkLine(<CitybusRemarkRun>[
+      CitybusRemarkRun(
+        text: text.contains('車費備註') ? '車費備註' : 'Fare Remark',
+        bold: true,
+      ),
+    ]);
+  }
+  if (text == '成人收費' || lower == 'adult fare') {
+    return CitybusRemarkLine(<CitybusRemarkRun>[
+      for (final CitybusRemarkRun run in line.runs)
+        CitybusRemarkRun(
+          text: run.text,
+          bold: run.bold,
+          italic: run.italic,
+          underline: true,
+          href: run.href,
+        ),
+    ]);
+  }
+  return line;
 }
 
 bool _isBbiHeading(String text) {
