@@ -8,6 +8,7 @@ import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/data/nearby_routes.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/route_eta_view.dart';
 import 'package:hktransports/location/location_service.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -340,6 +341,7 @@ class _NearbyRoutesViewState extends State<NearbyRoutesView>
                     final NearbyRouteResult result = _results[index];
                     return _NearbyRouteTile(
                       result: result,
+                      showEta: widget.active,
                       onTap: () {
                         repository.addRecent(result.route);
                         final String stopQuery = result.routeStopId.isEmpty
@@ -437,16 +439,22 @@ class _LocationMessage extends StatelessWidget {
 }
 
 class _NearbyRouteTile extends StatelessWidget {
-  const _NearbyRouteTile({required this.result, required this.onTap});
+  const _NearbyRouteTile({
+    required this.result,
+    required this.onTap,
+    required this.showEta,
+  });
 
   final NearbyRouteResult result;
   final VoidCallback onTap;
+  final bool showEta;
 
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final RouteEntry route = result.route;
     final StopEntry stop = result.stop;
+    final int seq = result.routeSeq;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -494,7 +502,11 @@ class _NearbyRouteTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            if (showEta && seq >= 0) ...[
+              const SizedBox(width: 8),
+              RouteEtaView(route: route, seq: seq),
+            ],
+            const SizedBox(width: 4),
             Icon(
               Icons.directions_walk,
               size: 18,

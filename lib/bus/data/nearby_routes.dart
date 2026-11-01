@@ -8,12 +8,14 @@ class NearbyRouteResult {
     required this.route,
     required this.stop,
     required this.routeStopId,
+    required this.routeSeq,
     required this.distanceMeters,
   });
 
   final RouteEntry route;
   final StopEntry stop;
   final String routeStopId;
+  final int routeSeq;
   final double distanceMeters;
 }
 
@@ -47,12 +49,17 @@ List<NearbyRouteResult> findNearbyRoutes({
     for (final RouteStopRef ref in routesAtStop(stop.id)) {
       final NearbyRouteResult? existing = nearestByRoute[ref.route.key];
       if (existing != null && existing.distanceMeters <= distance) continue;
-      final String routeStopId = _routeStopId(database, ref, stop.id);
-      if (routeStopId.isEmpty) continue;
+      final ({String stopId, int seq})? routeStop = _routeStop(
+        database,
+        ref,
+        stop.id,
+      );
+      if (routeStop == null || routeStop.stopId.isEmpty) continue;
       nearestByRoute[ref.route.key] = NearbyRouteResult(
         route: ref.route,
         stop: stop,
-        routeStopId: routeStopId,
+        routeStopId: routeStop.stopId,
+        routeSeq: routeStop.seq,
         distanceMeters: distance,
       );
     }
@@ -87,29 +94,39 @@ double distanceMetersBetween(
   return earthRadius * 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h));
 }
 
-String _routeStopId(
+({String stopId, int seq})? _routeStop(
   BusDatabase database,
   RouteStopRef ref,
   String physicalStopId,
 ) {
   final RouteEntry route = ref.route;
   final List<String> primaryStops = route.primaryStops;
-  final String refStopId = route.stopIdAt(ref.company, ref.seq) ?? '';
-  if (primaryStops.contains(refStopId)) return refStopId;
+  if (primaryStops.isEmpty) return null;
 
   final BusCompany? primaryCompany = route.primaryCompany;
+  if (primaryCompany != null && ref.company == primaryCompany) {
+    if (ref.seq >= 0 && ref.seq < primaryStops.length) {
+      return (stopId: primaryStops[ref.seq], seq: ref.seq);
+    }
+  }
+
   final List<StopRef>? physicalStops = database.stopMap[physicalStopId];
   if (primaryCompany != null && physicalStops != null) {
     for (final StopRef stopRef in physicalStops) {
-      if (stopRef.company == primaryCompany &&
-          primaryStops.contains(stopRef.stopId)) {
-        return stopRef.stopId;
+      if (stopRef.company != primaryCompany) continue;
+      final int alignedSeq = ref.seq;
+      if (alignedSeq >= 0 &&
+          alignedSeq < primaryStops.length &&
+          primaryStops[alignedSeq] == stopRef.stopId) {
+        return (stopId: stopRef.stopId, seq: alignedSeq);
       }
+      final int seq = primaryStops.indexOf(stopRef.stopId);
+      if (seq >= 0) return (stopId: stopRef.stopId, seq: seq);
     }
   }
 
   if (ref.seq >= 0 && ref.seq < primaryStops.length) {
-    return primaryStops[ref.seq];
+    return (stopId: primaryStops[ref.seq], seq: ref.seq);
   }
-  return primaryStops.isNotEmpty ? primaryStops.first : '';
+  return (stopId: primaryStops.first, seq: 0);
 }

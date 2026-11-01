@@ -1,18 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
-import 'package:hktransports/bus/eta/eta_display.dart';
-import 'package:hktransports/bus/eta/eta_models.dart';
-import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
 import 'package:hktransports/bus/ui/notice_banner.dart';
+import 'package:hktransports/bus/ui/route_eta_view.dart';
 import 'package:hktransports/pages/homeIndexPage/nearby_routes.dart';
-import 'package:intl/intl.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
@@ -393,7 +388,7 @@ class _GroupRoutesViewState extends State<_GroupRoutesView> {
   }
 }
 
-class _FavoriteRouteTile extends StatefulWidget {
+class _FavoriteRouteTile extends StatelessWidget {
   const _FavoriteRouteTile({
     super.key,
     required this.route,
@@ -412,117 +407,19 @@ class _FavoriteRouteTile extends StatefulWidget {
   final int refreshVersion;
 
   @override
-  State<_FavoriteRouteTile> createState() => _FavoriteRouteTileState();
-}
-
-class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
-  late final EtaService _etaService;
-  Timer? _timer;
-  List<BusEta>? _etas;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _etaService = context.read<EtaService>();
-    final AppSettings settings = context.read<AppSettings>();
-    _etaService.setLanguage(settings.language);
-    if (widget.showEta) _startEtaUpdates();
-  }
-
-  @override
-  void didUpdateWidget(covariant _FavoriteRouteTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.showEta != widget.showEta) {
-      _stopEtaUpdates();
-      if (widget.showEta) _startEtaUpdates();
-      return;
-    }
-    if (widget.showEta && oldWidget.refreshVersion != widget.refreshVersion) {
-      _fetch();
-    }
-  }
-
-  void _startEtaUpdates() {
-    _fetch();
-    final AppSettings settings = context.read<AppSettings>();
-    _timer?.cancel();
-    _timer = Timer.periodic(
-      Duration(seconds: settings.refreshSeconds),
-      (_) => _fetch(),
-    );
-  }
-
-  void _stopEtaUpdates() {
-    _timer?.cancel();
-    _timer = null;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _etaService.setLanguage(context.read<AppSettings>().language);
-  }
-
-  @override
-  void dispose() {
-    _stopEtaUpdates();
-    super.dispose();
-  }
-
-  Future<void> _fetch() async {
-    if (!widget.showEta) return;
-    final List<BusEta> etas = await _etaService.fetchRouteStop(
-      widget.route,
-      widget.seq,
-    );
-    if (!mounted) return;
-    setState(() {
-      _etas = etas;
-      _loading = false;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
-    final List<String> stopIds = widget.route.primaryStops;
-    final StopEntry? stop = widget.seq >= 0 && widget.seq < stopIds.length
-        ? repository.stopById(stopIds[widget.seq])
+    final List<String> stopIds = route.primaryStops;
+    final StopEntry? stop = seq >= 0 && seq < stopIds.length
+        ? repository.stopById(stopIds[seq])
         : null;
-    final List<BusEta> etas = (_etas ?? const [])
-        .where((eta) => eta.eta != null)
-        .take(3)
-        .toList();
-
-    Widget? trailing = widget.trailing;
-    if (widget.showEta) {
-      if (_loading && _etas == null) {
-        trailing = const M3ELoadingIndicator(size: 24);
-      } else if (etas.isEmpty) {
-        trailing = Text('--', style: Theme.of(context).textTheme.bodySmall);
-      } else {
-        trailing = ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 150),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              for (int index = 0; index < etas.length; index++)
-                _CompactEtaLine(
-                  eta: etas[index],
-                  first: index == 0,
-                  atOrigin: widget.seq == 0,
-                ),
-            ],
-          ),
-        );
-      }
-    }
+    final Widget? etaOrTrailing = showEta
+        ? RouteEtaView(route: route, seq: seq, refreshVersion: refreshVersion)
+        : trailing;
 
     return InkWell(
-      onTap: widget.onTap,
+      onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
@@ -535,11 +432,11 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    widget.route.route,
+                    route.route,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   Text(
-                    widget.route.companiesLabel(settings.language),
+                    route.companiesLabel(settings.language),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -556,11 +453,11 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${settings.text('往', 'to')} ${widget.route.dest.get(settings.language)}',
+                    '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
                   ),
                   Text(
                     stop?.displayName(settings.language) ??
-                        widget.route.orig.get(settings.language),
+                        route.orig.get(settings.language),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -568,81 +465,13 @@ class _FavoriteRouteTileState extends State<_FavoriteRouteTile> {
                 ],
               ),
             ),
-            if (trailing != null) ...[const SizedBox(width: 8), trailing],
+            if (etaOrTrailing != null) ...[
+              const SizedBox(width: 8),
+              etaOrTrailing,
+            ],
           ],
         ),
       ),
-    );
-  }
-}
-
-class _CompactEtaLine extends StatelessWidget {
-  const _CompactEtaLine({
-    required this.eta,
-    required this.first,
-    required this.atOrigin,
-  });
-
-  final BusEta eta;
-  final bool first;
-  final bool atOrigin;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppSettings settings = context.watch<AppSettings>();
-    final DateTime? time = eta.eta;
-    final String remark = eta.remark(settings.language);
-    if (time == null) {
-      if (remark.isEmpty) return const SizedBox.shrink();
-      return Text(
-        remark,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodySmall,
-      );
-    }
-
-    final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
-    final String clock = DateFormat('HH:mm').format(hkTime);
-    final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
-    final String? departed = departedEtaLabel(eta, settings);
-    final String wait = minutes < 1
-        ? atOrigin
-              ? settings.text('即場開出', 'Departing now')
-              : settings.text('即將到達', 'Arriving')
-        : '$minutes ${settings.text('分', 'min')}';
-    final String text = departed != null
-        ? '$clock  $departed'
-        : switch (settings.etaFormat) {
-            EtaFormat.diff => wait,
-            EtaFormat.exact => clock,
-            EtaFormat.mixed => '$clock  $wait',
-          };
-    final Color color = first
-        ? Theme.of(context).colorScheme.primary
-        : Theme.of(context).colorScheme.onSurfaceVariant;
-    final TextStyle? style = first
-        ? Theme.of(context).textTheme.bodyLarge?.copyWith(color: color)
-        : Theme.of(context).textTheme.bodySmall?.copyWith(color: color);
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (eta.isScheduledLike)
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: Icon(Icons.schedule, size: first ? 16 : 14, color: color),
-          ),
-        Flexible(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.end,
-            style: style,
-          ),
-        ),
-      ],
     );
   }
 }
