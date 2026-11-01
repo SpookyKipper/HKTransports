@@ -103,6 +103,7 @@ void main() {
     expect(near.single.route.key, kmb.key);
     expect(near.single.stop.id, 'K1');
     expect(near.single.routeStopId, 'K1');
+    expect(near.single.routeSeq, 0);
     expect(near.single.distanceMeters, lessThan(50));
 
     final List<NearbyRouteResult> wider = findNearbyRoutes(
@@ -114,6 +115,18 @@ void main() {
     );
     expect(wider.length, 1);
     expect(wider.single.stop.id, 'K1');
+
+    final List<NearbyRouteResult> atSecondStop = findNearbyRoutes(
+      database: database,
+      routesAtStop: routesAt,
+      latitude: 22.3100,
+      longitude: 114.1000,
+      radiusMeters: 200,
+    );
+    expect(atSecondStop.length, 1);
+    expect(atSecondStop.single.stop.id, 'K2');
+    expect(atSecondStop.single.routeStopId, 'K2');
+    expect(atSecondStop.single.routeSeq, 1);
   });
 
   test('maps a secondary company stop back to the primary route stop', () {
@@ -153,5 +166,6 @@ void main() {
       radiusMeters: 100,
     );
     expect(results.single.routeStopId, 'K1');
+    expect(results.single.routeSeq, 0);
   });
 }
