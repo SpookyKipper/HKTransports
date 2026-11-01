@@ -361,7 +361,6 @@ class _RoutePageState extends State<_RoutePage> {
           enabled: settings.isProprietaryEnabled(ProprietaryDataSource.citybus),
           text:
               '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
-          marqueeWhenOverflow: true,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -426,7 +425,8 @@ class _RoutePageState extends State<_RoutePage> {
                     top: Radius.circular(_stationInnerRadius),
                   ),
                   child: ListView.builder(
-                    scrollCacheExtent: ScrollCacheExtent.pixels(12000), padding: const EdgeInsets.only(bottom: 24),
+                    scrollCacheExtent: ScrollCacheExtent.pixels(12000),
+                    padding: const EdgeInsets.only(bottom: 24),
                     itemCount: stopIds.length,
                     itemBuilder: (context, index) {
                       final bool isExpanded = _expandedIndex == index;
