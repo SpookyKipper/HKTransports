@@ -433,70 +433,31 @@ class _RoutePageState extends State<_RoutePage> {
                       final bool isExpanded = _expandedIndex == index;
                       return KeyedSubtree(
                         key: _stationKeys.putIfAbsent(index, () => GlobalKey()),
-                        child: M3EExpandableItem(
-                          key: ValueKey<String>('${stopIds[index]}|$index'),
-                          index: index,
-                          totalCount: stopIds.length,
+                        child: _StationExpandable(
                           isExpanded: isExpanded,
-                          decoration: M3EExpandableStyle(
-                            outerRadius: index == 0 ? _stationInnerRadius : 24,
-                            innerRadius: _stationInnerRadius,
-                            hoverRadius: 24,
-                            pressedRadius: 24,
-                            gap: _stationGap,
-                            elevation: 0,
-                            expandedStateFill: false,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            headerPadding: const EdgeInsets.all(16),
-                            bodyPadding: const EdgeInsets.fromLTRB(
-                              16,
-                              0,
-                              16,
-                              16,
-                            ),
-                            iconPlacement: M3EExpandableIconPlacement.right,
-                            expandIcon: null,
-                            collapseIcon: null,
-                            useInkWell: false,
+                          isFirst: index == 0,
+                          isLast: index == stopIds.length - 1,
+                          gap: _stationGap,
+                          innerRadius: _stationInnerRadius,
+                          header: _buildStopHeader(
+                            context,
+                            repository,
+                            route,
+                            stopIds,
+                            index,
+                            holiday,
+                            isExpanded,
+                            () => _onExpansionChanged(index, !isExpanded),
                           ),
-                          expandMotion: const M3ESpring(
-                            stiffness: 300,
-                            damping: 0.9,
-                          ),
-                          collapseMotion: const M3ESpring(
-                            stiffness: 320,
-                            damping: 0.9,
+                          body: _buildStopBody(
+                            context,
+                            route,
+                            stopIds,
+                            index,
+                            pinned,
                           ),
                           onToggle: () =>
                               _onExpansionChanged(index, !isExpanded),
-                          headerBuilder: (context, index, progress) =>
-                              _buildStopHeader(
-                                context,
-                                repository,
-                                route,
-                                stopIds,
-                                index,
-                                holiday,
-                                isExpanded,
-                                () => _onExpansionChanged(index, !isExpanded),
-                              ),
-                          bodyBuilder: (context, index, progress) {
-                            if (progress <= 0) {
-                              return const SizedBox.shrink();
-                            }
-                            return Opacity(
-                              opacity: progress.clamp(0.0, 1.0),
-                              child: _buildStopBody(
-                                context,
-                                route,
-                                stopIds,
-                                index,
-                                pinned,
-                              ),
-                            );
-                          },
                         ),
                       );
                     },
@@ -1146,6 +1107,77 @@ class _StopInfoSheet extends StatelessWidget {
                 },
               ),
         ],
+      ),
+    );
+  }
+}
+
+class _StationExpandable extends StatelessWidget {
+  const _StationExpandable({
+    required this.isExpanded,
+    required this.isFirst,
+    required this.isLast,
+    required this.gap,
+    required this.innerRadius,
+    required this.header,
+    required this.body,
+    required this.onToggle,
+  });
+
+  final bool isExpanded;
+  final bool isFirst;
+  final bool isLast;
+  final double gap;
+  final double innerRadius;
+  final Widget header;
+  final Widget body;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final BorderRadius radius;
+    if (isFirst && isLast) {
+      radius = BorderRadius.circular(innerRadius);
+    } else if (isFirst) {
+      radius = BorderRadius.vertical(
+        top: Radius.circular(innerRadius),
+        bottom: Radius.circular(innerRadius),
+      );
+    } else if (isLast) {
+      radius = BorderRadius.vertical(
+        top: Radius.circular(innerRadius),
+        bottom: Radius.circular(24),
+      );
+    } else {
+      radius = BorderRadius.circular(innerRadius);
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : gap),
+      child: Material(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: radius,
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            InkWell(onTap: onToggle, child: header),
+            ClipRect(
+              child: AnimatedSize(
+                alignment: Alignment.topCenter,
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+                child: isExpanded
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: body,
+                      )
+                    : const SizedBox(width: double.infinity, height: 0),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
