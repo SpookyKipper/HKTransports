@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/functions/app.dart';
 import 'package:hktransports/location/location_controller.dart';
 import 'package:hktransports/location/location_service.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -200,6 +201,14 @@ class SettingsPage extends StatelessWidget {
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/credits'),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.badge_outlined),
+            title: af.getVersionBuilder(
+              builder: (String value) =>
+                  Text('${settings.text('版本', 'Version')} $value [BETA]'),
+            ),
           ),
         ],
       ),
