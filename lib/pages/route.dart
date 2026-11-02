@@ -434,11 +434,7 @@ class _RoutePageState extends State<_RoutePage> {
                       return KeyedSubtree(
                         key: _stationKeys.putIfAbsent(index, () => GlobalKey()),
                         child: M3EExpandableItem(
-                          key: ValueKey<String>(
-                            '${stopIds[index]}|'
-                            '${_etas[index]?.length ?? -1}|'
-                            '${_loading.contains(index)}',
-                          ),
+                          key: ValueKey<String>('${stopIds[index]}|$index'),
                           index: index,
                           totalCount: stopIds.length,
                           isExpanded: isExpanded,
