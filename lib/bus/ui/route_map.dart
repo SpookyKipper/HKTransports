@@ -59,7 +59,8 @@ class RouteMapState extends State<RouteMap>
   static const String _stationLayerId = 'route-stations-layer';
   static const String _arrowImageName = 'route-direction-arrow';
   static const double _stationHitRadius = 26;
-  static const double _stationFocusSpan = 0.0012;
+  static const double _mapMaxZoom = 18;
+  static const double _stationFocusZoom = _mapMaxZoom - 1;
   static const String _mapBackgroundColor = '#F5F2EA';
   static const String _userLocationSourceId = 'user-location';
   static const String _userLocationLayerId = 'user-location-layer';
@@ -498,14 +499,10 @@ class RouteMapState extends State<RouteMap>
     await _updateStationSource();
     if (!mounted || !identical(_mapController, controller)) return;
     final double bearing = controller.getCamera().bearing;
-    await controller.fitBounds(
-      bounds: _boundsAround(
-        station.stop.lat,
-        station.stop.lng,
-        _stationFocusSpan,
-      ),
+    await controller.animateCamera(
+      center: Geographic(lon: station.stop.lng, lat: station.stop.lat),
+      zoom: _stationFocusZoom,
       bearing: bearing,
-      padding: const EdgeInsets.all(24),
       nativeDuration: const Duration(milliseconds: 900),
       webMaxDuration: const Duration(milliseconds: 900),
     );
@@ -1083,7 +1080,7 @@ class RouteMapState extends State<RouteMap>
                     initCenter: _initialCenter(),
                     initZoom: 11,
                     minZoom: 8,
-                    maxZoom: 18,
+                    maxZoom: _mapMaxZoom,
                     gestures: const MapGestures.all(rotate: true, pitch: false),
                   ),
                   onMapCreated: (MapController controller) {
