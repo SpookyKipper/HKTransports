@@ -1083,7 +1083,7 @@ class RouteMapState extends State<RouteMap>
                     initCenter: _initialCenter(),
                     initZoom: 11,
                     minZoom: 8,
-                    maxZoom: 18,
+                    maxZoom: 17,
                     gestures: const MapGestures.all(rotate: true, pitch: false),
                   ),
                   onMapCreated: (MapController controller) {
