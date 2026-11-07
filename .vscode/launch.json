@@ -2,15 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Flutter Web (Hot Reload)",
+      "name": "Flutter Android",
       "type": "dart",
       "request": "launch",
       "program": "lib/main.dart",
-      "args": [
-        "-d",
-        "chrome",
-        "--web-experimental-hot-reload"
-      ]
+      "args": ["-d", "android"]
     }
   ]
 }
