@@ -10,6 +10,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/route_eta_view.dart';
+import 'package:hktransports/bus/ui/route_special_tag.dart';
 import 'package:hktransports/location/location_controller.dart';
 import 'package:hktransports/location/location_service.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -491,6 +492,13 @@ class _NearbyRouteTile extends StatelessWidget {
                       height: 1.1,
                     ),
                   ),
+                  if (route.isSpecial)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: RouteSpecialTag(
+                        label: settings.text('特別班', 'Special'),
+                      ),
+                    ),
                 ],
               ),
             ),
