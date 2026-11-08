@@ -106,47 +106,61 @@ class _SearchPageState extends State<SearchPage> {
                       title: Text(
                         '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
                       ),
-                      subtitle: CitybusRouteNameSubtitle(
-                        key: ValueKey<String>(
-                          '${route.key}|${settings.language}|'
-                          '${settings.isProprietaryEnabled(ProprietaryDataSource.citybus)}',
-                        ),
-                        route: route,
-                        text: route.orig.get(settings.language),
-                        language: settings.language,
-                        enabled: settings.isProprietaryEnabled(
-                          ProprietaryDataSource.citybus,
-                        ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CitybusRouteNameSubtitle(
+                            key: ValueKey<String>(
+                              '${route.key}|${settings.language}|'
+                              '${settings.isProprietaryEnabled(ProprietaryDataSource.citybus)}',
+                            ),
+                            route: route,
+                            text: route.orig.get(settings.language),
+                            language: settings.language,
+                            enabled: settings.isProprietaryEnabled(
+                              ProprietaryDataSource.citybus,
+                            ),
+                          ),
+                          CitybusRouteDescription(
+                            route: route,
+                            language: settings.language,
+                            enabled: settings.isProprietaryEnabled(
+                              ProprietaryDataSource.citybus,
+                            ),
+                            fallback: '',
+                            builder: (BuildContext context, String label) {
+                              if (label.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  label,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                       trailing: route.isSpecial
-                          ? CitybusRouteDescription(
-                              route: route,
-                              language: settings.language,
-                              enabled: settings.isProprietaryEnabled(
-                                ProprietaryDataSource.citybus,
-                              ),
-                              fallback: settings.text('特別班', 'Special'),
-                              builder: (BuildContext context, String label) {
-                                return ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    maxWidth: 140,
+                          ? Text(
+                              settings.text('特別班', 'Special'),
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
-                                  child: Text(
-                                    label,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.end,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall
-                                        ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
-                                        ),
-                                  ),
-                                );
-                              },
                             )
                           : null,
                       onTap: () {

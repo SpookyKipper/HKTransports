@@ -357,16 +357,7 @@ class _RoutePageState extends State<_RoutePage> {
         titleTrailing: _RouteTitleMeta(
           company: route.companiesLabel(settings.language),
           special: route.isSpecial
-              ? CitybusRouteDescription(
-                  route: route,
-                  language: settings.language,
-                  enabled: settings.isProprietaryEnabled(
-                    ProprietaryDataSource.citybus,
-                  ),
-                  fallback: settings.text('特別班', 'Special'),
-                  builder: (BuildContext context, String label) =>
-                      _RouteSpecialTag(label: label),
-                )
+              ? _RouteSpecialTag(label: settings.text('特別班', 'Special'))
               : null,
         ),
         subtitleWidget: CitybusRouteNameSubtitle(
@@ -417,6 +408,30 @@ class _RoutePageState extends State<_RoutePage> {
       ),
       body: Column(
         children: [
+          if (route.isSpecial)
+            CitybusRouteDescription(
+              route: route,
+              language: settings.language,
+              enabled: settings.isProprietaryEnabled(
+                ProprietaryDataSource.citybus,
+              ),
+              fallback: '',
+              builder: (BuildContext context, String label) {
+                if (label.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              },
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, _stationGap),
             child: RouteMap(
