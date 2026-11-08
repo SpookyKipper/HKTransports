@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/citybus_route_description.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/route_number_pad.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -118,14 +119,34 @@ class _SearchPageState extends State<SearchPage> {
                         ),
                       ),
                       trailing: route.isSpecial
-                          ? Text(
-                              settings.text('特別班', 'Special'),
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
+                          ? CitybusRouteDescription(
+                              route: route,
+                              language: settings.language,
+                              enabled: settings.isProprietaryEnabled(
+                                ProprietaryDataSource.citybus,
+                              ),
+                              fallback: settings.text('特別班', 'Special'),
+                              builder: (BuildContext context, String label) {
+                                return ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 140,
                                   ),
+                                  child: Text(
+                                    label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.end,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                        ),
+                                  ),
+                                );
+                              },
                             )
                           : null,
                       onTap: () {

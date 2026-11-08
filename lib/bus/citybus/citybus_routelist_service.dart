@@ -28,6 +28,8 @@ class CitybusRoutelistService {
 
   final Map<String, Future<CitybusRoutelistReader?>> _readers =
       <String, Future<CitybusRoutelistReader?>>{};
+  final Map<String, Future<String?>> _descriptionCache =
+      <String, Future<String?>>{};
   Future<void>? _downloadFuture;
 
   DateTime? get storedUpdatedAt {
@@ -74,6 +76,18 @@ class CitybusRoutelistService {
     return reader?.routeData(route, language);
   }
 
+  Future<String?> specialDescription(RouteEntry route, String language) {
+    if (!route.isSpecial || !route.companies.contains(BusCompany.ctb)) {
+      return Future<String?>.value(null);
+    }
+    final String locale = language == 'en' ? 'en' : 'zh';
+    final String key = '${route.key}|$locale';
+    return _descriptionCache.putIfAbsent(key, () async {
+      final CitybusRouteData? data = await routeData(route, language);
+      return data?.specialDescription;
+    });
+  }
+
   Future<CitybusStopData?> stopData(
     RouteEntry route,
     int stopIndex,
@@ -98,6 +112,7 @@ class CitybusRoutelistService {
 
   Future<void> delete() async {
     await _closeReaders();
+    _descriptionCache.clear();
     final Directory directory = await _directory();
     if (await directory.exists()) {
       await directory.delete(recursive: true);
@@ -148,6 +163,7 @@ class CitybusRoutelistService {
       }
 
       await _closeReaders();
+      _descriptionCache.clear();
       for (final String locale in _locales) {
         final File pending = pendingDatabases[locale]!;
         final File target = await _databaseFile(locale);
