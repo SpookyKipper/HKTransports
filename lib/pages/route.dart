@@ -564,15 +564,6 @@ class _RoutePageState extends State<_RoutePage> {
                       ),
                   ],
                 ),
-                if (expanded)
-                  CitybusStopLandmark(
-                    route: route,
-                    stopIndex: index,
-                    language: settings.language,
-                    enabled: settings.isProprietaryEnabled(
-                      ProprietaryDataSource.citybus,
-                    ),
-                  ),
               ],
             ),
           ),
@@ -618,6 +609,12 @@ class _RoutePageState extends State<_RoutePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        CitybusStopLandmark(
+          route: route,
+          stopIndex: index,
+          language: settings.language,
+          enabled: settings.isProprietaryEnabled(ProprietaryDataSource.citybus),
+        ),
         _EtaList(
           route: route,
           loading: _loading.contains(index),

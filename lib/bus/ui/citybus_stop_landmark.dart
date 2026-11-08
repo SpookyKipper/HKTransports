@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_reader.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
-import 'package:hktransports/bus/state/app_settings.dart';
-import 'package:provider/provider.dart';
 
 class CitybusStopLandmark extends StatefulWidget {
   const CitybusStopLandmark({
@@ -59,7 +57,6 @@ class _CitybusStopLandmarkState extends State<CitybusStopLandmark> {
   Widget build(BuildContext context) {
     final Future<CitybusStopData?>? future = _future;
     if (future == null) return const SizedBox.shrink();
-    final AppSettings settings = context.watch<AppSettings>();
     return FutureBuilder<CitybusStopData?>(
       future: future,
       builder:
@@ -68,7 +65,7 @@ class _CitybusStopLandmarkState extends State<CitybusStopLandmark> {
             if (landmark.isEmpty) return const SizedBox.shrink();
             final ThemeData theme = Theme.of(context);
             return Padding(
-              padding: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.only(bottom: 8),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -80,7 +77,7 @@ class _CitybusStopLandmarkState extends State<CitybusStopLandmark> {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      '${settings.text('附近', 'Nearby')}: $landmark',
+                      landmark,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
