@@ -168,6 +168,22 @@ void main() {
     expect(reader.stopData(route, 1, 'en')?.landmark, 'Tseung Kwan O');
   });
 
+  test('prepares indexes before the database is stored', () {
+    prepareCitybusRoutelistDatabase(database);
+    final ResultSet indexes = database.select(
+      "SELECT name FROM sqlite_master WHERE type = 'index' "
+      "AND name LIKE 'citybus_%' ORDER BY name",
+    );
+    expect(
+      indexes.map((Row row) => row['name']),
+      containsAll(<String>[
+        'citybus_route_service',
+        'citybus_routestop_service',
+        'citybus_routelist_service',
+      ]),
+    );
+  });
+
   test('extracts a routelist database from the ZIP payload', () {
     final Uint8List bytes = Uint8List.fromList(<int>[
       ...'SQLite format 3\u0000'.codeUnits,

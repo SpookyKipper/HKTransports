@@ -102,9 +102,7 @@ CitybusRoutelistRecord? parseCitybusRoutelistRecord(String packed) {
 }
 
 class CitybusRoutelistReader {
-  CitybusRoutelistReader(this.database) {
-    _ensureIndexes();
-  }
+  CitybusRoutelistReader(this.database);
 
   final Database database;
   final Map<String, CitybusRouteData?> _routeCache = {};
@@ -404,24 +402,24 @@ class CitybusRoutelistReader {
     if (candidateWeb != existingWeb) return candidateWeb;
     return false;
   }
+}
 
-  void _ensureIndexes() {
-    try {
-      database.execute(
-        'CREATE INDEX IF NOT EXISTS citybus_route_service '
-        'ON ROUTE(COMPANY_CODE, SERVICE_NO)',
-      );
-      database.execute(
-        'CREATE INDEX IF NOT EXISTS citybus_routestop_service '
-        'ON ROUTESTOP(COMPANY_CODE, SERVICE_NO, ROUTE_INDEX, BSA_SEQ)',
-      );
-      database.execute(
-        'CREATE INDEX IF NOT EXISTS citybus_routelist_service '
-        'ON ROUTELIST(service_no)',
-      );
-    } catch (error) {
-      debugPrint('Unable to prepare Citybus routelist indexes: $error');
-    }
+void prepareCitybusRoutelistDatabase(Database database) {
+  try {
+    database.execute(
+      'CREATE INDEX IF NOT EXISTS citybus_route_service '
+      'ON ROUTE(COMPANY_CODE, SERVICE_NO)',
+    );
+    database.execute(
+      'CREATE INDEX IF NOT EXISTS citybus_routestop_service '
+      'ON ROUTESTOP(COMPANY_CODE, SERVICE_NO, ROUTE_INDEX, BSA_SEQ)',
+    );
+    database.execute(
+      'CREATE INDEX IF NOT EXISTS citybus_routelist_service '
+      'ON ROUTELIST(service_no)',
+    );
+  } catch (error) {
+    debugPrint('Unable to prepare Citybus routelist indexes: $error');
   }
 }
 
