@@ -16,6 +16,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
 import 'package:hktransports/bus/ui/citybus_fare_label.dart';
+import 'package:hktransports/bus/ui/citybus_route_description.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
@@ -355,7 +356,18 @@ class _RoutePageState extends State<_RoutePage> {
         title: route.route,
         titleTrailing: _RouteTitleMeta(
           company: route.companiesLabel(settings.language),
-          special: route.isSpecial ? settings.text('特別班', 'Special') : null,
+          special: route.isSpecial
+              ? CitybusRouteDescription(
+                  route: route,
+                  language: settings.language,
+                  enabled: settings.isProprietaryEnabled(
+                    ProprietaryDataSource.citybus,
+                  ),
+                  fallback: settings.text('特別班', 'Special'),
+                  builder: (BuildContext context, String label) =>
+                      _RouteSpecialTag(label: label),
+                )
+              : null,
         ),
         subtitleWidget: CitybusRouteNameSubtitle(
           route: route,
@@ -711,7 +723,7 @@ class _RouteTitleMeta extends StatelessWidget {
   const _RouteTitleMeta({required this.company, this.special});
 
   final String company;
-  final String? special;
+  final Widget? special;
 
   @override
   Widget build(BuildContext context) {
@@ -733,7 +745,7 @@ class _RouteTitleMeta extends StatelessWidget {
             ),
           ),
         if (company.isNotEmpty && special != null) const SizedBox(width: 8),
-        if (special != null) _RouteSpecialTag(label: special!),
+        ?special,
       ],
     );
   }
@@ -754,11 +766,16 @@ class _RouteSpecialTag extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: scheme.onPrimaryContainer,
-            fontWeight: FontWeight.w600,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 180),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: scheme.onPrimaryContainer,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),

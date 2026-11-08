@@ -196,6 +196,23 @@ void main() {
     expect(reader.remarkInfoKeys(route), <String>['A28-LHP-1']);
   });
 
+  test('extracts only non-normal special route descriptions', () {
+    const CitybusRouteData normal = CitybusRouteData(
+      routeIndex: 1,
+      stops: <CitybusStopData>[],
+      routingRemark: '正常路線',
+      variantDescription: 'Normal Route',
+    );
+    const CitybusRouteData special = CitybusRouteData(
+      routeIndex: 2,
+      stops: <CitybusStopData>[],
+      routingRemark: '經國泰城',
+      variantDescription: '晨早特別班次，經國泰城',
+    );
+    expect(normal.specialDescription, isNull);
+    expect(special.specialDescription, '經國泰城');
+  });
+
   test('prepares indexes before the database is stored', () {
     prepareCitybusRoutelistDatabase(database);
     final ResultSet indexes = database.select(

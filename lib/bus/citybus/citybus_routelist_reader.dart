@@ -37,6 +37,16 @@ class CitybusRouteData {
   final String? routingRemark;
   final String? variantDescription;
 
+  String? get specialDescription {
+    for (final String? value in <String?>[routingRemark, variantDescription]) {
+      final String description = value?.trim() ?? '';
+      if (description.isEmpty) continue;
+      if (isNormalCitybusRouteDescription(description)) continue;
+      return description;
+    }
+    return null;
+  }
+
   CitybusStopData? stopById(String stopId, {int? occurrence}) {
     CitybusStopData? found;
     int seen = 0;
@@ -48,6 +58,17 @@ class CitybusRouteData {
     }
     return found;
   }
+}
+
+bool isNormalCitybusRouteDescription(String value) {
+  final String normalised = value
+      .toLowerCase()
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+  return normalised == '正常路線' ||
+      normalised == 'normal route' ||
+      normalised == 'normal service' ||
+      normalised == 'normal';
 }
 
 class CitybusRoutelistRecord {
