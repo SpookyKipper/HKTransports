@@ -19,10 +19,16 @@ class RouteSpecialTag extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          textHeightBehavior: const TextHeightBehavior(
+            applyHeightToFirstAscent: false,
+            applyHeightToLastDescent: false,
+            leadingDistribution: TextLeadingDistribution.even,
+          ),
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: scheme.onPrimaryContainer,
             fontWeight: FontWeight.w600,
-            height: 1.1,
+            height: 1,
           ),
         ),
       ),
