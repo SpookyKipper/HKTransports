@@ -1,42 +1,36 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
-
-String html(String note) {
-  return '''
-  <html><body><table><tbody><tr>
-    <td id="stopname_0">
-      <table><tbody><tr>
-        <td><table><tbody><tr><td><font>798</font></td></tr></tbody></table></td>
-        <td></td>
-        <td><table><tbody>
-          <tr><td>To: Fo Tan (Chun Yeung Estate)</td></tr>
-          <tr><td><font>$note</font></td></tr>
-        </tbody></table></td>
-      </tr></tbody></table>
-    </td>
-  </tr></tbody></table></body></html>
-  ''';
-}
+import 'package:hktransports/bus/model/bus_models.dart';
 
 void main() {
-  test('parses and strips the Citybus prefix from an English route name', () {
-    expect(
-      parseCitybusRouteName(html('Citybus, Tseung Sha Line'), english: true),
-      'Tseung Sha Line',
-    );
-  });
-
-  test('parses and strips the Chinese Citybus prefix', () {
-    expect(parseCitybusRouteName(html('城巴, 將沙線'), english: false), '將沙線');
-  });
-
-  test('returns null when only the company name is present', () {
-    expect(parseCitybusRouteName(html('Citybus'), english: true), isNull);
-  });
-
   test('does not fetch Cityflyer A/NA routes', () async {
     const CitybusRouteNameService service = CitybusRouteNameService();
-    expect(await service.routeName('A21', 'en'), isNull);
-    expect(await service.routeName('NA21', 'en'), isNull);
+    expect(await service.routeName(_route('A21'), 'en'), isNull);
+    expect(await service.routeName(_route('NA21'), 'en'), isNull);
   });
+
+  test('does not look up non-Citybus routes', () async {
+    const CitybusRouteNameService service = CitybusRouteNameService();
+    expect(
+      await service.routeName(_route('720', company: BusCompany.kmb), 'en'),
+      isNull,
+    );
+  });
+}
+
+RouteEntry _route(String number, {BusCompany company = BusCompany.ctb}) {
+  return RouteEntry(
+    key: '$number+1+Origin+Destination',
+    slug: '$number-${company.id}',
+    route: number,
+    serviceType: '1',
+    companies: <BusCompany>[company],
+    orig: const Terminal(en: 'Origin', zh: '起點'),
+    dest: const Terminal(en: 'Destination', zh: '終點'),
+    stops: <BusCompany, List<String>>{
+      company: const <String>['001825'],
+    },
+    bound: <BusCompany, String>{company: 'O'},
+    seq: 1,
+  );
 }

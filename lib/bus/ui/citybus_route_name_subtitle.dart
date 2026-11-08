@@ -54,7 +54,7 @@ class _CitybusRouteNameSubtitleState extends State<CitybusRouteNameSubtitle> {
       _routeNameFuture = null;
       return;
     }
-    _routeNameFuture = _service.routeName(widget.route.route, widget.language);
+    _routeNameFuture = _service.routeName(widget.route, widget.language);
   }
 
   @override

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/page_bar.dart';
-import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -138,7 +137,6 @@ class ProprietaryDataPage extends StatelessWidget {
     if (source == ProprietaryDataSource.citybus) {
       if (!value) {
         await CitybusRoutelistService.instance.delete();
-        await const CitybusRouteNameService().clearCache();
         return;
       }
       if (await CitybusRoutelistService.instance.isDownloaded) return;
