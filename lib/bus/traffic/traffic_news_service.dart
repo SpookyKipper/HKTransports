@@ -14,15 +14,23 @@ final Uri _trafficNewsUriv2 = Uri.parse(
 Future<List<TrafficNewsItem>> getTrafficNews() async {
   final List<TrafficNewsItem> v2NewsItems = await _getNewsV2();
   final List<TrafficNewsItem> v1NewsItems = await _getNewsV1();
+  return mergeTrafficNews(v2NewsItems, v1NewsItems);
+}
 
-  if (v1NewsItems.isNotEmpty && v2NewsItems.isNotEmpty) {
-    final List<String> firstDescription = v2NewsItems.first.description;
-    final List<String> lastDescription = v1NewsItems.first.description;
-    if (_sameText(lastDescription, firstDescription)) {
-      v1NewsItems.removeAt(0);
+List<TrafficNewsItem> mergeTrafficNews(
+  List<TrafficNewsItem> current,
+  List<TrafficNewsItem> legacy,
+) {
+  final List<TrafficNewsItem> result = <TrafficNewsItem>[...current];
+  for (final TrafficNewsItem item in legacy) {
+    if (result.any(
+      (TrafficNewsItem existing) => _sameNewsContent(item, existing),
+    )) {
+      continue;
     }
+    result.add(item);
   }
-  return <TrafficNewsItem>[...v2NewsItems, ...v1NewsItems];
+  return result;
 }
 
 Future<List<TrafficNewsItem>> _getNewsV1() async {
@@ -92,13 +100,20 @@ String _formatDate(String value) {
   return date == null ? '' : DateFormat('HH:mm').format(date);
 }
 
-bool _sameText(List<String> a, List<String> b) {
-  String normalize(String value) {
-    return value.replaceAll(' ', '').replaceAll(RegExp(r'\n|\r'), '');
+bool _sameNewsContent(TrafficNewsItem a, TrafficNewsItem b) {
+  final Set<String> left = a.description
+      .map(_normaliseNewsText)
+      .where((String value) => value.isNotEmpty)
+      .toSet();
+  if (left.isEmpty) return false;
+  for (final String right in b.description.map(_normaliseNewsText)) {
+    if (right.isNotEmpty && left.contains(right)) return true;
   }
+  return false;
+}
 
-  return normalize(a[0]) == normalize(b[0]) ||
-      normalize(a[1]) == normalize(b[1]);
+String _normaliseNewsText(String value) {
+  return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9\u4e00-\u9fff]+'), '');
 }
 
 class TrafficNewsItem {
