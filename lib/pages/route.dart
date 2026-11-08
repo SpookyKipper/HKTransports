@@ -22,7 +22,6 @@ import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:hktransports/bus/ui/route_map.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
-import 'package:hktransports/bus/ui/route_special_tag.dart';
 import 'package:hktransports/bus/ui/timetable_sheet.dart';
 import 'package:hktransports/location/location_controller.dart';
 import 'package:intl/intl.dart';
@@ -358,7 +357,7 @@ class _RoutePageState extends State<_RoutePage> {
         titleTrailing: _RouteTitleMeta(
           company: route.companiesLabel(settings.language),
           special: route.isSpecial
-              ? RouteSpecialTag(label: settings.text('特別班', 'Special'))
+              ? _RouteSpecialTag(label: settings.text('特別班', 'Special'))
               : null,
         ),
         subtitleWidget: CitybusRouteNameSubtitle(
@@ -763,6 +762,38 @@ class _RouteTitleMeta extends StatelessWidget {
         if (company.isNotEmpty && special != null) const SizedBox(width: 8),
         ?special,
       ],
+    );
+  }
+}
+
+class _RouteSpecialTag extends StatelessWidget {
+  const _RouteSpecialTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 180),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: scheme.onPrimaryContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
