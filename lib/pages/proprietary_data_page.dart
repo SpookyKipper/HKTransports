@@ -212,7 +212,12 @@ class _CitybusDownloadDialogState extends State<_CitybusDownloadDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          LinearProgressIndicator(value: _progress),
+          M3EProgressIndicator.linearWavy(
+            value: _progress,
+            linearSize: M3EProgressIndicatorSize.m,
+            strokeWidth: 4,
+            trackStrokeWidth: 4,
+          ),
           const SizedBox(height: 12),
           Text(
             _finished

@@ -565,7 +565,12 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                       ),
                     if (_refreshingCitybus) ...[
                       const SizedBox(height: 12),
-                      LinearProgressIndicator(value: _citybusProgress),
+                      M3EProgressIndicator.linearWavy(
+                        value: _citybusProgress,
+                        linearSize: M3EProgressIndicatorSize.m,
+                        strokeWidth: 4,
+                        trackStrokeWidth: 4,
+                      ),
                       const SizedBox(height: 6),
                       Text(
                         _citybusProgress == null
