@@ -50,6 +50,14 @@ void main() {
       }
     });
 
+    test('keeps KMB for SP special routes', () {
+      for (final String number in <String>['SP1', 'SP10', 'SP5A']) {
+        final RouteEntry value = route(number, const [BusCompany.kmb]);
+        expect(value.companiesLabel('zh'), '九巴');
+        expect(value.companiesLabel('en'), 'KMB');
+      }
+    });
+
     test('shows LWB for the listed KMB night routes', () {
       for (final String number in <String>[
         'N30',

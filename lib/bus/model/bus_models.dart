@@ -316,6 +316,7 @@ class RouteEntry {
   }
 
   bool _isLongWinRoute(String routeNumber) {
+    if (routeNumber.startsWith('SP')) return false;
     if (routeNumber.startsWith('A') ||
         routeNumber.startsWith('NA') ||
         routeNumber.startsWith('E') ||
