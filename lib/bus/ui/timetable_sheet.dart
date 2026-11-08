@@ -349,7 +349,7 @@ class _RemarksTabState extends State<_RemarksTab> {
     if (!settings.isProprietaryEnabled(ProprietaryDataSource.citybus)) {
       return null;
     }
-    return _service.fetchRemarks(widget.route.route, zh: settings.isChinese);
+    return _service.fetchRemarks(widget.route, zh: settings.isChinese);
   }
 
   void _retry() {
