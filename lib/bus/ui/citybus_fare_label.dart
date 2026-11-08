@@ -68,6 +68,14 @@ class _CitybusFareLabelState extends State<CitybusFareLabel> {
           (BuildContext context, AsyncSnapshot<CitybusStopData?> snapshot) {
             final double? fare = snapshot.data?.adultFare;
             if (fare == null) return _buildFallback(context);
+            if (fare == 0) {
+              return Text(
+                settings.text('只供落客', 'Alighting only'),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              );
+            }
             return Text(
               '${settings.text('車費', 'Fare')} \$${formatCitybusFare(fare)}',
               style: Theme.of(context).textTheme.bodySmall,
