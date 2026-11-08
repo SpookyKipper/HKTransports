@@ -22,7 +22,6 @@ import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:hktransports/bus/ui/route_map.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
-import 'package:hktransports/bus/ui/route_special_tag.dart';
 import 'package:hktransports/bus/ui/timetable_sheet.dart';
 import 'package:hktransports/location/location_controller.dart';
 import 'package:intl/intl.dart';
@@ -357,9 +356,6 @@ class _RoutePageState extends State<_RoutePage> {
         title: route.route,
         titleTrailing: _RouteTitleMeta(
           company: route.companiesLabel(settings.language),
-          special: route.isSpecial
-              ? RouteSpecialTag(label: settings.text('特別班', 'Special'))
-              : null,
         ),
         subtitleWidget: CitybusRouteNameSubtitle(
           route: route,
@@ -736,34 +732,24 @@ class _RoutePageState extends State<_RoutePage> {
 }
 
 class _RouteTitleMeta extends StatelessWidget {
-  const _RouteTitleMeta({required this.company, this.special});
+  const _RouteTitleMeta({required this.company});
 
   final String company;
-  final Widget? special;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (company.isNotEmpty)
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 140),
-            child: Text(
-              company,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        if (special != null)
-          Padding(padding: const EdgeInsets.only(top: 2), child: special!),
-      ],
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 140),
+      child: Text(
+        company,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 }
