@@ -38,13 +38,12 @@ class CitybusRouteData {
   final String? variantDescription;
 
   String? get specialDescription {
-    for (final String? value in <String?>[routingRemark, variantDescription]) {
-      final String description = value?.trim() ?? '';
-      if (description.isEmpty) continue;
-      if (isNormalCitybusRouteDescription(description)) continue;
-      return description;
+    final String? variant = _nonNormalDescription(variantDescription);
+    if (variant != null) {
+      final String? derived = _descriptionWithoutRouteName(variant, routeName);
+      if (derived != null) return derived;
     }
-    return null;
+    return _nonNormalDescription(routingRemark);
   }
 
   CitybusStopData? stopById(String stopId, {int? occurrence}) {
@@ -58,6 +57,35 @@ class CitybusRouteData {
     }
     return found;
   }
+}
+
+String? _nonNormalDescription(String? value) {
+  final String description = value?.trim() ?? '';
+  if (description.isEmpty) return null;
+  if (isNormalCitybusRouteDescription(description)) return null;
+  return description;
+}
+
+/// Removes a leading phrase that duplicates the route name. If the remaining
+/// part is parenthesised, only the parenthetical note is returned.
+String? _descriptionWithoutRouteName(String description, String? routeName) {
+  final String route = routeName?.trim() ?? '';
+  if (route.isEmpty) return description;
+
+  final RegExpMatch? openMatch = RegExp(r'[\(（]').firstMatch(description);
+  if (openMatch != null) {
+    final String prefix = description.substring(0, openMatch.start).trim();
+    if (prefix.isNotEmpty && route.contains(prefix)) {
+      final int close = description.indexOf(RegExp(r'[\)）]'), openMatch.end);
+      if (close > openMatch.end) {
+        final String note = description.substring(openMatch.end, close).trim();
+        if (note.isNotEmpty) return note;
+      }
+      return null;
+    }
+  }
+  if (route.contains(description)) return null;
+  return description;
 }
 
 bool isNormalCitybusRouteDescription(String value) {
