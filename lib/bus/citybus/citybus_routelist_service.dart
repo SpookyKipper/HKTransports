@@ -138,6 +138,12 @@ class CitybusRoutelistService {
         );
         final File pending = File('${directory.path}/routelist$locale.db.new');
         await pending.writeAsBytes(database, flush: true);
+        final Database prepared = sqlite3.open(pending.path);
+        try {
+          prepareCitybusRoutelistDatabase(prepared);
+        } finally {
+          prepared.close();
+        }
         pendingDatabases[locale] = pending;
       }
 
