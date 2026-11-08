@@ -15,6 +15,7 @@ import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
+import 'package:hktransports/bus/ui/citybus_fare_label.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
@@ -538,16 +539,15 @@ class _RoutePageState extends State<_RoutePage> {
                               ),
                         ),
                       ),
-                    if (fare != null)
-                      Text(
-                        '${settings.text('車費', 'Fare')} \$$fare',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      )
-                    else if (normalFare != null)
-                      Text(
-                        '${settings.text('車費', 'Fare')} \$$normalFare',
-                        style: Theme.of(context).textTheme.bodySmall,
+                    CitybusFareLabel(
+                      route: route,
+                      stopIndex: index,
+                      language: settings.language,
+                      enabled: settings.isProprietaryEnabled(
+                        ProprietaryDataSource.citybus,
                       ),
+                      fallbackFare: fare ?? normalFare,
+                    ),
                     if (code != null)
                       Text(
                         '${settings.text('站碼', 'Code')} $code',
