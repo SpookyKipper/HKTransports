@@ -16,6 +16,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
+import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:hktransports/bus/ui/route_map.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
@@ -563,6 +564,15 @@ class _RoutePageState extends State<_RoutePage> {
                       ),
                   ],
                 ),
+                if (expanded)
+                  CitybusStopLandmark(
+                    route: route,
+                    stopIndex: index,
+                    language: settings.language,
+                    enabled: settings.isProprietaryEnabled(
+                      ProprietaryDataSource.citybus,
+                    ),
+                  ),
               ],
             ),
           ),
