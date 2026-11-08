@@ -8,6 +8,7 @@ import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
+import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:intl/intl.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -246,6 +247,21 @@ class _PinnedChip extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelLarge,
                 ),
+                if (item.route.companies.contains(BusCompany.ctb) &&
+                    settings.isProprietaryEnabled(
+                      ProprietaryDataSource.citybus,
+                    ))
+                  CitybusRouteNameSubtitle(
+                    route: item.route,
+                    language: settings.language,
+                    enabled: true,
+                    text: '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 Text(
                   _etaLabel(item.eta, settings),
                   maxLines: 1,

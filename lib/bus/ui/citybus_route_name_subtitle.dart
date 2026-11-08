@@ -86,6 +86,7 @@ class _CitybusRouteNameSubtitleState extends State<CitybusRouteNameSubtitle> {
   }
 
   Widget _buildText(String text) {
+    if (text.isEmpty) return const SizedBox.shrink();
     return _RouteSubtitleText(
       text: text,
       style: widget.style,
