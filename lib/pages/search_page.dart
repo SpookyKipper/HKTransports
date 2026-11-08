@@ -104,8 +104,12 @@ class _SearchPageState extends State<SearchPage> {
                             if (route.isSpecial)
                               Padding(
                                 padding: const EdgeInsets.only(top: 2),
-                                child: RouteSpecialTag(
-                                  label: settings.text('特別班', 'Special'),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: RouteSpecialTag(
+                                    label: settings.text('特別班', 'Special'),
+                                  ),
                                 ),
                               ),
                           ],
