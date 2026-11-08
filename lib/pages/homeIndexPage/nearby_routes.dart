@@ -9,6 +9,7 @@ import 'package:hktransports/bus/data/nearby_routes.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
+import 'package:hktransports/bus/ui/company_logos.dart';
 import 'package:hktransports/bus/ui/route_eta_view.dart';
 import 'package:hktransports/bus/ui/route_special_tag.dart';
 import 'package:hktransports/location/location_controller.dart';
@@ -479,18 +480,22 @@ class _NearbyRouteTile extends StatelessWidget {
                     route.route,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  Text(
-                    route.companiesLabel(settings.language),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize:
-                          (Theme.of(context).textTheme.bodySmall?.fontSize ??
-                              12) -
-                          1,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      height: 1.1,
-                    ),
+                  CompanyLogos(
+                    route: route,
+                    language: settings.language,
+                    height: 18,
+                    maxWidth: 80,
+                    fallbackStyle: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(
+                          fontSize:
+                              (Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.fontSize ??
+                                  12) -
+                              1,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.1,
+                        ),
                   ),
                   if (route.isSpecial)
                     Padding(

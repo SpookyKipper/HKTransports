@@ -17,6 +17,7 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
 import 'package:hktransports/bus/ui/citybus_fare_label.dart';
 import 'package:hktransports/bus/ui/citybus_route_description.dart';
+import 'package:hktransports/bus/ui/company_logos.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
@@ -355,7 +356,8 @@ class _RoutePageState extends State<_RoutePage> {
         context,
         title: route.route,
         titleTrailing: _RouteTitleMeta(
-          company: route.companiesLabel(settings.language),
+          route: route,
+          language: settings.language,
           special: route.isSpecial
               ? _RouteSpecialTag(label: settings.text('特別班', 'Special'))
               : null,
@@ -735,9 +737,14 @@ class _RoutePageState extends State<_RoutePage> {
 }
 
 class _RouteTitleMeta extends StatelessWidget {
-  const _RouteTitleMeta({required this.company, this.special});
+  const _RouteTitleMeta({
+    required this.route,
+    required this.language,
+    this.special,
+  });
 
-  final String company;
+  final RouteEntry route;
+  final String language;
   final Widget? special;
 
   @override
@@ -746,20 +753,17 @@ class _RouteTitleMeta extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (company.isNotEmpty)
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 140),
-            child: Text(
-              company,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+        CompanyLogos(
+          route: route,
+          language: language,
+          height: 22,
+          maxWidth: 140,
+          fallbackStyle: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
           ),
-        if (company.isNotEmpty && special != null) const SizedBox(width: 8),
+        ),
+        if (special != null) const SizedBox(width: 8),
         ?special,
       ],
     );

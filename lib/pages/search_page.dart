@@ -4,6 +4,7 @@ import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/citybus_route_description.dart';
+import 'package:hktransports/bus/ui/company_logos.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/route_special_tag.dart';
 import 'package:hktransports/bus/ui/route_number_pad.dart';
@@ -103,11 +104,14 @@ class _SearchPageState extends State<SearchPage> {
                                       context,
                                     ).textTheme.titleLarge,
                                   ),
-                                  Text(
-                                    route.companiesLabel(settings.language),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodySmall
+                                  CompanyLogos(
+                                    route: route,
+                                    language: settings.language,
+                                    height: 18,
+                                    maxWidth: 80,
+                                    fallbackStyle: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
                                         ?.copyWith(
                                           color: Theme.of(
                                             context,
