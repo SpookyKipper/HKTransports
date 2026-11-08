@@ -10,6 +10,7 @@ import 'package:hktransports/app/app_transition_page.dart';
 import 'package:hktransports/app/fade_forward_page.dart';
 import 'package:hktransports/app/m3e_scope.dart';
 import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
+import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -177,7 +178,23 @@ void main() async {
   if (!settings.isProprietaryEnabled(ProprietaryDataSource.kmb)) {
     await const BbiService().clearCache();
   }
-  if (!settings.isProprietaryEnabled(ProprietaryDataSource.citybus)) {
+  final bool citybusEnabled = settings.isProprietaryEnabled(
+    ProprietaryDataSource.citybus,
+  );
+  if (citybusEnabled) {
+    unawaited(
+      CitybusRoutelistService.instance.ensureDownloaded().catchError((
+        Object error,
+      ) {
+        debugPrint('Unable to download Citybus routelist: $error');
+      }),
+    );
+  } else {
+    unawaited(
+      CitybusRoutelistService.instance.delete().catchError((Object error) {
+        debugPrint('Unable to delete Citybus routelist: $error');
+      }),
+    );
     await const CitybusRouteNameService().clearCache();
   }
   final BusRepository repository = BusRepository(settings);

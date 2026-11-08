@@ -30,8 +30,8 @@ extension ProprietaryDataSourceInfo on ProprietaryDataSource {
         );
       case ProprietaryDataSource.citybus:
         return settings.text(
-          '特別、路線及站務通告，以及轉乘優惠',
-          'Special, route and stop notices, and transfer discounts',
+          '特別、路線及站務通告、轉乘優惠、路線名稱、車站地標及車費',
+          'Special, route and stop notices, transfer discounts, route names, stop landmarks, and fares',
         );
     }
   }
