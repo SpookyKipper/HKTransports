@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
+import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
@@ -35,12 +37,12 @@ class CitybusRemarksService {
   static const Duration _timeout = Duration(seconds: 20);
 
   Future<List<CitybusRemarkLine>?> fetchRemarks(
-    String routeNumber, {
+    RouteEntry route, {
     required bool zh,
   }) async {
-    final String route = routeNumber.trim().toUpperCase();
-    if (route.isEmpty) return null;
-    final List<String> infoKeys = await _fetchInfoKeys(route);
+    if (route.route.trim().isEmpty) return null;
+    final List<String> infoKeys = await CitybusRoutelistService.instance
+        .remarkInfoKeys(route);
     if (infoKeys.isEmpty) return null;
 
     Object? lastError;
@@ -76,45 +78,6 @@ class CitybusRemarksService {
     if (!anySuccess && lastError != null) throw lastError;
     return null;
   }
-
-  Future<List<String>> _fetchInfoKeys(String routeNumber) async {
-    final Uri uri = Uri.https(
-      'www.citybus.com.hk',
-      '/concessionApi/public/bbi/api/v1/route/en/$routeNumber',
-    );
-    final http.Response response = await http
-        .get(uri, headers: const <String, String>{'User-Agent': 'Mozilla/5.0'})
-        .timeout(_timeout);
-    if (response.statusCode != 200) return const [];
-    final dynamic decoded = jsonDecode(utf8.decode(response.bodyBytes));
-    if (decoded is! Map || decoded.isEmpty) return const [];
-    return citybusRemarkInfoKeys(
-      decoded.keys.map((dynamic key) => key.toString()),
-    );
-  }
-}
-
-/// Returns one remark lookup key per terminus, ignoring the B/F direction
-/// segment because it is removed before the remarks request is made.
-List<String> citybusRemarkInfoKeys(Iterable<String> concessionKeys) {
-  final List<String> result = <String>[];
-  final Set<String> termini = <String>{};
-  final Set<String> seen = <String>{};
-  for (final String concessionKey in concessionKeys) {
-    final List<String> parts = concessionKey.split('-');
-    if (parts.length < 4) continue;
-    final String terminus = parts[2];
-    if (!termini.add(terminus)) continue;
-    final String infoKey = '${parts[0]}-$terminus-${parts[3]}';
-    if (seen.add(infoKey)) result.add(infoKey);
-  }
-  return result;
-}
-
-String? citybusRemarkInfoKey(String concessionKey) {
-  final List<String> parts = concessionKey.split('-');
-  if (parts.length < 4) return null;
-  return '${parts[0]}-${parts[2]}-${parts[3]}';
 }
 
 List<CitybusRemarkLine>? parseCitybusRemarks(String source) {
@@ -171,7 +134,9 @@ CitybusRemarkLine _styleSpecialLine(CitybusRemarkLine line) {
   if (text.contains('路線備註') || lower.contains('routing remark')) {
     return CitybusRemarkLine(<CitybusRemarkRun>[
       CitybusRemarkRun(
-        text: text.contains('路線備註') ? '=== 以下備註由城巴提供 ===\n路線備註' : '=== Remarks here are from Citybus ===\nRouting Remark',
+        text: text.contains('路線備註')
+            ? '=== 以下備註由城巴提供 ===\n路線備註'
+            : '=== Remarks here are from Citybus ===\nRouting Remark',
         bold: true,
       ),
     ]);
