@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:hktransports/bus/data/bus_data_updater.dart';
+import 'package:hktransports/bus/data/network_policy.dart';
 import 'package:hktransports/bus/data/route_search.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
@@ -146,6 +147,9 @@ class BusRepository extends ChangeNotifier {
   Future<void> ensureDataAvailable() async {
     if (_status == BusDataStatus.updating) return;
     if (_database == null || updater.isCompletelyOutdated) {
+      if (!await AutoUpdateNetworkPolicy.allows(settings.autoUpdateNetwork)) {
+        return;
+      }
       final bool updated = await update();
       if (updated) await const BbiService().clearCache();
     }
@@ -155,6 +159,9 @@ class BusRepository extends ChangeNotifier {
     if (_database == null) return;
     if (!settings.autoRenew) return;
     if (_checking) return;
+    if (!await AutoUpdateNetworkPolicy.allows(settings.autoUpdateNetwork)) {
+      return;
+    }
     if (!await updater.shouldAutoCheck(settings.autoUpdateHours)) return;
     _checking = true;
     try {

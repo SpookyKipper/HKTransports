@@ -32,6 +32,7 @@ dependencies:
   xml: ^7.1.0
   archive: ^4.6.0
   sqlite3: ^3.9.0
+  connectivity_plus: ^7.3.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

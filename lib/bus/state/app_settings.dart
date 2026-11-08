@@ -3,6 +3,20 @@ import 'package:hktransports/dataStore/objectbox.dart';
 
 enum EtaFormat { diff, exact, mixed }
 
+enum AutoUpdateNetwork { wifiOnly, wifiOrMobile }
+
+extension AutoUpdateNetworkInfo on AutoUpdateNetwork {
+  String label(String language) {
+    final bool zh = language != 'en';
+    switch (this) {
+      case AutoUpdateNetwork.wifiOnly:
+        return zh ? '僅 Wi-Fi' : 'Wi-Fi only';
+      case AutoUpdateNetwork.wifiOrMobile:
+        return zh ? 'Wi-Fi 或流動數據' : 'Wi-Fi or mobile data';
+    }
+  }
+}
+
 enum ProprietaryDataSource { notice, kmb, citybus }
 
 extension ProprietaryDataSourceInfo on ProprietaryDataSource {
@@ -122,6 +136,7 @@ class AppSettings extends ChangeNotifier {
   bool _dimMapInDarkMode = true;
   bool _autoRenew = true;
   int _autoUpdateHours = 24;
+  AutoUpdateNetwork _autoUpdateNetwork = AutoUpdateNetwork.wifiOrMobile;
   bool _locationEnabled = false;
   int _nearbyRadiusMeters = 200;
   String? _lastHomeTabId;
@@ -141,6 +156,7 @@ class AppSettings extends ChangeNotifier {
   bool get dimMapInDarkMode => _dimMapInDarkMode;
   bool get autoRenew => _autoRenew;
   int get autoUpdateHours => _autoUpdateHours;
+  AutoUpdateNetwork get autoUpdateNetwork => _autoUpdateNetwork;
   bool get locationEnabled => _locationEnabled;
   int get nearbyRadiusMeters => _nearbyRadiusMeters;
   String? get lastHomeTabId => _lastHomeTabId;
@@ -185,6 +201,13 @@ class AppSettings extends ChangeNotifier {
     _dimMapInDarkMode = sp.getBool('dimMapInDarkMode') ?? true;
     _autoRenew = sp.getBool('autoRenew') ?? true;
     _autoUpdateHours = (sp.getInt('autoUpdateHours') ?? 24).clamp(1, 168);
+    final String storedNetwork =
+        sp.getString('autoUpdateNetwork') ??
+        AutoUpdateNetwork.wifiOrMobile.name;
+    _autoUpdateNetwork = AutoUpdateNetwork.values.firstWhere(
+      (AutoUpdateNetwork value) => value.name == storedNetwork,
+      orElse: () => AutoUpdateNetwork.wifiOrMobile,
+    );
     _locationEnabled = sp.getBool('locationEnabled') ?? false;
     _nearbyRadiusMeters = (sp.getInt('nearbyRadiusMeters') ?? 200).clamp(
       20,
@@ -270,6 +293,13 @@ class AppSettings extends ChangeNotifier {
     if (_autoUpdateHours == next) return;
     _autoUpdateHours = next;
     sp.setInt('autoUpdateHours', next);
+    notifyListeners();
+  }
+
+  void setAutoUpdateNetwork(AutoUpdateNetwork network) {
+    if (_autoUpdateNetwork == network) return;
+    _autoUpdateNetwork = network;
+    sp.setString('autoUpdateNetwork', network.name);
     notifyListeners();
   }
 

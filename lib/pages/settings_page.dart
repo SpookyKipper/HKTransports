@@ -169,6 +169,24 @@ class SettingsPage extends StatelessWidget {
             ],
             onChanged: settings.setAutoUpdateHours,
           ),
+          _DropdownSetting<AutoUpdateNetwork>(
+            icon: Icons.wifi,
+            title: settings.text('自動更新網絡', 'Auto-update network'),
+            value: settings.autoUpdateNetwork,
+            enabled: settings.autoRenew,
+            caption: settings.text(
+              '僅套用於自動更新',
+              'Only applies to automatic updates',
+            ),
+            items: [
+              for (final AutoUpdateNetwork network in AutoUpdateNetwork.values)
+                M3EDropdownItem(
+                  label: network.label(settings.language),
+                  value: network,
+                ),
+            ],
+            onChanged: settings.setAutoUpdateNetwork,
+          ),
           ListTile(
             leading: const Icon(Icons.hub_outlined),
             title: Text(settings.text('專有資料', 'Proprietary data')),
