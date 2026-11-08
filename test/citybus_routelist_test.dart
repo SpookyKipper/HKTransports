@@ -209,8 +209,24 @@ void main() {
       routingRemark: '經國泰城',
       variantDescription: '晨早特別班次，經國泰城',
     );
+    const CitybusRouteData h1Holiday = CitybusRouteData(
+      routeIndex: 3,
+      stops: <CitybusStopData>[],
+      routeName: '開篷巴士 觀光城巴-懷舊之旅',
+      routingRemark: '假日經銅鑼灣',
+      variantDescription: '懷舊之旅 (星期日及假日不經遮打道)',
+    );
+    const CitybusRouteData h1Weekday = CitybusRouteData(
+      routeIndex: 4,
+      stops: <CitybusStopData>[],
+      routeName: '開篷巴士 觀光城巴-懷舊之旅',
+      routingRemark: '平日經銅鑼灣',
+      variantDescription: '懷舊之旅',
+    );
     expect(normal.specialDescription, isNull);
-    expect(special.specialDescription, '經國泰城');
+    expect(special.specialDescription, '晨早特別班次，經國泰城');
+    expect(h1Holiday.specialDescription, '星期日及假日不經遮打道');
+    expect(h1Weekday.specialDescription, '平日經銅鑼灣');
   });
 
   test('prepares indexes before the database is stored', () {
