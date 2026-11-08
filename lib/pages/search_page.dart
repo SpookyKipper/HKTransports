@@ -78,96 +78,126 @@ class _SearchPageState extends State<SearchPage> {
                       const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final RouteEntry route = results[index];
-                    return ListTile(
-                      leading: SizedBox(
-                        width: 80,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              route.route,
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            Text(
-                              route.companiesLabel(settings.language),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                                    height: 1.1,
-                                  ),
-                            ),
-                            if (route.isSpecial)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.centerLeft,
-                                  child: RouteSpecialTag(
-                                    label: settings.text('特別班', 'Special'),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      title: Text(
-                        '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CitybusRouteNameSubtitle(
-                            key: ValueKey<String>(
-                              '${route.key}|${settings.language}|'
-                              '${settings.isProprietaryEnabled(ProprietaryDataSource.citybus)}',
-                            ),
-                            route: route,
-                            text: route.orig.get(settings.language),
-                            language: settings.language,
-                            enabled: settings.isProprietaryEnabled(
-                              ProprietaryDataSource.citybus,
-                            ),
-                          ),
-                          CitybusRouteDescription(
-                            route: route,
-                            language: settings.language,
-                            enabled: settings.isProprietaryEnabled(
-                              ProprietaryDataSource.citybus,
-                            ),
-                            fallback: '',
-                            builder: (BuildContext context, String label) {
-                              if (label.isEmpty) {
-                                return const SizedBox.shrink();
-                              }
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: Text(
-                                  label,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
+                    return InkWell(
                       onTap: () {
                         repository.addRecent(route);
                         context.push('/route/${route.slug}');
                       },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 80,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    route.route,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge,
+                                  ),
+                                  Text(
+                                    route.companiesLabel(settings.language),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                          height: 1.1,
+                                        ),
+                                  ),
+                                  if (route.isSpecial)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: RouteSpecialTag(
+                                          label: settings.text(
+                                            '特別班',
+                                            'Special',
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+                                  ),
+                                  CitybusRouteNameSubtitle(
+                                    key: ValueKey<String>(
+                                      '${route.key}|${settings.language}|'
+                                      '${settings.isProprietaryEnabled(ProprietaryDataSource.citybus)}',
+                                    ),
+                                    route: route,
+                                    text: route.orig.get(settings.language),
+                                    language: settings.language,
+                                    enabled: settings.isProprietaryEnabled(
+                                      ProprietaryDataSource.citybus,
+                                    ),
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                  CitybusRouteDescription(
+                                    route: route,
+                                    language: settings.language,
+                                    enabled: settings.isProprietaryEnabled(
+                                      ProprietaryDataSource.citybus,
+                                    ),
+                                    fallback: '',
+                                    builder:
+                                        (BuildContext context, String label) {
+                                          if (label.isEmpty) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 2,
+                                            ),
+                                            child: Text(
+                                              label,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.primary,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   },
                 ),
