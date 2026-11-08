@@ -5,6 +5,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/citybus_route_description.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
+import 'package:hktransports/bus/ui/route_special_tag.dart';
 import 'package:hktransports/bus/ui/route_number_pad.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -100,6 +101,13 @@ class _SearchPageState extends State<SearchPage> {
                                     height: 1.1,
                                   ),
                             ),
+                            if (route.isSpecial)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: RouteSpecialTag(
+                                  label: settings.text('特別班', 'Special'),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -152,17 +160,6 @@ class _SearchPageState extends State<SearchPage> {
                           ),
                         ],
                       ),
-                      trailing: route.isSpecial
-                          ? Text(
-                              settings.text('特別班', 'Special'),
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                  ),
-                            )
-                          : null,
                       onTap: () {
                         repository.addRecent(route);
                         context.push('/route/${route.slug}');
