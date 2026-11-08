@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
+import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -82,6 +85,7 @@ class ProprietaryDataPage extends StatelessWidget {
               final ProprietaryDataSource source =
                   ProprietaryDataSource.values[index];
               _setProprietarySource(
+                context,
                 settings,
                 source,
                 !settings.isProprietaryEnabled(source),
@@ -100,7 +104,12 @@ class ProprietaryDataPage extends StatelessWidget {
                       value: enabled,
                       onChanged: (bool? value) {
                         if (value != null) {
-                          _setProprietarySource(settings, source, value);
+                          _setProprietarySource(
+                            context,
+                            settings,
+                            source,
+                            value,
+                          );
                         }
                       },
                       focusable: false,
@@ -117,6 +126,7 @@ class ProprietaryDataPage extends StatelessWidget {
   }
 
   Future<void> _setProprietarySource(
+    BuildContext context,
     AppSettings settings,
     ProprietaryDataSource source,
     bool value,
@@ -125,8 +135,97 @@ class ProprietaryDataPage extends StatelessWidget {
     if (!value && source == ProprietaryDataSource.kmb) {
       await const BbiService().clearCache();
     }
-    if (!value && source == ProprietaryDataSource.citybus) {
-      await const CitybusRouteNameService().clearCache();
+    if (source == ProprietaryDataSource.citybus) {
+      if (!value) {
+        await CitybusRoutelistService.instance.delete();
+        await const CitybusRouteNameService().clearCache();
+        return;
+      }
+      if (await CitybusRoutelistService.instance.isDownloaded) return;
+      if (!context.mounted) return;
+      final bool? downloaded = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) => const _CitybusDownloadDialog(),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            downloaded == true
+                ? settings.text(
+                    '城巴專有路線資料已下載',
+                    'Citybus proprietary route data downloaded',
+                  )
+                : settings.text(
+                    '城巴專有路線資料下載失敗，可在「更新資料」重試',
+                    'Citybus proprietary data download failed. Retry in Update data.',
+                  ),
+          ),
+        ),
+      );
     }
+  }
+}
+
+class _CitybusDownloadDialog extends StatefulWidget {
+  const _CitybusDownloadDialog();
+
+  @override
+  State<_CitybusDownloadDialog> createState() => _CitybusDownloadDialogState();
+}
+
+class _CitybusDownloadDialogState extends State<_CitybusDownloadDialog> {
+  double? _progress;
+  bool _finished = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _download();
+  }
+
+  Future<void> _download() async {
+    bool success = false;
+    try {
+      await CitybusRoutelistService.instance.ensureDownloaded(
+        force: true,
+        onProgress: (double? progress) {
+          if (!mounted) return;
+          setState(() => _progress = progress);
+        },
+      );
+      success = true;
+    } catch (_) {
+      success = false;
+    }
+    if (!mounted) return;
+    setState(() => _finished = true);
+    Navigator.of(context).pop(success);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final int percent = ((_progress ?? 0) * 100).round().clamp(0, 100);
+    return AlertDialog(
+      title: Text(settings.text('下載城巴專有資料', 'Downloading Citybus data')),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LinearProgressIndicator(value: _progress),
+          const SizedBox(height: 12),
+          Text(
+            _finished
+                ? settings.text('完成', 'Finished')
+                : _progress == null
+                ? settings.text('正在連線…', 'Connecting…')
+                : '$percent%',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 }

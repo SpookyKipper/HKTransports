@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
+import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -22,6 +23,11 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
   int? _routeBytes;
   int? _kmbBytes;
   DateTime? _kmbUpdatedAt;
+  int? _citybusBytes;
+  DateTime? _citybusUpdatedAt;
+  bool _refreshingCitybus = false;
+  double? _citybusProgress;
+  String? _citybusError;
 
   @override
   void initState() {
@@ -35,11 +41,16 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     final BbiService bbi = const BbiService();
     final int kmbBytes = await bbi.storedBytes();
     final DateTime? kmbUpdatedAt = await bbi.storedUpdatedAt();
+    final CitybusRoutelistService citybus = CitybusRoutelistService.instance;
+    final int citybusBytes = await citybus.storedBytes();
+    final DateTime? citybusUpdatedAt = citybus.storedUpdatedAt;
     if (!mounted) return;
     setState(() {
       _routeBytes = routeBytes;
       _kmbBytes = kmbBytes;
       _kmbUpdatedAt = kmbUpdatedAt;
+      _citybusBytes = citybusBytes;
+      _citybusUpdatedAt = citybusUpdatedAt;
     });
   }
 
@@ -150,7 +161,9 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(settings.text('刪除九巴/龍運轉乘資料', 'Delete KMB/LWB interchange data')),
+          title: Text(
+            settings.text('刪除九巴/龍運轉乘資料', 'Delete KMB/LWB interchange data'),
+          ),
           content: Text(
             settings.text(
               '這些是非必要資料，下次使用時會重新下載。',
@@ -175,6 +188,72 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     await _loadSizes();
     if (!mounted) return;
     _showMessage(settings.text('九巴轉乘資料已刪除', 'KMB interchange data deleted'));
+  }
+
+  Future<void> _downloadCitybus({required bool force}) async {
+    final AppSettings settings = context.read<AppSettings>();
+    setState(() {
+      _refreshingCitybus = true;
+      _citybusProgress = null;
+      _citybusError = null;
+    });
+    try {
+      await CitybusRoutelistService.instance.ensureDownloaded(
+        force: force,
+        onProgress: (double? progress) {
+          if (!mounted) return;
+          setState(() => _citybusProgress = progress);
+        },
+      );
+      await _loadSizes();
+      if (!mounted) return;
+      _showMessage(
+        settings.text('城巴專有路線資料已更新', 'Citybus proprietary route data updated'),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _citybusError = error.toString());
+      _showMessage(settings.text('城巴專有資料下載失敗', 'Citybus data download failed'));
+    } finally {
+      if (mounted) setState(() => _refreshingCitybus = false);
+    }
+  }
+
+  Future<void> _deleteCitybus() async {
+    final AppSettings settings = context.read<AppSettings>();
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            settings.text('刪除城巴專有資料', 'Delete Citybus proprietary data'),
+          ),
+          content: Text(
+            settings.text(
+              '路線名稱、車站地標及車費數據會被刪除。你仍可保持城巴專有 API 啟用並重新下載。',
+              'Route names, stop landmarks and fare data will be deleted. You can keep the Citybus proprietary API enabled and download it again.',
+            ),
+          ),
+          actions: [
+            M3EButton.text(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(settings.text('取消', 'Cancel')),
+            ),
+            M3EButton.text(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(settings.text('刪除', 'Delete')),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) return;
+    await CitybusRoutelistService.instance.delete();
+    await _loadSizes();
+    if (!mounted) return;
+    _showMessage(
+      settings.text('城巴專有資料已刪除', 'Citybus proprietary data deleted'),
+    );
   }
 
   void _showMessage(String message) {
@@ -295,7 +374,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
     final bool routeBusy = repository.status == BusDataStatus.updating;
-    final bool busy = routeBusy || _refreshingBbi;
+    final bool busy = routeBusy || _refreshingBbi || _refreshingCitybus;
     final bool kmbEnabled = settings.isProprietaryEnabled(
       ProprietaryDataSource.kmb,
     );
@@ -454,6 +533,89 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
             ),
           ],
           if (citybusEnabled) ...[
+            const SizedBox(height: 16),
+            Card.filled(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      settings.text(
+                        '城巴專有路線資料',
+                        'Citybus proprietary route data',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      settings.text(
+                        '路線名稱、車站地標及車費',
+                        'Route names, stop landmarks and fares',
+                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _sizeText(context, settings, _citybusBytes, optional: true),
+                    if (_citybusUpdatedAt != null)
+                      Text(
+                        '${settings.text('上次更新', 'Last updated')}: '
+                        '${DateFormat('yyyy-MM-dd HH:mm').format(_citybusUpdatedAt!)}',
+                      ),
+                    if (_refreshingCitybus) ...[
+                      const SizedBox(height: 12),
+                      LinearProgressIndicator(value: _citybusProgress),
+                      const SizedBox(height: 6),
+                      Text(
+                        _citybusProgress == null
+                            ? settings.text('正在下載', 'Downloading')
+                            : '${(_citybusProgress! * 100).round()}%',
+                      ),
+                    ],
+                    if (_citybusError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _citybusError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        M3EButton.icon(
+                          onPressed: busy
+                              ? null
+                              : () => _downloadCitybus(force: true),
+                          icon: const Icon(Icons.sync),
+                          label: Text(
+                            (_citybusBytes ?? 0) > 0
+                                ? settings.text('更新城巴資料', 'Update Citybus data')
+                                : settings.text(
+                                    '下載城巴資料',
+                                    'Download Citybus data',
+                                  ),
+                          ),
+                        ),
+                        M3EButton.icon(
+                          style: M3EButtonStyle.text,
+                          onPressed: busy || (_citybusBytes ?? 0) == 0
+                              ? null
+                              : _deleteCitybus,
+                          icon: const Icon(Icons.delete_outline),
+                          label: Text(settings.text('刪除', 'Delete')),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             const _CitybusRouteNameCacheCard(),
           ],
