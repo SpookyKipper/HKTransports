@@ -92,6 +92,22 @@ void main() {
     database.execute(
       "INSERT INTO ROUTELIST VALUES ('792M', 'NLB||792M||N/A||1||Sai Kung||Tseung Kwan O||1||792M--Other||900||I||Other operator||N/A||Not used')",
     );
+    database.execute('''
+      INSERT INTO ROUTE VALUES (
+        'CTB', 'A28', 'I', 'LHP', 1, 'I',
+        'Airport', 'LOHAS Park', 'Y',
+        '0A28-LHP-1', 'A28-LHP-1', 'Normal Route', 'Normal Route', 200
+      )
+      ''');
+    database.execute(
+      "INSERT INTO ROUTESTOP VALUES ('CTB', 'A28', 200, 1, '001837', 44, 22, 22, NULL, 'LOHAS Park')",
+    );
+    database.execute(
+      "INSERT INTO ROUTESTOP VALUES ('CTB', 'A28', 200, 2, '003329', 0, 0, 0, NULL, 'LOHAS Park')",
+    );
+    database.execute(
+      "INSERT INTO ROUTELIST VALUES ('A28', 'CTB||A28||LHP||2||Airport||LOHAS Park||1||A28--LOHAS_Park||200||I||||A28-LHP-1||LOHAS Park')",
+    );
     reader = CitybusRoutelistReader(database);
   });
 
@@ -168,6 +184,18 @@ void main() {
     expect(reader.stopData(route, 1, 'en')?.landmark, 'Tseung Kwan O');
   });
 
+  test('uses the unpadded RDV identifier for A28 remarks', () {
+    final RouteEntry route = _route(
+      routeNumber: 'A28',
+      orig: const Terminal(en: 'Airport', zh: '機場'),
+      dest: const Terminal(en: 'LOHAS Park', zh: '日出康城'),
+      bound: 'I',
+      stops: <String>['001837', '003329'],
+    );
+
+    expect(reader.remarkInfoKeys(route), <String>['A28-LHP-1']);
+  });
+
   test('prepares indexes before the database is stored', () {
     prepareCitybusRoutelistDatabase(database);
     final ResultSet indexes = database.select(
@@ -198,15 +226,16 @@ void main() {
 }
 
 RouteEntry _route({
+  String routeNumber = '792M',
   required Terminal orig,
   required Terminal dest,
   required String bound,
   required List<String> stops,
 }) {
   return RouteEntry(
-    key: '792M+1+${orig.en}+${dest.en}',
-    slug: '792M-ctb',
-    route: '792M',
+    key: '$routeNumber+1+${orig.en}+${dest.en}',
+    slug: '$routeNumber-ctb',
+    route: routeNumber,
     serviceType: '1',
     companies: <BusCompany>[BusCompany.ctb],
     orig: orig,

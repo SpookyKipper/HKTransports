@@ -218,8 +218,8 @@ class CitybusRoutelistReader {
     final int routeIndex = _asInt(best.row['ROUTE_INDEX'])!;
     final String? routeName = _routeNameForIndex(route, language, routeIndex);
     final String? rdv = _firstText(<Object?>[
-      best.row['ROUTE_RDV'],
       best.row['RDV'],
+      _normaliseRdv(_text(best.row['ROUTE_RDV']), route.route),
     ]);
     return CitybusRouteData(
       routeIndex: routeIndex,
@@ -442,6 +442,21 @@ Map<String, Object?> _rowMap(Row row) {
 String? _text(Object? value) {
   final String text = value?.toString().trim() ?? '';
   return text.isEmpty ? null : text;
+}
+
+/// `ROUTE_RDV` uses a zero-padded route prefix (for example `0A28-LHP-1`),
+/// while the remark endpoint expects the normal route number (`A28-LHP-1`).
+String? _normaliseRdv(String? value, String routeNumber) {
+  if (value == null) return null;
+  final String route = routeNumber.trim().toUpperCase();
+  String result = value.trim();
+  if (route.isEmpty || result.toUpperCase().startsWith(route)) return result;
+  while (result.startsWith('0') &&
+      result.length > 1 &&
+      !result.toUpperCase().startsWith(route)) {
+    result = result.substring(1);
+  }
+  return result.isEmpty ? null : result;
 }
 
 String? _firstText(List<Object?> values) {
