@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/page_bar.dart';
-import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
@@ -616,8 +615,6 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            const _CitybusRouteNameCacheCard(),
           ],
         ],
       ),
@@ -633,83 +630,4 @@ String _formatBytes(int bytes) {
     return '${(bytes / 1024).toStringAsFixed(0)} KB';
   }
   return '$bytes B';
-}
-
-class _CitybusRouteNameCacheCard extends StatefulWidget {
-  const _CitybusRouteNameCacheCard();
-
-  @override
-  State<_CitybusRouteNameCacheCard> createState() =>
-      _CitybusRouteNameCacheCardState();
-}
-
-class _CitybusRouteNameCacheCardState
-    extends State<_CitybusRouteNameCacheCard> {
-  static const CitybusRouteNameService _service = CitybusRouteNameService();
-
-  int? _bytes;
-  bool _deleting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadStats();
-  }
-
-  Future<void> _loadStats() async {
-    final int bytes = await _service.storedBytes();
-    if (!mounted) return;
-    setState(() => _bytes = bytes);
-  }
-
-  Future<void> _deleteCache() async {
-    setState(() => _deleting = true);
-    await _service.clearCache();
-    await _loadStats();
-    if (!mounted) return;
-    setState(() => _deleting = false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppSettings settings = context.watch<AppSettings>();
-    final ThemeData theme = Theme.of(context);
-    return Card.filled(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              settings.text('城巴路線名稱快取', 'Citybus Route Name Cache'),
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _bytes == null
-                  ? '${settings.text('大小', 'Size')}: ...'
-                  : '${settings.text('大小', 'Size')}: '
-                        '${_formatBytes(_bytes!)} · '
-                        '${settings.text('可刪除', 'Can be deleted')}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: M3EButton.icon(
-                style: M3EButtonStyle.text,
-                onPressed: _deleting || (_bytes ?? 0) == 0
-                    ? null
-                    : _deleteCache,
-                icon: const Icon(Icons.delete_outline),
-                label: Text(settings.text('刪除', 'Delete')),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

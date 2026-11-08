@@ -111,6 +111,7 @@ class CitybusRoutelistService {
     void Function(double? progress)? onProgress,
   }) async {
     final Directory directory = await _directory();
+    await _deleteLegacyRouteNameCache();
     if (!force && await isDownloaded) return;
 
     final List<File> zips = <File>[];

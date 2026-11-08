@@ -9,7 +9,6 @@ import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/app/app_transition_page.dart';
 import 'package:hktransports/app/fade_forward_page.dart';
 import 'package:hktransports/app/m3e_scope.dart';
-import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
@@ -195,7 +194,6 @@ void main() async {
         debugPrint('Unable to delete Citybus routelist: $error');
       }),
     );
-    await const CitybusRouteNameService().clearCache();
   }
   final BusRepository repository = BusRepository(settings);
   await repository.initialize();
