@@ -35,6 +35,31 @@ enum ProprietaryEndpoint {
 extension ProprietaryEndpointInfo on ProprietaryEndpoint {
   String get storageKey => 'proprietary.endpoint.$name';
 
+  String get configKey {
+    switch (this) {
+      case ProprietaryEndpoint.noticeFeed:
+        return 'hkbus-notice';
+      case ProprietaryEndpoint.kmbAnnouncements:
+        return 'kmb-routenotice';
+      case ProprietaryEndpoint.kmbInterchange:
+        return 'kmb-interchange';
+      case ProprietaryEndpoint.citybusSpecialNotices:
+        return 'ctb-specialnotice';
+      case ProprietaryEndpoint.citybusRouteNotices:
+        return 'ctb-routenotice';
+      case ProprietaryEndpoint.citybusStopNotices:
+        return 'ctb-stationnotice';
+      case ProprietaryEndpoint.citybusRemarks:
+        return 'ctb-routeremark';
+      case ProprietaryEndpoint.citybusInterchange:
+        return 'ctb-interchange';
+      case ProprietaryEndpoint.citybusDatabase:
+        return 'ctb-routedata';
+      case ProprietaryEndpoint.citybusEtaStatus:
+        return 'ctb-eta';
+    }
+  }
+
   String get legacyKey {
     switch (this) {
       case ProprietaryEndpoint.noticeFeed:

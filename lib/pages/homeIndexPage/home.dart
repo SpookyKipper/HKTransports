@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hktransports/app/app_config.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
+import 'package:hktransports/bus/ui/app_update_banner.dart';
 import 'package:hktransports/bus/ui/notice_banner.dart';
 import 'package:hktransports/bus/ui/route_eta_view.dart';
 import 'package:hktransports/bus/ui/route_special_tag.dart';
@@ -126,6 +128,7 @@ class _HomeContentState extends State<HomeContent>
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
         children: [
+          const AppUpdateBanner(),
           Card.filled(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -175,6 +178,11 @@ class _HomeContentState extends State<HomeContent>
 
     return Column(
       children: [
+        if (context.watch<AppConfigController>().hasUpdate)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: AppUpdateBanner(),
+          ),
         if (settings.useProprietaryNotice)
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
