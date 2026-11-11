@@ -98,7 +98,10 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.kmbAnnouncements:
         return settings.text('九巴路線最新消息', 'KMB route news');
       case ProprietaryEndpoint.kmbInterchange:
-        return settings.text('九巴/龍運轉乘優惠資料', 'KMB/LWB transfer data');
+        return settings.text(
+          '九巴/龍運轉乘優惠資料 · 約 61 MB',
+          'KMB/LWB transfer data · approx. 61 MB',
+        );
       case ProprietaryEndpoint.citybusSpecialNotices:
         return settings.text('城巴特別通告', 'Citybus special notices');
       case ProprietaryEndpoint.citybusRouteNotices:
@@ -111,8 +114,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return settings.text('城巴轉乘優惠資料', 'Citybus transfer data');
       case ProprietaryEndpoint.citybusDatabase:
         return settings.text(
-          '路線名稱、車站地標、車費及特別路線說明',
-          'Route names, stop landmarks, fares, and special route descriptions',
+          '路線名稱、車站地標、車費及特別路線說明 · 約 65 MB',
+          'Route names, stop landmarks, fares, and special route descriptions · approx. 65 MB',
         );
     }
   }

@@ -486,7 +486,10 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      settings.text('九巴/龍運轉乘資料', 'KMB/LWB interchange data'),
+                      settings.text(
+                        '九巴/龍運轉乘資料（約 61 MB）',
+                        'KMB/LWB interchange data (~61 MB)',
+                      ),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -543,8 +546,8 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                   children: [
                     Text(
                       settings.text(
-                        '城巴專有路線資料',
-                        'Citybus proprietary route data',
+                        '城巴專有路線資料（約 65 MB）',
+                        'Citybus proprietary route data (~65 MB)',
                       ),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
