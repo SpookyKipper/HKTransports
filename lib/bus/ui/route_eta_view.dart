@@ -28,6 +28,7 @@ class RouteEtaView extends StatefulWidget {
 
 class _RouteEtaViewState extends State<RouteEtaView> {
   late final EtaService _etaService;
+  StreamSubscription<EtaStatusUpdate>? _statusSubscription;
   late String _language;
   Timer? _timer;
   List<BusEta>? _etas;
@@ -40,6 +41,7 @@ class _RouteEtaViewState extends State<RouteEtaView> {
     _etaService = context.read<EtaService>();
     _language = context.read<AppSettings>().language;
     _etaService.setLanguage(_language);
+    _statusSubscription = _etaService.statusUpdates.listen(_onStatusUpdate);
     _start();
   }
 
@@ -92,9 +94,27 @@ class _RouteEtaViewState extends State<RouteEtaView> {
     });
   }
 
+  void _onStatusUpdate(EtaStatusUpdate update) {
+    if (!mounted ||
+        update.routeKey != widget.route.key ||
+        update.seq != widget.seq) {
+      return;
+    }
+    final List<BusEta>? current = _etas;
+    if (current == null) return;
+    final List<BusEta> updated = _etaService.applyCachedStatuses(
+      widget.route,
+      widget.seq,
+      current,
+    );
+    if (identical(updated, current)) return;
+    setState(() => _etas = updated);
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
+    _statusSubscription?.cancel();
     super.dispose();
   }
 
