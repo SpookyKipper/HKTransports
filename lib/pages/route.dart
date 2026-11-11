@@ -363,7 +363,9 @@ class _RoutePageState extends State<_RoutePage> {
         subtitleWidget: CitybusRouteNameSubtitle(
           route: route,
           language: settings.language,
-          enabled: settings.isProprietaryEnabled(ProprietaryDataSource.citybus),
+          enabled: settings.isProprietaryEnabled(
+            ProprietaryEndpoint.citybusDatabase,
+          ),
           compactAppBar: true,
           text:
               '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
@@ -413,7 +415,7 @@ class _RoutePageState extends State<_RoutePage> {
               route: route,
               language: settings.language,
               enabled: settings.isProprietaryEnabled(
-                ProprietaryDataSource.citybus,
+                ProprietaryEndpoint.citybusDatabase,
               ),
               fallback: '',
               builder: (BuildContext context, String label) {
@@ -574,7 +576,7 @@ class _RoutePageState extends State<_RoutePage> {
                       stopIndex: index,
                       language: settings.language,
                       enabled: settings.isProprietaryEnabled(
-                        ProprietaryDataSource.citybus,
+                        ProprietaryEndpoint.citybusDatabase,
                       ),
                       fallbackFare: fare ?? normalFare,
                       alightingOnly: kmbAlightingOnly,
@@ -644,7 +646,9 @@ class _RoutePageState extends State<_RoutePage> {
           route: route,
           stopIndex: index,
           language: settings.language,
-          enabled: settings.isProprietaryEnabled(ProprietaryDataSource.citybus),
+          enabled: settings.isProprietaryEnabled(
+            ProprietaryEndpoint.citybusDatabase,
+          ),
         ),
         _EtaList(
           route: route,

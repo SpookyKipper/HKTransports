@@ -460,7 +460,7 @@ class _NearbyRouteTile extends StatelessWidget {
     final StopEntry stop = result.stop;
     final int seq = result.routeSeq;
     final bool citybusEnabled = settings.isProprietaryEnabled(
-      ProprietaryDataSource.citybus,
+      ProprietaryEndpoint.citybusDatabase,
     );
     return InkWell(
       onTap: onTap,

@@ -413,7 +413,7 @@ class _FavoriteRouteTile extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
     final bool citybusEnabled = settings.isProprietaryEnabled(
-      ProprietaryDataSource.citybus,
+      ProprietaryEndpoint.citybusDatabase,
     );
     final List<String> stopIds = route.primaryStops;
     final StopEntry? stop = seq >= 0 && seq < stopIds.length

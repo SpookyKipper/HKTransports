@@ -17,38 +17,44 @@ class ProprietaryNoticesTab extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
     final bool hasKmb = route.companies.contains(BusCompany.kmb);
     final bool hasCtb = route.companies.contains(BusCompany.ctb);
-    final bool kmbEnabled = settings.isProprietaryEnabled(
-      ProprietaryDataSource.kmb,
-    );
-    final bool ctbEnabled = settings.isProprietaryEnabled(
-      ProprietaryDataSource.citybus,
-    );
-
-    final bool showKmbBbi = hasKmb && kmbEnabled;
-    final bool showCtbBbi = hasCtb && ctbEnabled;
+    final bool showKmbNews =
+        hasKmb &&
+        settings.isProprietaryEnabled(ProprietaryEndpoint.kmbAnnouncements);
+    final bool showKmbBbi =
+        hasKmb &&
+        settings.isProprietaryEnabled(ProprietaryEndpoint.kmbInterchange);
+    final bool showCtbSpecial =
+        hasCtb &&
+        settings.isProprietaryEnabled(
+          ProprietaryEndpoint.citybusSpecialNotices,
+        );
+    final bool showCtbRouteNotices =
+        hasCtb &&
+        settings.isProprietaryEnabled(ProprietaryEndpoint.citybusRouteNotices);
+    final bool showCtbBbi =
+        hasCtb &&
+        settings.isProprietaryEnabled(ProprietaryEndpoint.citybusInterchange);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        if (hasKmb)
-          if (kmbEnabled)
-            _AsyncNoticeSection(
-              key: ValueKey<String>('kmb-${settings.language}'),
-              title: settings.text('九巴路線最新消息', 'KMB route news'),
-              creditHost: ProprietaryNoticeService.kmbHost,
-              errorText: settings.text(
-                '未能載入九巴路線最新消息',
-                'Could not load KMB route news',
-              ),
-              loader: () => const ProprietaryNoticeService()
-                  .fetchKmbAnnouncements(route, zh: settings.isChinese),
-            )
-          else
-            _DisabledSourceNotice(company: BusCompany.kmb),
-        if (hasCtb)
-          if (ctbEnabled)
-            _CitybusNotices(route: route)
-          else
-            _DisabledSourceNotice(company: BusCompany.ctb),
+        if (showKmbNews)
+          _AsyncNoticeSection(
+            key: ValueKey<String>('kmb-${settings.language}'),
+            title: settings.text('九巴路線最新消息', 'KMB route news'),
+            creditHost: ProprietaryNoticeService.kmbHost,
+            errorText: settings.text(
+              '未能載入九巴路線最新消息',
+              'Could not load KMB route news',
+            ),
+            loader: () => const ProprietaryNoticeService()
+                .fetchKmbAnnouncements(route, zh: settings.isChinese),
+          ),
+        if (showCtbSpecial || showCtbRouteNotices)
+          _CitybusNotices(
+            route: route,
+            showSpecial: showCtbSpecial,
+            showRouteNotices: showCtbRouteNotices,
+          ),
         if (showKmbBbi) _BbiSection(company: BusCompany.kmb, route: route),
         if (showCtbBbi)
           _BbiSection(
@@ -69,7 +75,9 @@ class CitybusStopNotices extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
-    if (!settings.isProprietaryEnabled(ProprietaryDataSource.citybus)) {
+    if (!settings.isProprietaryEnabled(
+      ProprietaryEndpoint.citybusStopNotices,
+    )) {
       return const SizedBox.shrink();
     }
     return _AsyncNoticeSection(
@@ -92,9 +100,15 @@ class CitybusStopNotices extends StatelessWidget {
 }
 
 class _CitybusNotices extends StatefulWidget {
-  const _CitybusNotices({required this.route});
+  const _CitybusNotices({
+    required this.route,
+    required this.showSpecial,
+    required this.showRouteNotices,
+  });
 
   final RouteEntry route;
+  final bool showSpecial;
+  final bool showRouteNotices;
 
   @override
   State<_CitybusNotices> createState() => _CitybusNoticesState();
@@ -120,28 +134,33 @@ class _CitybusNoticesState extends State<_CitybusNotices> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _AsyncNoticeSection(
-          key: ValueKey<String>('ctb-special-${settings.language}'),
-          title: settings.text('城巴特別通告', 'Citybus special notices'),
-          errorText: settings.text(
-            '未能載入城巴特別通告',
-            'Could not load Citybus special notices',
+        if (widget.showSpecial)
+          _AsyncNoticeSection(
+            key: ValueKey<String>('ctb-special-${settings.language}'),
+            title: settings.text('城巴特別通告', 'Citybus special notices'),
+            errorText: settings.text(
+              '未能載入城巴特別通告',
+              'Could not load Citybus special notices',
+            ),
+            onHasDataChanged: _setSpecialHasNotices,
+            loader: () =>
+                const ProprietaryNoticeService().fetchCitybusSpecialNotices(
+                  widget.route,
+                  zh: settings.isChinese,
+                ),
           ),
-          onHasDataChanged: _setSpecialHasNotices,
-          loader: () => const ProprietaryNoticeService()
-              .fetchCitybusSpecialNotices(widget.route, zh: settings.isChinese),
-        ),
-        _AsyncNoticeSection(
-          key: ValueKey<String>('ctb-route-${settings.language}'),
-          title: settings.text('城巴路線乘客通告', 'Citybus route passenger notices'),
-          errorText: settings.text(
-            '未能載入城巴路線乘客通告',
-            'Could not load Citybus route notices',
+        if (widget.showRouteNotices)
+          _AsyncNoticeSection(
+            key: ValueKey<String>('ctb-route-${settings.language}'),
+            title: settings.text('城巴路線乘客通告', 'Citybus route passenger notices'),
+            errorText: settings.text(
+              '未能載入城巴路線乘客通告',
+              'Could not load Citybus route notices',
+            ),
+            onHasDataChanged: _setRouteHasNotices,
+            loader: () => const ProprietaryNoticeService()
+                .fetchCitybusRouteNotices(widget.route, zh: settings.isChinese),
           ),
-          onHasDataChanged: _setRouteHasNotices,
-          loader: () => const ProprietaryNoticeService()
-              .fetchCitybusRouteNotices(widget.route, zh: settings.isChinese),
-        ),
         if (_specialHasNotices || _routeHasNotices)
           _CreditsLine(host: ProprietaryNoticeService.citybusHost),
       ],
@@ -293,39 +312,6 @@ class _NoticeCard extends StatelessWidget {
             ? null
             : () =>
                   openNotice(context, url: url.toString(), title: notice.title),
-      ),
-    );
-  }
-}
-
-class _DisabledSourceNotice extends StatelessWidget {
-  const _DisabledSourceNotice({required this.company});
-
-  final BusCompany company;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppSettings settings = context.watch<AppSettings>();
-    final String name = company.label(settings.language);
-    final bool kmb = company == BusCompany.kmb;
-    return Card.filled(
-      margin: const EdgeInsets.only(top: 12),
-      child: ListTile(
-        leading: const Icon(Icons.lock_outline),
-        title: Text(
-          settings.text('$name通告未顯示', '$name notices are not displayed'),
-        ),
-        subtitle: Text(
-          kmb
-              ? settings.text(
-                  '九巴專有資料來源尚未啟用。如需查看，請在「設定」→「專有資料」中啟用。',
-                  'The KMB proprietary source is not enabled. Enable it in Settings → Proprietary data to view these notices.',
-                )
-              : settings.text(
-                  '城巴專有資料來源尚未啟用。如需查看，請在「設定」→「專有資料」中啟用。',
-                  'The Citybus proprietary source is not enabled. Enable it in Settings → Proprietary data to view these notices.',
-                ),
-        ),
       ),
     );
   }

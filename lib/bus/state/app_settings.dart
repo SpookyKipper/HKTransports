@@ -17,36 +17,116 @@ extension AutoUpdateNetworkInfo on AutoUpdateNetwork {
   }
 }
 
-enum ProprietaryDataSource { notice, kmb, citybus }
+enum ProprietaryGroup { notice, kmb, citybus }
 
-extension ProprietaryDataSourceInfo on ProprietaryDataSource {
-  String get storageKey => 'proprietary.$name';
+enum ProprietaryEndpoint {
+  noticeFeed,
+  kmbAnnouncements,
+  kmbInterchange,
+  citybusSpecialNotices,
+  citybusRouteNotices,
+  citybusStopNotices,
+  citybusRemarks,
+  citybusInterchange,
+  citybusDatabase,
+}
+
+extension ProprietaryEndpointInfo on ProprietaryEndpoint {
+  String get storageKey => 'proprietary.endpoint.$name';
+
+  String get legacyKey {
+    switch (this) {
+      case ProprietaryEndpoint.noticeFeed:
+        return 'proprietary.notice';
+      case ProprietaryEndpoint.kmbAnnouncements:
+      case ProprietaryEndpoint.kmbInterchange:
+        return 'proprietary.kmb';
+      case ProprietaryEndpoint.citybusSpecialNotices:
+      case ProprietaryEndpoint.citybusRouteNotices:
+      case ProprietaryEndpoint.citybusStopNotices:
+      case ProprietaryEndpoint.citybusRemarks:
+      case ProprietaryEndpoint.citybusInterchange:
+      case ProprietaryEndpoint.citybusDatabase:
+        return 'proprietary.citybus';
+    }
+  }
+
+  ProprietaryGroup get group {
+    switch (this) {
+      case ProprietaryEndpoint.noticeFeed:
+        return ProprietaryGroup.notice;
+      case ProprietaryEndpoint.kmbAnnouncements:
+      case ProprietaryEndpoint.kmbInterchange:
+        return ProprietaryGroup.kmb;
+      case ProprietaryEndpoint.citybusSpecialNotices:
+      case ProprietaryEndpoint.citybusRouteNotices:
+      case ProprietaryEndpoint.citybusStopNotices:
+      case ProprietaryEndpoint.citybusRemarks:
+      case ProprietaryEndpoint.citybusInterchange:
+      case ProprietaryEndpoint.citybusDatabase:
+        return ProprietaryGroup.citybus;
+    }
+  }
 
   String label(AppSettings settings) {
     switch (this) {
-      case ProprietaryDataSource.notice:
+      case ProprietaryEndpoint.noticeFeed:
         return 'notice.hkbus.app';
-      case ProprietaryDataSource.kmb:
-        return settings.text('九巴專有 API', 'KMB Proprietary API');
-      case ProprietaryDataSource.citybus:
-        return settings.text('城巴專有 API', 'Citybus Proprietary API');
+      case ProprietaryEndpoint.kmbAnnouncements:
+        return settings.text('九巴路線通告', 'KMB route announcements');
+      case ProprietaryEndpoint.kmbInterchange:
+        return settings.text('九巴/龍運轉乘優惠', 'KMB/LWB interchange discounts');
+      case ProprietaryEndpoint.citybusSpecialNotices:
+        return settings.text('城巴特別通告', 'Citybus special notices');
+      case ProprietaryEndpoint.citybusRouteNotices:
+        return settings.text('城巴路線乘客通告', 'Citybus route notices');
+      case ProprietaryEndpoint.citybusStopNotices:
+        return settings.text('城巴站務通告', 'Citybus stop notices');
+      case ProprietaryEndpoint.citybusRemarks:
+        return settings.text('城巴路線備註', 'Citybus route remarks');
+      case ProprietaryEndpoint.citybusInterchange:
+        return settings.text('城巴轉乘優惠', 'Citybus interchange discounts');
+      case ProprietaryEndpoint.citybusDatabase:
+        return settings.text('城巴路線資料庫', 'Citybus route database');
     }
   }
 
   String description(AppSettings settings) {
     switch (this) {
-      case ProprietaryDataSource.notice:
+      case ProprietaryEndpoint.noticeFeed:
         return settings.text('HK Bus ETA 通告服務', 'HK Bus ETA notices');
-      case ProprietaryDataSource.kmb:
+      case ProprietaryEndpoint.kmbAnnouncements:
+        return settings.text('九巴路線最新消息', 'KMB route news');
+      case ProprietaryEndpoint.kmbInterchange:
+        return settings.text('九巴/龍運轉乘優惠資料', 'KMB/LWB transfer data');
+      case ProprietaryEndpoint.citybusSpecialNotices:
+        return settings.text('城巴特別通告', 'Citybus special notices');
+      case ProprietaryEndpoint.citybusRouteNotices:
+        return settings.text('城巴路線乘客通告', 'Citybus route passenger notices');
+      case ProprietaryEndpoint.citybusStopNotices:
+        return settings.text('城巴站務通告', 'Citybus stop notices');
+      case ProprietaryEndpoint.citybusRemarks:
+        return settings.text('城巴路線備註', 'Citybus route remarks');
+      case ProprietaryEndpoint.citybusInterchange:
+        return settings.text('城巴轉乘優惠資料', 'Citybus transfer data');
+      case ProprietaryEndpoint.citybusDatabase:
         return settings.text(
-          '路線通告及轉乘優惠',
-          'Route announcements and transfer discounts',
+          '路線名稱、車站地標、車費及特別路線說明',
+          'Route names, stop landmarks, fares, and special route descriptions',
         );
-      case ProprietaryDataSource.citybus:
-        return settings.text(
-          '特別、路線及站務通告、轉乘優惠、路線名稱、車站地標及車費',
-          'Special, route and stop notices, transfer discounts, route names, stop landmarks, and fares',
-        );
+    }
+  }
+}
+
+extension ProprietaryGroupInfo on ProprietaryGroup {
+  String label(AppSettings settings) {
+    switch (this) {
+      case ProprietaryGroup.notice:
+        return settings.text('通告服務', 'Notice service');
+      case ProprietaryGroup.kmb:
+        return settings.text('九巴/龍運', 'KMB / LWB');
+      case ProprietaryGroup.citybus:
+        return 'Citybus';
     }
   }
 }
@@ -140,7 +220,7 @@ class AppSettings extends ChangeNotifier {
   bool _locationEnabled = false;
   int _nearbyRadiusMeters = 200;
   String? _lastHomeTabId;
-  final Set<ProprietaryDataSource> _proprietarySources = {};
+  final Set<ProprietaryEndpoint> _proprietaryEndpoints = {};
 
   AppThemeChoice get themeChoice => _themeChoice;
   ThemeMode get themeMode => _themeChoice.themeMode;
@@ -160,12 +240,12 @@ class AppSettings extends ChangeNotifier {
   bool get locationEnabled => _locationEnabled;
   int get nearbyRadiusMeters => _nearbyRadiusMeters;
   String? get lastHomeTabId => _lastHomeTabId;
-  Set<ProprietaryDataSource> get proprietarySources =>
-      Set.unmodifiable(_proprietarySources);
-  bool isProprietaryEnabled(ProprietaryDataSource source) =>
-      _proprietarySources.contains(source);
+  Set<ProprietaryEndpoint> get proprietaryEndpoints =>
+      Set.unmodifiable(_proprietaryEndpoints);
+  bool isProprietaryEnabled(ProprietaryEndpoint endpoint) =>
+      _proprietaryEndpoints.contains(endpoint);
   bool get useProprietaryNotice =>
-      isProprietaryEnabled(ProprietaryDataSource.notice);
+      isProprietaryEnabled(ProprietaryEndpoint.noticeFeed);
 
   AppSettings() {
     final String? storedChoice = sp.getString('themeChoice');
@@ -215,10 +295,12 @@ class AppSettings extends ChangeNotifier {
     );
     final String? lastTab = sp.getString('lastHomeTabId');
     _lastHomeTabId = lastTab == null || lastTab.isEmpty ? null : lastTab;
-    for (final ProprietaryDataSource source in ProprietaryDataSource.values) {
-      if (sp.getBool(source.storageKey) ?? false) {
-        _proprietarySources.add(source);
-      }
+    for (final ProprietaryEndpoint endpoint in ProprietaryEndpoint.values) {
+      final bool enabled =
+          sp.getBool(endpoint.storageKey) ??
+          sp.getBool(endpoint.legacyKey) ??
+          false;
+      if (enabled) _proprietaryEndpoints.add(endpoint);
     }
   }
 
@@ -325,12 +407,12 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setProprietarySource(ProprietaryDataSource source, bool enabled) {
+  void setProprietaryEndpoint(ProprietaryEndpoint endpoint, bool enabled) {
     final bool changed = enabled
-        ? _proprietarySources.add(source)
-        : _proprietarySources.remove(source);
+        ? _proprietaryEndpoints.add(endpoint)
+        : _proprietaryEndpoints.remove(endpoint);
     if (!changed) return;
-    sp.setBool(source.storageKey, enabled);
+    sp.setBool(endpoint.storageKey, enabled);
     notifyListeners();
   }
 
