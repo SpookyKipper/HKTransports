@@ -272,10 +272,17 @@ class _PinnedChip extends StatelessWidget {
 
   String _etaLabel(BusEta? eta, AppSettings settings) {
     if (eta == null) return '--';
+    final String? status = eta.status(settings.language);
+    final String? distance = eta.distanceLabel(settings.language);
     final DateTime? time = eta.eta;
     if (time == null) {
       final String remark = eta.remark(settings.language);
-      return remark.isEmpty ? '--' : remark;
+      final List<String> parts = <String>[
+        if (remark.isNotEmpty) remark,
+        ?status,
+        ?distance,
+      ];
+      return parts.isEmpty ? '--' : parts.join(' · ');
     }
     final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
     final String clock = DateFormat('HH:mm').format(hkTime);
@@ -284,12 +291,14 @@ class _PinnedChip extends StatelessWidget {
     final String wait = minutes < 1
         ? settings.text('即將到達', 'Arriving')
         : '$minutes ${settings.text('分', 'min')}';
-    return departed != null
+    final String base = departed != null
         ? '$clock · $departed'
         : switch (settings.etaFormat) {
             EtaFormat.diff => wait,
             EtaFormat.exact => clock,
             EtaFormat.mixed => '$clock · $wait',
           };
+    final List<String> parts = <String>[base, ?status, ?distance];
+    return parts.join(' · ');
   }
 }

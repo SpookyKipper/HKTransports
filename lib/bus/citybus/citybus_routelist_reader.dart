@@ -5,6 +5,9 @@ import 'package:sqlite3/sqlite3.dart';
 class CitybusStopData {
   const CitybusStopData({
     required this.stopId,
+    this.routeSeq,
+    this.lat,
+    this.lon,
     this.adultFare,
     this.childFare,
     this.seniorFare,
@@ -13,11 +16,38 @@ class CitybusStopData {
   });
 
   final String stopId;
+  final int? routeSeq;
+  final double? lat;
+  final double? lon;
   final double? adultFare;
   final double? childFare;
   final double? seniorFare;
   final String? landmark;
   final String? destinationName;
+}
+
+class CitybusEtaArguments {
+  const CitybusEtaArguments({
+    required this.stopId,
+    required this.rdv,
+    required this.seq,
+    required this.bound,
+    required this.lat,
+    required this.lon,
+  });
+
+  final String stopId;
+  final String rdv;
+  final int seq;
+  final String bound;
+  final double lat;
+  final double lon;
+
+  String get info => '$stopId||$rdv||$seq||$bound';
+
+  String get altLat => lat.toString();
+
+  String get altLon => lon.toString();
 }
 
 class CitybusRouteData {
@@ -26,6 +56,7 @@ class CitybusRouteData {
     required this.stops,
     this.routeName,
     this.rdv,
+    this.bound,
     this.routingRemark,
     this.variantDescription,
   });
@@ -34,6 +65,7 @@ class CitybusRouteData {
   final List<CitybusStopData> stops;
   final String? routeName;
   final String? rdv;
+  final String? bound;
   final String? routingRemark;
   final String? variantDescription;
 
@@ -194,6 +226,47 @@ class CitybusRoutelistReader {
     return data.stopById(stopId, occurrence: occurrence);
   }
 
+  CitybusEtaArguments? etaArguments(
+    RouteEntry route,
+    int stopIndex,
+    String language,
+  ) {
+    final CitybusRouteData? data = routeData(route, language);
+    if (data == null) return null;
+    final String? stopId = route.stopIdAt(BusCompany.ctb, stopIndex);
+    if (stopId == null || stopId.isEmpty) return null;
+    final List<String> currentStops =
+        route.stops[BusCompany.ctb] ?? const <String>[];
+    final int occurrence = data.stops.length == currentStops.length
+        ? stopIndex
+        : 0;
+    final CitybusStopData? stop = data.stopById(stopId, occurrence: occurrence);
+    final String rdv = data.rdv?.trim() ?? '';
+    final int? seq = stop?.routeSeq;
+    final double? lat = stop?.lat;
+    final double? lon = stop?.lon;
+    final String bound = (data.bound ?? route.boundFor(BusCompany.ctb) ?? '')
+        .trim()
+        .toUpperCase();
+    if (stop == null ||
+        rdv.isEmpty ||
+        seq == null ||
+        seq <= 0 ||
+        lat == null ||
+        lon == null ||
+        (bound != 'O' && bound != 'I')) {
+      return null;
+    }
+    return CitybusEtaArguments(
+      stopId: stop.stopId,
+      rdv: rdv,
+      seq: seq,
+      bound: bound,
+      lat: lat,
+      lon: lon,
+    );
+  }
+
   String? routeName(RouteEntry route, String language) {
     if (!route.companies.contains(BusCompany.ctb)) return null;
     final CitybusRouteData? data = routeData(route, language);
@@ -275,6 +348,7 @@ class CitybusRoutelistReader {
       stops: List<CitybusStopData>.unmodifiable(best.stops),
       routeName: routeName,
       rdv: rdv,
+      bound: _text(best.row['BOUND']),
       routingRemark: _text(best.row['ROUTING_REMARK']),
       variantDescription: _text(best.row['VARDESC']),
     );
@@ -315,8 +389,8 @@ class CitybusRoutelistReader {
   List<CitybusStopData> _stopsFor(String serviceNo, int routeIndex) {
     final ResultSet rows = database.select(
       '''
-      SELECT STOP_ID, ADULT_FARE, CHILD_FARE, SENIOR_FARE, BUSSTOP_INFO,
-             DESC_NAME
+      SELECT STOP_ID, BSA_SEQ, LAT, LON, ADULT_FARE, CHILD_FARE,
+             SENIOR_FARE, BUSSTOP_INFO, DESC_NAME
       FROM ROUTESTOP
       WHERE COMPANY_CODE = ? AND SERVICE_NO = ? AND ROUTE_INDEX = ?
       ORDER BY BSA_SEQ
@@ -330,6 +404,9 @@ class CitybusRoutelistReader {
       result.add(
         CitybusStopData(
           stopId: stopId,
+          routeSeq: _asInt(row['BSA_SEQ']),
+          lat: _asDouble(row['LAT']),
+          lon: _asDouble(row['LON']),
           adultFare: _asDouble(row['ADULT_FARE']),
           childFare: _asDouble(row['CHILD_FARE']),
           seniorFare: _asDouble(row['SENIOR_FARE']),

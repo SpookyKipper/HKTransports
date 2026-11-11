@@ -45,4 +45,16 @@ void main() {
     expect(eta.hasDepartedAt(now), isFalse);
     expect(eta.hasDepartedAt(now, grace: const Duration(seconds: 10)), isTrue);
   });
+
+  test('proprietary status and distance are localised', () {
+    final BusEta eta = busEta(
+      now,
+    ).copyWith(statusZh: '未開出', statusEn: 'Not yet departed', distanceKm: 1.2);
+
+    expect(eta.status('zh'), '未開出');
+    expect(eta.status('en'), 'Not yet departed');
+    expect(eta.distanceLabel('zh'), '距離 1.2 公里');
+    expect(eta.distanceLabel('en'), '1.2 km away');
+    expect(eta.isScheduledLike, isTrue);
+  });
 }

@@ -29,6 +29,7 @@ enum ProprietaryEndpoint {
   citybusRemarks,
   citybusInterchange,
   citybusDatabase,
+  citybusEtaStatus,
 }
 
 extension ProprietaryEndpointInfo on ProprietaryEndpoint {
@@ -48,6 +49,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.citybusInterchange:
       case ProprietaryEndpoint.citybusDatabase:
         return 'proprietary.citybus';
+      case ProprietaryEndpoint.citybusEtaStatus:
+        return 'proprietary.citybus.etaStatus';
     }
   }
 
@@ -64,6 +67,7 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.citybusRemarks:
       case ProprietaryEndpoint.citybusInterchange:
       case ProprietaryEndpoint.citybusDatabase:
+      case ProprietaryEndpoint.citybusEtaStatus:
         return ProprietaryGroup.citybus;
     }
   }
@@ -88,6 +92,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return settings.text('城巴轉乘優惠', 'Citybus interchange discounts');
       case ProprietaryEndpoint.citybusDatabase:
         return settings.text('城巴路線資料庫', 'Citybus route database');
+      case ProprietaryEndpoint.citybusEtaStatus:
+        return settings.text('城巴實時到站狀態', 'Citybus live ETA status');
     }
   }
 
@@ -116,6 +122,11 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return settings.text(
           '路線名稱、車站地標、車費及特別路線說明 · 約 65 MB',
           'Route names, stop landmarks, fares, and special route descriptions · approx. 65 MB',
+        );
+      case ProprietaryEndpoint.citybusEtaStatus:
+        return settings.text(
+          '未開出、前往中及距離等狀態 · 需城巴路線資料庫',
+          'Not yet departed, en route, and distance status · requires Citybus route database',
         );
     }
   }

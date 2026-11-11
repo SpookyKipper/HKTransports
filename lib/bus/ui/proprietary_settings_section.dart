@@ -172,6 +172,8 @@ class _EndpointTile extends StatelessWidget {
         return Icons.alt_route;
       case ProprietaryEndpoint.citybusDatabase:
         return Icons.storage_outlined;
+      case ProprietaryEndpoint.citybusEtaStatus:
+        return Icons.schedule_outlined;
     }
   }
 }

@@ -42,7 +42,9 @@ void main() {
         CHILD_FARE REAL,
         SENIOR_FARE REAL,
         BUSSTOP_INFO TEXT,
-        DESC_NAME TEXT
+        DESC_NAME TEXT,
+        LAT REAL,
+        LON REAL
       )
     ''');
     database.execute('''
@@ -66,22 +68,22 @@ void main() {
       )
       ''');
     database.execute(
-      "INSERT INTO ROUTESTOP VALUES ('CTB', '792M', 100, 1, '002918', 9.4, 4.7, 2, NULL, 'Sai Kung')",
+      "INSERT INTO ROUTESTOP (COMPANY_CODE, SERVICE_NO, ROUTE_INDEX, BSA_SEQ, STOP_ID, ADULT_FARE, CHILD_FARE, SENIOR_FARE, BUSSTOP_INFO, DESC_NAME) VALUES ('CTB', '792M', 100, 1, '002918', 9.4, 4.7, 2, NULL, 'Sai Kung')",
     );
     database.execute(
-      "INSERT INTO ROUTESTOP VALUES ('CTB', '792M', 100, 2, '001823', 6.5, 3.3, 2, 'Tseung Kwan O', 'Sai Kung')",
+      "INSERT INTO ROUTESTOP (COMPANY_CODE, SERVICE_NO, ROUTE_INDEX, BSA_SEQ, STOP_ID, ADULT_FARE, CHILD_FARE, SENIOR_FARE, BUSSTOP_INFO, DESC_NAME) VALUES ('CTB', '792M', 100, 2, '001823', 6.5, 3.3, 2, 'Tseung Kwan O', 'Sai Kung')",
     );
     database.execute(
-      "INSERT INTO ROUTESTOP VALUES ('CTB', '792M', 100, 3, '002109', 0, 0, 0, NULL, 'Sai Kung')",
+      "INSERT INTO ROUTESTOP (COMPANY_CODE, SERVICE_NO, ROUTE_INDEX, BSA_SEQ, STOP_ID, ADULT_FARE, CHILD_FARE, SENIOR_FARE, BUSSTOP_INFO, DESC_NAME) VALUES ('CTB', '792M', 100, 3, '002109', 0, 0, 0, NULL, 'Sai Kung')",
     );
     database.execute(
-      "INSERT INTO ROUTESTOP VALUES ('CTB', '792M', 101, 1, '002109', 9.4, 4.7, 2, NULL, 'Tseung Kwan O Station')",
+      "INSERT INTO ROUTESTOP (COMPANY_CODE, SERVICE_NO, ROUTE_INDEX, BSA_SEQ, STOP_ID, ADULT_FARE, CHILD_FARE, SENIOR_FARE, BUSSTOP_INFO, DESC_NAME) VALUES ('CTB', '792M', 101, 1, '002109', 9.4, 4.7, 2, NULL, 'Tseung Kwan O Station')",
     );
     database.execute(
-      "INSERT INTO ROUTESTOP VALUES ('CTB', '792M', 101, 2, '001823', 6.5, 3.3, 2, 'Tseung Kwan O', 'Tseung Kwan O Station')",
+      "INSERT INTO ROUTESTOP (COMPANY_CODE, SERVICE_NO, ROUTE_INDEX, BSA_SEQ, STOP_ID, ADULT_FARE, CHILD_FARE, SENIOR_FARE, BUSSTOP_INFO, DESC_NAME) VALUES ('CTB', '792M', 101, 2, '001823', 6.5, 3.3, 2, 'Tseung Kwan O', 'Tseung Kwan O Station')",
     );
     database.execute(
-      "INSERT INTO ROUTESTOP VALUES ('CTB', '792M', 101, 3, '002918', 0, 0, 0, NULL, 'Tseung Kwan O Station')",
+      "INSERT INTO ROUTESTOP (COMPANY_CODE, SERVICE_NO, ROUTE_INDEX, BSA_SEQ, STOP_ID, ADULT_FARE, CHILD_FARE, SENIOR_FARE, BUSSTOP_INFO, DESC_NAME) VALUES ('CTB', '792M', 101, 3, '002918', 0, 0, 0, NULL, 'Tseung Kwan O Station')",
     );
     database.execute(
       "INSERT INTO ROUTELIST VALUES ('792M', 'CTB||792M||SAK||2||Tseung Kwan O Station||Sai Kung||2||792M--Sai_Kung||100||O||Scenic Summit||792M-SAK-1||Sai Kung')",
@@ -92,6 +94,9 @@ void main() {
     database.execute(
       "INSERT INTO ROUTELIST VALUES ('792M', 'NLB||792M||N/A||1||Sai Kung||Tseung Kwan O||1||792M--Other||900||I||Other operator||N/A||Not used')",
     );
+    database.execute(
+      "UPDATE ROUTESTOP SET LAT = 22.3, LON = 114.2 WHERE SERVICE_NO = '792M'",
+    );
     database.execute('''
       INSERT INTO ROUTE VALUES (
         'CTB', 'A28', 'I', 'LHP', 1, 'I',
@@ -100,10 +105,10 @@ void main() {
       )
       ''');
     database.execute(
-      "INSERT INTO ROUTESTOP VALUES ('CTB', 'A28', 200, 1, '001837', 44, 22, 22, NULL, 'LOHAS Park')",
+      "INSERT INTO ROUTESTOP (COMPANY_CODE, SERVICE_NO, ROUTE_INDEX, BSA_SEQ, STOP_ID, ADULT_FARE, CHILD_FARE, SENIOR_FARE, BUSSTOP_INFO, DESC_NAME) VALUES ('CTB', 'A28', 200, 1, '001837', 44, 22, 22, NULL, 'LOHAS Park')",
     );
     database.execute(
-      "INSERT INTO ROUTESTOP VALUES ('CTB', 'A28', 200, 2, '003329', 0, 0, 0, NULL, 'LOHAS Park')",
+      "INSERT INTO ROUTESTOP (COMPANY_CODE, SERVICE_NO, ROUTE_INDEX, BSA_SEQ, STOP_ID, ADULT_FARE, CHILD_FARE, SENIOR_FARE, BUSSTOP_INFO, DESC_NAME) VALUES ('CTB', 'A28', 200, 2, '003329', 0, 0, 0, NULL, 'LOHAS Park')",
     );
     database.execute(
       "INSERT INTO ROUTELIST VALUES ('A28', 'CTB||A28||LHP||2||Airport||LOHAS Park||1||A28--LOHAS_Park||200||I||||A28-LHP-1||LOHAS Park')",
@@ -153,6 +158,19 @@ void main() {
     expect(stop.landmark, 'Tseung Kwan O');
     expect(stop.adultFare, 6.5);
     expect(stop.childFare, 3.3);
+    expect(stop.routeSeq, 2);
+    expect(stop.lat, 22.3);
+    expect(stop.lon, 114.2);
+
+    final CitybusEtaArguments? args = reader.etaArguments(route, 1, 'en');
+    expect(args, isNotNull);
+    expect(args!.stopId, '001823');
+    expect(args.rdv, '792M-SAK-1');
+    expect(args.seq, 2);
+    expect(args.bound, 'O');
+    expect(args.lat, 22.3);
+    expect(args.lon, 114.2);
+    expect(args.info, '001823||792M-SAK-1||2||O');
   });
 
   test('uses bound and terminals to choose the matching direction', () {

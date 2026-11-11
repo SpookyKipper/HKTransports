@@ -97,6 +97,15 @@ class CitybusRoutelistService {
     return reader?.stopData(route, stopIndex, language);
   }
 
+  Future<CitybusEtaArguments?> etaArguments(
+    RouteEntry route,
+    int stopIndex,
+    String language,
+  ) async {
+    final CitybusRoutelistReader? reader = await _readerFor(language);
+    return reader?.etaArguments(route, stopIndex, language);
+  }
+
   Future<String?> routeName(RouteEntry route, String language) async {
     final CitybusRoutelistReader? reader = await _readerFor(language);
     return reader?.routeName(route, language);

@@ -83,7 +83,7 @@ class _RoutePageState extends State<_RoutePage> {
   void initState() {
     super.initState();
     final AppSettings settings = context.read<AppSettings>();
-    _etaService = EtaService(language: settings.language);
+    _etaService = EtaService(language: settings.language, settings: settings);
     final int initialIndex = widget.route.primaryStops.indexOf(
       widget.initialStopId ?? '',
     );
@@ -830,7 +830,10 @@ class _EtaList extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
     final List<BusEta> visible = (etas ?? const [])
         .where(
-          (eta) => eta.eta != null || eta.remark(settings.language).isNotEmpty,
+          (eta) =>
+              eta.eta != null ||
+              eta.remark(settings.language).isNotEmpty ||
+              eta.status(settings.language) != null,
         )
         .toList();
 
@@ -974,10 +977,14 @@ class _EtaLine extends StatelessWidget {
     final String via = eta.company == BusCompany.nlb
         ? eta.dest(settings.language).trim()
         : '';
+    final String? status = eta.status(settings.language);
+    final String? distance = eta.distanceLabel(settings.language);
     final List<String> segments = [
       parts,
       if (showCompany) company,
       if (remark.isNotEmpty) remark,
+      ?status,
+      ?distance,
       if (eta.scheduled && remark.isEmpty) settings.text('預定班次', 'Scheduled'),
       if (via.isNotEmpty) via,
     ];

@@ -163,13 +163,16 @@ class _RouteEtaLine extends StatelessWidget {
               ? settings.text('即場開出', 'Departing now')
               : settings.text('即將到達', 'Arriving')
         : '$minutes ${settings.text('分', 'min')}';
-    final String text = departed != null
+    final String base = departed != null
         ? '$clock  $departed'
         : switch (settings.etaFormat) {
             EtaFormat.diff => wait,
             EtaFormat.exact => clock,
             EtaFormat.mixed => '$clock  $wait',
           };
+    final String? status = eta.status(settings.language);
+    final String? distance = eta.distanceLabel(settings.language);
+    final String text = <String>[base, ?status, ?distance].join(' · ');
     final Color color = first
         ? Theme.of(context).colorScheme.primary
         : Theme.of(context).colorScheme.onSurfaceVariant;
