@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:hktransports/bus/citybus/citybus_routelist_reader.dart';
+import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
+import 'package:hktransports/bus/eta/citybus_eta_status_client.dart';
 import 'package:hktransports/bus/eta/clients/ctb_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/gmb_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/kmb_eta_client.dart';
@@ -8,17 +11,22 @@ import 'package:hktransports/bus/eta/clients/lrtfeeder_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/nlb_eta_client.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/state/app_settings.dart';
 
 class EtaService {
-  EtaService({String language = 'zh'}) : _language = language;
+  EtaService({String language = 'zh', AppSettings? settings})
+    : _language = language,
+      _settings = settings;
 
   String _language;
+  final AppSettings? _settings;
 
   final KmbEtaClient _kmb = KmbEtaClient();
   final CtbEtaClient _ctb = CtbEtaClient();
   final NlbEtaClient _nlb = NlbEtaClient();
   final GmbEtaClient _gmb = GmbEtaClient();
   final LrtFeederEtaClient _lrtFeeder = LrtFeederEtaClient();
+  final CitybusEtaStatusClient _ctbStatus = const CitybusEtaStatusClient();
 
   String get language => _language;
 
@@ -62,12 +70,7 @@ class EtaService {
           language: _language,
         );
       case BusCompany.ctb:
-        return _ctb.fetch(
-          route: route,
-          company: company,
-          seq: seq,
-          language: _language,
-        );
+        return _fetchCitybus(route, company, seq);
       case BusCompany.nlb:
         return _nlb.fetch(
           route: route,
@@ -95,6 +98,68 @@ class EtaService {
       case BusCompany.fortuneferry:
       case BusCompany.hkkf:
         return Future.value(const []);
+    }
+  }
+
+  Future<List<BusEta>> _fetchCitybus(
+    RouteEntry route,
+    BusCompany company,
+    int seq,
+  ) async {
+    final List<BusEta> base = await _ctb.fetch(
+      route: route,
+      company: company,
+      seq: seq,
+      language: _language,
+    );
+    final AppSettings? settings = _settings;
+    if (base.isEmpty ||
+        settings == null ||
+        !settings.isProprietaryEnabled(ProprietaryEndpoint.citybusEtaStatus)) {
+      return base;
+    }
+
+    try {
+      final CitybusEtaArguments? args = await CitybusRoutelistService.instance
+          .etaArguments(route, seq, _language);
+      if (args == null) return base;
+      final List<CitybusEtaStatus> statuses = await _ctbStatus.fetch(args);
+      if (statuses.isEmpty) return base;
+
+      final List<BusEta> sorted = List<BusEta>.of(base)
+        ..sort((BusEta a, BusEta b) {
+          final DateTime? aTime = a.eta;
+          final DateTime? bTime = b.eta;
+          if (aTime == null && bTime == null) {
+            return a.etaSeq.compareTo(b.etaSeq);
+          }
+          if (aTime == null) return 1;
+          if (bTime == null) return -1;
+          final int byTime = aTime.compareTo(bTime);
+          if (byTime != 0) return byTime;
+          return a.etaSeq.compareTo(b.etaSeq);
+        });
+
+      final List<BusEta> enriched = <BusEta>[];
+      int statusIndex = 0;
+      for (final BusEta eta in sorted) {
+        if (eta.eta == null || statusIndex >= statuses.length) {
+          enriched.add(eta);
+          continue;
+        }
+        final CitybusEtaStatus status = statuses[statusIndex++];
+        enriched.add(
+          eta.copyWith(
+            statusZh: status.statusZh,
+            statusEn: status.statusEn,
+            distanceKm: status.distanceKm,
+          ),
+        );
+      }
+      return enriched;
+    } catch (error) {
+      debugPrint('Citybus ETA status failed: $error');
+      return base;
     }
   }
 

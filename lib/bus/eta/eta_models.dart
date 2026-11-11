@@ -11,6 +11,9 @@ class BusEta {
     required this.etaSeq,
     this.scheduled = false,
     this.platform,
+    this.statusZh,
+    this.statusEn,
+    this.distanceKm,
   });
 
   final BusCompany company;
@@ -23,11 +26,47 @@ class BusEta {
   final bool scheduled;
   final String? platform;
 
+  /// Live ETA status from a proprietary source, for example `未開出`.
+  final String? statusZh;
+  final String? statusEn;
+
+  /// Distance to the stop reported by a proprietary source.
+  final double? distanceKm;
+
   String remark(String language) => language == 'en' ? remarkEn : remarkZh;
 
   String dest(String language) => language == 'en' ? destEn : destZh;
 
+  String? status(String language) {
+    final String? value = language == 'en' ? statusEn : statusZh;
+    return value == null || value.trim().isEmpty ? null : value.trim();
+  }
+
+  String? distanceLabel(String language) {
+    final double? value = distanceKm;
+    if (value == null) return null;
+    final String distance = value.toStringAsFixed(1);
+    return language == 'en' ? '$distance km away' : '距離 $distance 公里';
+  }
+
   bool get hasEta => eta != null;
+
+  BusEta copyWith({String? statusZh, String? statusEn, double? distanceKm}) {
+    return BusEta(
+      company: company,
+      eta: eta,
+      remarkZh: remarkZh,
+      remarkEn: remarkEn,
+      destZh: destZh,
+      destEn: destEn,
+      etaSeq: etaSeq,
+      scheduled: scheduled,
+      platform: platform,
+      statusZh: statusZh ?? this.statusZh,
+      statusEn: statusEn ?? this.statusEn,
+      distanceKm: distanceKm ?? this.distanceKm,
+    );
+  }
 
   bool hasDepartedAt(
     DateTime now, {
@@ -39,12 +78,13 @@ class BusEta {
   }
 
   bool get isScheduledMark {
-    final String en = remarkEn.toLowerCase();
-    final String zh = remarkZh;
+    final String en = '$remarkEn ${statusEn ?? ''}'.toLowerCase();
+    final String zh = '$remarkZh ${statusZh ?? ''}';
     return en.contains('scheduled') ||
         zh.contains('預定') ||
         zh.contains('原定') ||
-        zh.contains('未開出');
+        zh.contains('未開出') ||
+        zh.contains('not yet departed');
   }
 
   bool get isScheduledLike => scheduled || isScheduledMark;
