@@ -228,11 +228,18 @@ class _KmbInterchangeDownloadDialogState
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          M3EProgressIndicator.linearWavy(
-            value: value,
-            linearSize: M3EProgressIndicatorSize.m,
-            strokeWidth: 4,
-            trackStrokeWidth: 4,
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0, end: value),
+            duration: const Duration(milliseconds: 650),
+            curve: Curves.easeOutCubic,
+            builder: (BuildContext context, double animated, Widget? child) {
+              return M3EProgressIndicator.linearWavy(
+                value: animated,
+                linearSize: M3EProgressIndicatorSize.m,
+                strokeWidth: 4,
+                trackStrokeWidth: 4,
+              );
+            },
           ),
           const SizedBox(height: 12),
           Text(
