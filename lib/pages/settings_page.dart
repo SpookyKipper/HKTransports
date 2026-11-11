@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
-import 'package:hktransports/bus/ui/proprietary_settings_section.dart';
 import 'package:hktransports/functions/app.dart';
 import 'package:hktransports/location/location_controller.dart';
 import 'package:hktransports/location/location_service.dart';
@@ -188,7 +187,13 @@ class SettingsPage extends StatelessWidget {
             ],
             onChanged: settings.setAutoUpdateNetwork,
           ),
-          const ProprietarySettingsSection(),
+          ListTile(
+            leading: const Icon(Icons.hub_outlined),
+            title: Text(settings.text('專有 API', 'Proprietary APIs')),
+            subtitle: Text(_proprietarySummary(settings)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/proprietaryData'),
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.tune),
@@ -281,6 +286,14 @@ class SettingsPage extends StatelessWidget {
   String _autoUpdateLabel(AppSettings settings) {
     final int hours = settings.autoUpdateHours;
     return settings.text('上次更新後 $hours 小時', '$hours hours after last update');
+  }
+
+  String _proprietarySummary(AppSettings settings) {
+    final int count = settings.proprietaryEndpoints.length;
+    if (count == 0) {
+      return settings.text('未啟用任何 API', 'No APIs enabled');
+    }
+    return settings.text('已啟用 $count 個 API', '$count APIs enabled');
   }
 }
 

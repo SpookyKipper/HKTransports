@@ -17,11 +17,6 @@ class ProprietarySettingsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            settings.text('專有資料', 'Proprietary data'),
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: 6),
           Card.filled(
             color: theme.colorScheme.errorContainer,
             child: Padding(
