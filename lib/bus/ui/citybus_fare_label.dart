@@ -13,6 +13,7 @@ class CitybusFareLabel extends StatefulWidget {
     required this.language,
     required this.enabled,
     this.fallbackFare,
+    this.alightingOnly = false,
   });
 
   final RouteEntry route;
@@ -20,6 +21,7 @@ class CitybusFareLabel extends StatefulWidget {
   final String language;
   final bool enabled;
   final String? fallbackFare;
+  final bool alightingOnly;
 
   @override
   State<CitybusFareLabel> createState() => _CitybusFareLabelState();
@@ -59,6 +61,7 @@ class _CitybusFareLabelState extends State<CitybusFareLabel> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.alightingOnly) return _buildAlightingOnly(context);
     final Future<CitybusStopData?>? future = _future;
     if (future == null) return _buildFallback(context);
     final AppSettings settings = context.watch<AppSettings>();
@@ -68,19 +71,22 @@ class _CitybusFareLabelState extends State<CitybusFareLabel> {
           (BuildContext context, AsyncSnapshot<CitybusStopData?> snapshot) {
             final double? fare = snapshot.data?.adultFare;
             if (fare == null) return _buildFallback(context);
-            if (fare == 0) {
-              return Text(
-                settings.text('只供落客', 'Alighting only'),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              );
-            }
+            if (fare == 0) return _buildAlightingOnly(context);
             return Text(
               '${settings.text('車費', 'Fare')} \$${formatCitybusFare(fare)}',
               style: Theme.of(context).textTheme.bodySmall,
             );
           },
+    );
+  }
+
+  Widget _buildAlightingOnly(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    return Text(
+      settings.text('只供落客', 'Alighting only'),
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
     );
   }
 

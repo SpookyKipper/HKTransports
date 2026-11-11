@@ -154,6 +154,14 @@ class StopEntry {
 
   String rawName(String language) => language == 'en' ? nameEn : nameZh;
 
+  bool get isAlightingOnly {
+    return RegExp(r'[（(]\s*落客站\s*[）)]').hasMatch(nameZh) ||
+        RegExp(
+          r'[（(]\s*alighting(?:\s+stop)?\s*[）)]',
+          caseSensitive: false,
+        ).hasMatch(nameEn);
+  }
+
   factory StopEntry.fromJson(String id, Map<String, dynamic> json) {
     final Map<String, dynamic> name =
         (json['name'] as Map<String, dynamic>?) ?? const {};

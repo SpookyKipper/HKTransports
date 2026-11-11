@@ -519,6 +519,9 @@ class _RoutePageState extends State<_RoutePage> {
     final String? code = stop?.stationCode;
     final String? platform = stop?.platformCode;
     final bool isTerminus = index == stopIds.length - 1;
+    final bool kmbAlightingOnly =
+        route.companies.contains(BusCompany.kmb) &&
+        (stop?.isAlightingOnly ?? false);
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -574,6 +577,7 @@ class _RoutePageState extends State<_RoutePage> {
                         ProprietaryDataSource.citybus,
                       ),
                       fallbackFare: fare ?? normalFare,
+                      alightingOnly: kmbAlightingOnly,
                     ),
                     if (code != null)
                       Text(

@@ -51,6 +51,17 @@ void main() {
       expect(stop.displayEn, 'Science Park Road near L/P AE1877');
       expect(stop.stationCode, isNull);
     });
+
+    test('detects alighting-only stops', () {
+      expect(
+        parse(
+          'HZMB PASSENGER CLEARANCE BUILDING (ALIGHTING STOP)',
+          '港珠澳大橋旅檢大樓 (落客站)',
+        ).isAlightingOnly,
+        isTrue,
+      );
+      expect(parse('TSUEN WAN WEST STATION (TW965)').isAlightingOnly, isFalse);
+    });
   });
 
   group('route database', () {
