@@ -48,6 +48,8 @@ class PinnedStopsBar extends StatefulWidget {
 class _PinnedStopsBarState extends State<PinnedStopsBar> {
   PinnedStopsController? _controller;
   late EtaService _etaService;
+  EtaService? _subscribedService;
+  StreamSubscription<EtaStatusUpdate>? _statusSubscription;
   Timer? _timer;
   Map<String, List<BusEta>> _etas = const {};
   int _generation = 0;
@@ -57,6 +59,11 @@ class _PinnedStopsBarState extends State<PinnedStopsBar> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _etaService = context.read<EtaService>();
+    if (!identical(_subscribedService, _etaService)) {
+      _statusSubscription?.cancel();
+      _subscribedService = _etaService;
+      _statusSubscription = _etaService.statusUpdates.listen(_onStatusUpdate);
+    }
     final AppSettings settings = context.read<AppSettings>();
     if (_language != settings.language) {
       _language = settings.language;
@@ -118,10 +125,36 @@ class _PinnedStopsBarState extends State<PinnedStopsBar> {
     setState(() => _etas = results);
   }
 
+  void _onStatusUpdate(EtaStatusUpdate update) {
+    if (!mounted) return;
+    final PinnedStopsController? controller = _controller;
+    if (controller == null || controller.stations.isEmpty) return;
+    final BusRepository repository = context.read<BusRepository>();
+    bool changed = false;
+    final Map<String, List<BusEta>> next = Map<String, List<BusEta>>.of(_etas);
+    for (final PinnedStation pin in controller.stations) {
+      if (pin.seq != update.seq) continue;
+      final RouteEntry? route = repository.routeByKey(pin.routeKey);
+      if (route == null || route.key != update.routeKey) continue;
+      final List<BusEta>? current = next[pin.id];
+      if (current == null) continue;
+      final List<BusEta> updated = _etaService.applyCachedStatuses(
+        route,
+        pin.seq,
+        current,
+      );
+      if (identical(updated, current)) continue;
+      next[pin.id] = updated;
+      changed = true;
+    }
+    if (changed) setState(() => _etas = next);
+  }
+
   @override
   void dispose() {
     _controller?.removeListener(_handlePinsChanged);
     _timer?.cancel();
+    _statusSubscription?.cancel();
     super.dispose();
   }
 

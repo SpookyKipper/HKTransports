@@ -27,11 +27,24 @@ class EtaService {
   final GmbEtaClient _gmb = GmbEtaClient();
   final LrtFeederEtaClient _lrtFeeder = LrtFeederEtaClient();
   final CitybusEtaStatusClient _ctbStatus = const CitybusEtaStatusClient();
+  static const Duration _statusCacheTtl = Duration(seconds: 90);
+
+  final StreamController<EtaStatusUpdate> _statusUpdates =
+      StreamController<EtaStatusUpdate>.broadcast();
+  final Map<String, _CachedCitybusStatus> _statusCache =
+      <String, _CachedCitybusStatus>{};
+  final Set<String> _statusLoading = <String>{};
 
   String get language => _language;
 
+  Stream<EtaStatusUpdate> get statusUpdates => _statusUpdates.stream;
+
   void setLanguage(String language) {
     _language = language == 'en' ? 'en' : 'zh';
+  }
+
+  void dispose() {
+    _statusUpdates.close();
   }
 
   Future<List<BusEta>> fetchRouteStop(RouteEntry route, int seq) async {
@@ -119,49 +132,103 @@ class EtaService {
       return base;
     }
 
+    final List<BusEta> sorted = List<BusEta>.of(base)
+      ..sort((BusEta a, BusEta b) {
+        final DateTime? aTime = a.eta;
+        final DateTime? bTime = b.eta;
+        if (aTime == null && bTime == null) {
+          return a.etaSeq.compareTo(b.etaSeq);
+        }
+        if (aTime == null) return 1;
+        if (bTime == null) return -1;
+        final int byTime = aTime.compareTo(bTime);
+        if (byTime != 0) return byTime;
+        return a.etaSeq.compareTo(b.etaSeq);
+      });
+
+    final String key = _statusKey(route, seq);
+    final List<BusEta> result = _applyCitybusStatuses(
+      sorted,
+      _cachedStatuses(key),
+    );
+    unawaited(_refreshCitybusStatus(route, seq, key));
+    return result;
+  }
+
+  List<BusEta> applyCachedStatuses(
+    RouteEntry route,
+    int seq,
+    List<BusEta> etas,
+  ) {
+    return _applyCitybusStatuses(etas, _cachedStatuses(_statusKey(route, seq)));
+  }
+
+  List<CitybusEtaStatus>? _cachedStatuses(String key) {
+    final _CachedCitybusStatus? cached = _statusCache[key];
+    if (cached == null) return null;
+    if (DateTime.now().difference(cached.fetchedAt) > _statusCacheTtl) {
+      _statusCache.remove(key);
+      return null;
+    }
+    return cached.statuses;
+  }
+
+  List<BusEta> _applyCitybusStatuses(
+    List<BusEta> etas,
+    List<CitybusEtaStatus>? statuses,
+  ) {
+    if (statuses == null || statuses.isEmpty) return etas;
+    final List<BusEta> result = <BusEta>[];
+    int statusIndex = 0;
+    bool changed = false;
+    for (final BusEta eta in etas) {
+      if (eta.company != BusCompany.ctb ||
+          eta.eta == null ||
+          statusIndex >= statuses.length) {
+        result.add(eta);
+        continue;
+      }
+      final CitybusEtaStatus status = statuses[statusIndex++];
+      result.add(
+        eta.copyWith(
+          statusZh: status.statusZh,
+          statusEn: status.statusEn,
+          distanceKm: status.distanceKm,
+        ),
+      );
+      changed = true;
+    }
+    return changed ? result : etas;
+  }
+
+  Future<void> _refreshCitybusStatus(
+    RouteEntry route,
+    int seq,
+    String key,
+  ) async {
+    if (_statusLoading.contains(key) || _statusUpdates.isClosed) return;
+    _statusLoading.add(key);
     try {
       final CitybusEtaArguments? args = await CitybusRoutelistService.instance
           .etaArguments(route, seq, _language);
-      if (args == null) return base;
+      if (args == null) return;
       final List<CitybusEtaStatus> statuses = await _ctbStatus.fetch(args);
-      if (statuses.isEmpty) return base;
-
-      final List<BusEta> sorted = List<BusEta>.of(base)
-        ..sort((BusEta a, BusEta b) {
-          final DateTime? aTime = a.eta;
-          final DateTime? bTime = b.eta;
-          if (aTime == null && bTime == null) {
-            return a.etaSeq.compareTo(b.etaSeq);
-          }
-          if (aTime == null) return 1;
-          if (bTime == null) return -1;
-          final int byTime = aTime.compareTo(bTime);
-          if (byTime != 0) return byTime;
-          return a.etaSeq.compareTo(b.etaSeq);
-        });
-
-      final List<BusEta> enriched = <BusEta>[];
-      int statusIndex = 0;
-      for (final BusEta eta in sorted) {
-        if (eta.eta == null || statusIndex >= statuses.length) {
-          enriched.add(eta);
-          continue;
-        }
-        final CitybusEtaStatus status = statuses[statusIndex++];
-        enriched.add(
-          eta.copyWith(
-            statusZh: status.statusZh,
-            statusEn: status.statusEn,
-            distanceKm: status.distanceKm,
-          ),
-        );
+      if (statuses.isEmpty) return;
+      _statusCache[key] = _CachedCitybusStatus(
+        statuses: statuses,
+        fetchedAt: DateTime.now(),
+      );
+      if (!_statusUpdates.isClosed) {
+        _statusUpdates.add(EtaStatusUpdate(routeKey: route.key, seq: seq));
       }
-      return enriched;
     } catch (error) {
       debugPrint('Citybus ETA status failed: $error');
-      return base;
+    } finally {
+      _statusLoading.remove(key);
     }
   }
+
+  String _statusKey(RouteEntry route, int seq) => '${route.key}|$seq';
 
   List<BusEta> _normalise(List<BusEta> input) {
     if (input.isEmpty) return const [];
@@ -198,4 +265,18 @@ class EtaService {
     });
     return sorted;
   }
+}
+
+class EtaStatusUpdate {
+  const EtaStatusUpdate({required this.routeKey, required this.seq});
+
+  final String routeKey;
+  final int seq;
+}
+
+class _CachedCitybusStatus {
+  const _CachedCitybusStatus({required this.statuses, required this.fetchedAt});
+
+  final List<CitybusEtaStatus> statuses;
+  final DateTime fetchedAt;
 }

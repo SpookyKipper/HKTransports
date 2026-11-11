@@ -70,6 +70,7 @@ class _RoutePageState extends State<_RoutePage> {
   static const double _autoFocusMaxDistanceMeters = 2000;
 
   late final EtaService _etaService;
+  StreamSubscription<EtaStatusUpdate>? _statusSubscription;
   final Map<int, List<BusEta>?> _etas = {};
   final Set<int> _loading = {};
   final GlobalKey<RouteMapState> _mapKey = GlobalKey<RouteMapState>();
@@ -84,6 +85,7 @@ class _RoutePageState extends State<_RoutePage> {
     super.initState();
     final AppSettings settings = context.read<AppSettings>();
     _etaService = EtaService(language: settings.language, settings: settings);
+    _statusSubscription = _etaService.statusUpdates.listen(_onStatusUpdate);
     final int initialIndex = widget.route.primaryStops.indexOf(
       widget.initialStopId ?? '',
     );
@@ -169,7 +171,22 @@ class _RoutePageState extends State<_RoutePage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _statusSubscription?.cancel();
+    _etaService.dispose();
     super.dispose();
+  }
+
+  void _onStatusUpdate(EtaStatusUpdate update) {
+    if (!mounted || update.routeKey != widget.route.key) return;
+    final List<BusEta>? current = _etas[update.seq];
+    if (current == null) return;
+    final List<BusEta> updated = _etaService.applyCachedStatuses(
+      widget.route,
+      update.seq,
+      current,
+    );
+    if (identical(updated, current)) return;
+    setState(() => _etas[update.seq] = updated);
   }
 
   void _startRefresh(int index) {
