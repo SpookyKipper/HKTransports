@@ -90,8 +90,35 @@ class _EndpointTile extends StatelessWidget {
     bool value,
   ) async {
     settings.setProprietaryEndpoint(endpoint, value);
-    if (endpoint == ProprietaryEndpoint.kmbInterchange && !value) {
-      await const BbiService().clearCache();
+    if (endpoint == ProprietaryEndpoint.kmbInterchange) {
+      if (!value) {
+        await const BbiService().clearCache();
+        return;
+      }
+      if (await const BbiService().storedBytes() > 0) return;
+      if (!context.mounted) return;
+      final bool? downloaded = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) =>
+            const _KmbInterchangeDownloadDialog(),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            downloaded == true
+                ? settings.text(
+                    '九巴/龍運轉乘資料已下載',
+                    'KMB/LWB interchange data downloaded',
+                  )
+                : settings.text(
+                    '九巴/龍運轉乘資料下載失敗，可在「更新資料」重試',
+                    'KMB/LWB interchange data download failed. Retry in Update data.',
+                  ),
+          ),
+        ),
+      );
       return;
     }
     if (endpoint != ProprietaryEndpoint.citybusDatabase) return;
@@ -146,6 +173,75 @@ class _EndpointTile extends StatelessWidget {
       case ProprietaryEndpoint.citybusDatabase:
         return Icons.storage_outlined;
     }
+  }
+}
+
+class _KmbInterchangeDownloadDialog extends StatefulWidget {
+  const _KmbInterchangeDownloadDialog();
+
+  @override
+  State<_KmbInterchangeDownloadDialog> createState() =>
+      _KmbInterchangeDownloadDialogState();
+}
+
+class _KmbInterchangeDownloadDialogState
+    extends State<_KmbInterchangeDownloadDialog> {
+  int _completed = 0;
+  int _total = 4;
+
+  @override
+  void initState() {
+    super.initState();
+    _download();
+  }
+
+  Future<void> _download() async {
+    bool success = false;
+    try {
+      final AppSettings settings = context.read<AppSettings>();
+      success = await const BbiService().refreshAll(
+        zh: settings.isChinese,
+        onProgress: (int completed, int total) {
+          if (!mounted) return;
+          setState(() {
+            _completed = completed;
+            _total = total;
+          });
+        },
+      );
+    } catch (_) {
+      success = false;
+    }
+    if (!mounted) return;
+    Navigator.of(context).pop(success);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final double value = _total == 0 ? 0 : _completed / _total;
+    return AlertDialog(
+      title: Text(
+        settings.text('下載九巴/龍運轉乘資料', 'Downloading KMB/LWB interchange data'),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          M3EProgressIndicator.linearWavy(
+            value: value,
+            linearSize: M3EProgressIndicatorSize.m,
+            strokeWidth: 4,
+            trackStrokeWidth: 4,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '$_completed / $_total · ${settings.text('約 61 MB', 'approx. 61 MB')}',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 }
 
