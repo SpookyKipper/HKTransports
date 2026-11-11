@@ -26,6 +26,7 @@ import 'package:hktransports/pages/homeIndexPage/traffic_news.dart';
 import 'package:hktransports/pages/search_page.dart';
 import 'package:hktransports/pages/licenses_page.dart';
 import 'package:hktransports/pages/notice_viewer_page.dart';
+import 'package:hktransports/pages/proprietary_data_page.dart';
 import 'package:hktransports/pages/route.dart';
 import 'package:hktransports/pages/settings_page.dart';
 import 'package:hktransports/pages/update_data.dart';
@@ -113,6 +114,11 @@ final GoRouter _router = GoRouter(
       path: '/updateData',
       pageBuilder: (context, state) =>
           _page(context, state, const UpdateDataPageRoute()),
+    ),
+    GoRoute(
+      path: '/proprietaryData',
+      pageBuilder: (context, state) =>
+          _page(context, state, const ProprietaryDataPage()),
     ),
     GoRoute(
       path: '/notice',
