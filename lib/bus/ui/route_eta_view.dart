@@ -6,6 +6,7 @@ import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/fade_in.dart';
 import 'package:intl/intl.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -137,10 +138,13 @@ class _RouteEtaViewState extends State<RouteEtaView> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           for (int index = 0; index < etas.length; index++)
-            _RouteEtaLine(
-              eta: etas[index],
-              first: index == 0,
-              atOrigin: widget.seq == 0,
+            FadeIn(
+              key: ValueKey<String>(etaDisplayKey(etas[index])),
+              child: _RouteEtaLine(
+                eta: etas[index],
+                first: index == 0,
+                atOrigin: widget.seq == 0,
+              ),
             ),
         ],
       ),

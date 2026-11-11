@@ -19,6 +19,7 @@ import 'package:hktransports/bus/ui/citybus_fare_label.dart';
 import 'package:hktransports/bus/ui/citybus_route_description.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
+import 'package:hktransports/bus/ui/fade_in.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:hktransports/bus/ui/route_map.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
@@ -873,14 +874,17 @@ class _EtaList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (int index = 0; index < visible.length; index++)
-          _EtaLine(
-            route: route,
-            eta: visible[index],
-            first: index == 0,
-            showCompany: showCompany,
-            atOrigin: atOrigin,
-            stopIndex: stopIndex,
-            stopIndexByCode: stopIndexByCode,
+          FadeIn(
+            key: ValueKey<String>(etaDisplayKey(visible[index])),
+            child: _EtaLine(
+              route: route,
+              eta: visible[index],
+              first: index == 0,
+              showCompany: showCompany,
+              atOrigin: atOrigin,
+              stopIndex: stopIndex,
+              stopIndexByCode: stopIndexByCode,
+            ),
           ),
       ],
     );
