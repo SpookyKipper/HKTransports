@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/app_config.dart';
+import 'package:hktransports/app/app_update.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:provider/provider.dart';
 
@@ -50,6 +51,7 @@ Future<void> showProprietaryAvailabilityDialog(
     title: updateRequired
         ? settings.text('需要更新', 'Update required')
         : settings.text('目前無法使用', 'Currently unavailable'),
+    showUpdateAction: updateRequired,
     content: Text(
       updateRequired
           ? settings.text(
@@ -69,6 +71,7 @@ Future<void> _showPrimaryDialog(
   required String title,
   required Widget content,
   bool barrierDismissible = true,
+  bool showUpdateAction = false,
 }) async {
   final AppSettings settings = context.read<AppSettings>();
   final ColorScheme colors = Theme.of(context).colorScheme;
@@ -92,6 +95,15 @@ Future<void> _showPrimaryDialog(
             ),
             child: Text(settings.text('確定', 'OK')),
           ),
+          if (showUpdateAction)
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                openAppUpdatePage();
+              },
+              icon: const Icon(Icons.open_in_new_rounded),
+              label: Text(settings.text('更新', 'Update')),
+            ),
         ],
       );
     },

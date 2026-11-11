@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/app_config.dart';
+import 'package:hktransports/app/app_update.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:provider/provider.dart';
 
@@ -57,6 +58,12 @@ class CriticalUpdateScreen extends StatelessWidget {
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: colors.onPrimaryContainer,
                   ),
+                ),
+                const SizedBox(height: 28),
+                FilledButton.icon(
+                  onPressed: openAppUpdatePage,
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: Text(settings.text('更新', 'Update')),
                 ),
               ],
             ),
