@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hktransports/app/app_config.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/app_config_dialogs.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
@@ -89,6 +91,19 @@ class _EndpointTile extends StatelessWidget {
     AppSettings settings,
     bool value,
   ) async {
+    if (value) {
+      final ProprietaryAvailability availability = context
+          .read<AppConfigController>()
+          .availabilityFor(endpoint);
+      if (availability != ProprietaryAvailability.supported) {
+        await showProprietaryAvailabilityDialog(
+          context,
+          endpoint,
+          availability,
+        );
+        return;
+      }
+    }
     settings.setProprietaryEndpoint(endpoint, value);
     if (endpoint == ProprietaryEndpoint.kmbInterchange) {
       if (!value) {

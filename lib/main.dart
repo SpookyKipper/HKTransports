@@ -5,6 +5,8 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:material_ui/material_ui.dart' as mui;
 import 'package:go_router/go_router.dart';
+import 'package:hktransports/app/app_config.dart';
+import 'package:hktransports/app/app_config_gate.dart';
 import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/app/app_transition_page.dart';
 import 'package:hktransports/app/fade_forward_page.dart';
@@ -15,6 +17,7 @@ import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
+import 'package:hktransports/bus/ui/app_config_dialogs.dart';
 import 'package:hktransports/bus/ui/pinned_stops_bar.dart';
 import 'package:hktransports/location/location_controller.dart';
 import 'package:hktransports/objectBox/store.dart';
@@ -33,6 +36,8 @@ import 'package:hktransports/pages/update_data.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
 Page<void> _page(
   BuildContext context,
   GoRouterState state,
@@ -47,6 +52,7 @@ Page<void> _page(
 }
 
 final GoRouter _router = GoRouter(
+  navigatorKey: _navigatorKey,
   routes: [
     StatefulShellRoute.indexedStack(
       pageBuilder: (context, state, navigationShell) => _page(
@@ -173,28 +179,39 @@ void main() async {
   }
   await initObjectBox();
 
+  final AppConfigController appConfig = AppConfigController();
+  final Future<void> appConfigFuture = appConfig.load();
+
   final AppSettings settings = AppSettings();
-  if (!settings.isProprietaryEnabled(ProprietaryEndpoint.kmbInterchange)) {
-    await const BbiService().clearCache();
-  }
-  final bool citybusEnabled = settings.isProprietaryEnabled(
-    ProprietaryEndpoint.citybusDatabase,
-  );
-  if (citybusEnabled) {
-    unawaited(
-      CitybusRoutelistService.instance.ensureDownloaded().catchError((
-        Object error,
-      ) {
-        debugPrint('Unable to download Citybus routelist: $error');
-      }),
+  await appConfigFuture;
+  final List<ProprietaryEndpoint> disabledEndpoints = appConfig.isCritical
+      ? const <ProprietaryEndpoint>[]
+      : appConfig.applyToSettings(settings);
+
+  if (!appConfig.isCritical) {
+    if (!settings.isProprietaryEnabled(ProprietaryEndpoint.kmbInterchange)) {
+      await const BbiService().clearCache();
+    }
+    final bool citybusEnabled = settings.isProprietaryEnabled(
+      ProprietaryEndpoint.citybusDatabase,
     );
-  } else {
-    unawaited(
-      CitybusRoutelistService.instance.delete().catchError((Object error) {
-        debugPrint('Unable to delete Citybus routelist: $error');
-      }),
-    );
+    if (citybusEnabled) {
+      unawaited(
+        CitybusRoutelistService.instance.ensureDownloaded().catchError((
+          Object error,
+        ) {
+          debugPrint('Unable to download Citybus routelist: $error');
+        }),
+      );
+    } else {
+      unawaited(
+        CitybusRoutelistService.instance.delete().catchError((Object error) {
+          debugPrint('Unable to delete Citybus routelist: $error');
+        }),
+      );
+    }
   }
+
   final BusRepository repository = BusRepository(settings);
   await repository.initialize();
   final LocationController location = LocationController(settings);
@@ -204,6 +221,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider<AppSettings>.value(value: settings),
         ChangeNotifierProvider<BusRepository>.value(value: repository),
+        Provider<AppConfigController>.value(value: appConfig),
         Provider<EtaService>(
           create: (_) =>
               EtaService(language: settings.language, settings: settings),
@@ -216,8 +234,20 @@ void main() async {
       child: const MyApp(),
     ),
   );
-  repository.startAutoUpdate();
-  unawaited(location.ensureStarted());
+  if (!appConfig.isCritical) {
+    repository.startAutoUpdate();
+    unawaited(location.ensureStarted());
+    if (disabledEndpoints.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final BuildContext? context =
+            _navigatorKey.currentState?.overlay?.context;
+        if (context == null) return;
+        unawaited(
+          showDisabledProprietaryApisDialog(context, disabledEndpoints),
+        );
+      });
+    }
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -225,6 +255,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppConfigController appConfig = context.read<AppConfigController>();
     return Consumer<AppSettings>(
       builder: (context, settings, child) {
         return DynamicColorBuilder(
@@ -265,8 +296,11 @@ class MyApp extends StatelessWidget {
                               systemScale * settings.textScale,
                             ),
                           ),
-                          child: PinnedStopsHost(
-                            child: child ?? const SizedBox.shrink(),
+                          child: AppConfigGate(
+                            config: appConfig,
+                            child: PinnedStopsHost(
+                              child: child ?? const SizedBox.shrink(),
+                            ),
                           ),
                         ),
                       ),
