@@ -144,13 +144,13 @@ class _SearchPageState extends State<SearchPage> {
                                   CitybusRouteNameSubtitle(
                                     key: ValueKey<String>(
                                       '${route.key}|${settings.language}|'
-                                      '${settings.isProprietaryEnabled(ProprietaryDataSource.citybus)}',
+                                      '${settings.isProprietaryEnabled(ProprietaryEndpoint.citybusDatabase)}',
                                     ),
                                     route: route,
                                     text: route.orig.get(settings.language),
                                     language: settings.language,
                                     enabled: settings.isProprietaryEnabled(
-                                      ProprietaryDataSource.citybus,
+                                      ProprietaryEndpoint.citybusDatabase,
                                     ),
                                     style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(
@@ -163,7 +163,7 @@ class _SearchPageState extends State<SearchPage> {
                                     route: route,
                                     language: settings.language,
                                     enabled: settings.isProprietaryEnabled(
-                                      ProprietaryDataSource.citybus,
+                                      ProprietaryEndpoint.citybusDatabase,
                                     ),
                                     fallback: '',
                                     builder:

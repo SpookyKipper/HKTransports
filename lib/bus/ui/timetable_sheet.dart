@@ -24,10 +24,29 @@ class TimetableSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
+    final bool hasKmb = route.companies.contains(BusCompany.kmb);
+    final bool hasCtb = route.companies.contains(BusCompany.ctb);
     final bool showNotices =
-        route.companies.contains(BusCompany.kmb) ||
-        route.companies.contains(BusCompany.ctb);
-    final bool showRemarks = route.companies.contains(BusCompany.ctb);
+        (hasKmb &&
+            (settings.isProprietaryEnabled(
+                  ProprietaryEndpoint.kmbAnnouncements,
+                ) ||
+                settings.isProprietaryEnabled(
+                  ProprietaryEndpoint.kmbInterchange,
+                ))) ||
+        (hasCtb &&
+            (settings.isProprietaryEnabled(
+                  ProprietaryEndpoint.citybusSpecialNotices,
+                ) ||
+                settings.isProprietaryEnabled(
+                  ProprietaryEndpoint.citybusRouteNotices,
+                ) ||
+                settings.isProprietaryEnabled(
+                  ProprietaryEndpoint.citybusInterchange,
+                )));
+    final bool showRemarks =
+        hasCtb &&
+        settings.isProprietaryEnabled(ProprietaryEndpoint.citybusRemarks);
     return DefaultTabController(
       length: 2 + (showNotices ? 1 : 0) + (showRemarks ? 1 : 0),
       child: SizedBox(
@@ -337,7 +356,7 @@ class _RemarksTabState extends State<_RemarksTab> {
     super.didChangeDependencies();
     final AppSettings settings = context.read<AppSettings>();
     final bool enabled = settings.isProprietaryEnabled(
-      ProprietaryDataSource.citybus,
+      ProprietaryEndpoint.citybusRemarks,
     );
     if (enabled == _lastEnabled && settings.language == _lastLanguage) return;
     _lastEnabled = enabled;
@@ -346,7 +365,7 @@ class _RemarksTabState extends State<_RemarksTab> {
   }
 
   Future<List<CitybusRemarkLine>?>? _load(AppSettings settings) {
-    if (!settings.isProprietaryEnabled(ProprietaryDataSource.citybus)) {
+    if (!settings.isProprietaryEnabled(ProprietaryEndpoint.citybusRemarks)) {
       return null;
     }
     return _service.fetchRemarks(widget.route, zh: settings.isChinese);
@@ -360,14 +379,14 @@ class _RemarksTabState extends State<_RemarksTab> {
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
-    if (!settings.isProprietaryEnabled(ProprietaryDataSource.citybus)) {
+    if (!settings.isProprietaryEnabled(ProprietaryEndpoint.citybusRemarks)) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
             settings.text(
-              '請在設定中啟用城巴專有 API 以查看備註。',
-              'Enable the Citybus proprietary API in Settings to view remarks.',
+              '請在設定中啟用城巴路線備註。',
+              'Enable Citybus route remarks in Settings to view them.',
             ),
             textAlign: TextAlign.center,
           ),

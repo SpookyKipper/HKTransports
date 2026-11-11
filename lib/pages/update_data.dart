@@ -73,7 +73,9 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
 
     final AppSettings latestSettings = context.read<AppSettings>();
     if (downloadAgain ||
-        !latestSettings.isProprietaryEnabled(ProprietaryDataSource.kmb)) {
+        !latestSettings.isProprietaryEnabled(
+          ProprietaryEndpoint.kmbInterchange,
+        )) {
       await _loadSizes();
       if (!mounted) return;
       _showMessage(
@@ -375,10 +377,10 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     final bool routeBusy = repository.status == BusDataStatus.updating;
     final bool busy = routeBusy || _refreshingBbi || _refreshingCitybus;
     final bool kmbEnabled = settings.isProprietaryEnabled(
-      ProprietaryDataSource.kmb,
+      ProprietaryEndpoint.kmbInterchange,
     );
     final bool citybusEnabled = settings.isProprietaryEnabled(
-      ProprietaryDataSource.citybus,
+      ProprietaryEndpoint.citybusDatabase,
     );
 
     return Scaffold(
