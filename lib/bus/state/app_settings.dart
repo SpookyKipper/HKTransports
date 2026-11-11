@@ -129,7 +129,7 @@ extension ProprietaryGroupInfo on ProprietaryGroup {
       case ProprietaryGroup.kmb:
         return settings.text('九巴/龍運', 'KMB / LWB');
       case ProprietaryGroup.citybus:
-        return 'Citybus';
+        return settings.text('城巴', 'Citybus');
     }
   }
 }
