@@ -52,14 +52,14 @@ void main() {
       expect(stop.stationCode, isNull);
     });
 
-    test('detects alighting-only stops', () {
-      expect(
-        parse(
-          'HZMB PASSENGER CLEARANCE BUILDING (ALIGHTING STOP)',
-          '港珠澳大橋旅檢大樓 (落客站)',
-        ).isAlightingOnly,
-        isTrue,
+    test('detects and strips alighting-only labels', () {
+      final StopEntry stop = parse(
+        'HZMB PASSENGER CLEARANCE BUILDING (ALIGHTING STOP)',
+        '港珠澳大橋旅檢大樓（落客站）',
       );
+      expect(stop.isAlightingOnly, isTrue);
+      expect(stop.displayEn, 'HZMB PASSENGER CLEARANCE BUILDING');
+      expect(stop.displayZh, '港珠澳大橋旅檢大樓');
       expect(parse('TSUEN WAN WEST STATION (TW965)').isAlightingOnly, isFalse);
     });
   });

@@ -154,13 +154,9 @@ class StopEntry {
 
   String rawName(String language) => language == 'en' ? nameEn : nameZh;
 
-  bool get isAlightingOnly {
-    return RegExp(r'[（(]\s*落客站\s*[）)]').hasMatch(nameZh) ||
-        RegExp(
-          r'[（(]\s*alighting(?:\s+stop)?\s*[）)]',
-          caseSensitive: false,
-        ).hasMatch(nameEn);
-  }
+  bool get isAlightingOnly =>
+      _alightingOnlyPattern.hasMatch(nameZh) ||
+      _alightingOnlyPattern.hasMatch(nameEn);
 
   factory StopEntry.fromJson(String id, Map<String, dynamic> json) {
     final Map<String, dynamic> name =
@@ -197,6 +193,10 @@ class _ParsedName {
 final RegExp _stationCodePattern = RegExp(r'\s*\(([A-Z]{2}\d{3}[a-z]?)\)\s*$');
 final RegExp _kmbStopIdPattern = RegExp(r'^[0-9A-Fa-f]{16}$');
 final RegExp _platformCodePattern = RegExp(r'\s*\(([A-Z]\d{1,2})\)\s*$');
+final RegExp _alightingOnlyPattern = RegExp(
+  r'\s*[（(]\s*(?:落客站|alighting(?:\s+stop)?)\s*[）)]',
+  caseSensitive: false,
+);
 
 _ParsedName _parseStopName(String raw) {
   String display = raw.trim();
@@ -219,6 +219,7 @@ _ParsedName _parseStopName(String raw) {
         .trim();
   }
 
+  display = display.replaceAll(_alightingOnlyPattern, '').trim();
   return _ParsedName(display, stationCode, platformCode);
 }
 
