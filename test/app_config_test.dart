@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hktransports/app/app_config.dart';
+import 'package:hktransports/app/app_update.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 
 AppConfig _config({
@@ -113,5 +114,12 @@ void main() {
     expect(ProprietaryEndpoint.kmbInterchange.configKey, 'kmb-interchange');
     expect(ProprietaryEndpoint.citybusDatabase.configKey, 'ctb-routedata');
     expect(ProprietaryEndpoint.citybusEtaStatus.configKey, 'ctb-eta');
+  });
+
+  test('points update prompts at the app repository page', () {
+    expect(
+      appUpdateUrl,
+      'https://repo.spookysrv.com/apps/com.spookysrv.hktransports',
+    );
   });
 }
