@@ -801,6 +801,9 @@ class _RoutePageState extends State<_RoutePage> {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
+      // Keep the sheet draggable only by its handle so vertical gestures reach
+      // the NLB timetable WebView instead of being consumed by the sheet.
+      enableDrag: false,
       builder: (context) {
         return TimetableSheet(route: route, initialStopIndex: stopIndex);
       },
