@@ -68,6 +68,20 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
               _failed = true;
             });
           },
+          onSslAuthError: (SslAuthError error) {
+            // NLB serves an incomplete certificate chain. The rest of the app
+            // uses NlbHttp with the bundled GoDaddy intermediate certificate;
+            // allow the same NLB pages to render in its notice WebView.
+            final bool nlb = _isNlbHost(uri);
+            final bool untrusted = error.platform.description
+                .toLowerCase()
+                .contains('not trusted');
+            if (nlb && untrusted) {
+              error.proceed().ignore();
+            } else {
+              error.cancel().ignore();
+            }
+          },
           onNavigationRequest: (NavigationRequest request) {
             final Uri? target = Uri.tryParse(request.url);
             if (target != null && _isPdfUri(target)) {
