@@ -7,7 +7,6 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/official_links.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ProprietaryNoticesTab extends StatelessWidget {
   const ProprietaryNoticesTab({super.key, required this.route});
@@ -82,19 +81,14 @@ class _NlbFareTableNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final Uri uri = Uri.parse(nlbFareTableUrl(route.route));
+    final String title = settings.text('車資表', 'Fare Table');
     return Card.filled(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 8),
+      clipBehavior: Clip.antiAlias,
       child: ListTile(
-        leading: const Icon(Icons.receipt_long_outlined),
-        title: Text(settings.text('車資表', 'Fare Table')),
-        subtitle: Text(
-          settings.text(
-            '${route.route} 號線 · NLB 官方車費表',
-            'Route ${route.route} · NLB official fare table',
-          ),
-        ),
+        title: Text(title),
         trailing: const Icon(Icons.open_in_new),
-        onTap: () => launchUrl(uri, mode: LaunchMode.externalApplication),
+        onTap: () => openNotice(context, url: uri.toString(), title: title),
       ),
     );
   }
