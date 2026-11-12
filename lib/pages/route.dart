@@ -542,8 +542,10 @@ class _RoutePageState extends State<_RoutePage> {
     final String stopId = stopIds[index];
     final StopEntry? stop = repository.stopById(stopId);
     final String name = stop?.displayName(settings.language) ?? stopId;
-    final String? fare = route.fareAt(index, holiday: holiday);
-    final String? normalFare = route.fareAt(index, holiday: false);
+    final String? weekdayFare = route.fareAt(index, holiday: false);
+    final String? holidayFare = route.fareAt(index, holiday: true);
+    final String? fare = holiday ? holidayFare : weekdayFare;
+    final String? normalFare = weekdayFare;
     final String? code = stop?.stationCode;
     final String? platform = stop?.platformCode;
     final bool isTerminus = index == stopIds.length - 1;
@@ -606,7 +608,8 @@ class _RoutePageState extends State<_RoutePage> {
                           ProprietaryEndpoint.nlbProprietaryData,
                         ),
                         holiday: holiday,
-                        fallbackFare: fare ?? normalFare,
+                        fallbackWeekdayFare: weekdayFare,
+                        fallbackHolidayFare: holidayFare,
                         alightingOnly: kmbAlightingOnly,
                       )
                     else
