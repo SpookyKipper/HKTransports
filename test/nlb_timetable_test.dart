@@ -7,6 +7,10 @@ import 'package:http/testing.dart';
 const String _sampleHtml = '''
 <div>
   <div></div>
+  <div id="route-fare">
+    <div></div>
+    <div><div><div class="ck-content">Fare note example</div></div></div>
+  </div>
   <section class="space-y-4">
     <div></div>
     <div>
@@ -59,6 +63,8 @@ void main() {
     expect(html, contains('<table>'));
     expect(html, contains('T via Mui Wo Old Town'));
     expect(html, contains('nlb-timetable-legend'));
+    expect(html, contains('nlb-fare-note'));
+    expect(html, contains('Fare note example'));
     expect(html, contains('備註'));
     expect(html!.indexOf('備註'), lessThan(html.indexOf('Monday to Saturday')));
   });
