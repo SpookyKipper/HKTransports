@@ -66,7 +66,7 @@ class NlbTimetableService {
     try {
       final String? page = await _fetchHtml(uri, language);
       if (page == null) return null;
-      final String? html = parseNlbTimetableHtml(page);
+      final String? html = parseNlbTimetableHtml(page, language: language);
       if (html == null) return null;
       _timetableCache[key] = _CachedTimetableHtml(
         html: html,
@@ -160,7 +160,7 @@ class NlbTimetableService {
 }
 
 /// Returns the selected timetable HTML exactly as rendered by NLB.
-String? parseNlbTimetableHtml(String html) {
+String? parseNlbTimetableHtml(String html, {String language = 'tc'}) {
   final Document document = html_parser.parse(html);
   Element? content = document.querySelector(NlbTimetableService._selector);
   if (content == null) {
@@ -175,7 +175,39 @@ String? parseNlbTimetableHtml(String html) {
       }
     }
   }
-  return content?.outerHtml;
+  if (content == null) return null;
+  _addTimetableLegend(content, language);
+  return content.outerHtml;
+}
+
+void _addTimetableLegend(Element content, String language) {
+  final List<Element> children = content.children.toList(growable: false);
+  final List<Element> notes = <Element>[];
+  bool seenTable = false;
+  for (int index = 0; index < children.length; index++) {
+    final Element child = children[index];
+    if (child.localName == 'table') {
+      seenTable = true;
+      continue;
+    }
+    if (!seenTable || child.localName != 'p') continue;
+    final bool nextIsTable =
+        index + 1 < children.length && children[index + 1].localName == 'table';
+    if (!nextIsTable) notes.add(child);
+  }
+  if (notes.isEmpty) return;
+  final Element legend = Element.tag('div')
+    ..classes.add('nlb-timetable-legend');
+  legend.append(
+    Element.tag('p')
+      ..classes.add('nlb-timetable-legend-title')
+      ..text = language == 'en' ? 'Notes' : '備註',
+  );
+  for (final Element note in notes) {
+    legend.append(note.clone(true));
+    note.remove();
+  }
+  content.nodes.insert(0, legend);
 }
 
 NlbRoutePageData? parseNlbRouteData(String html) {

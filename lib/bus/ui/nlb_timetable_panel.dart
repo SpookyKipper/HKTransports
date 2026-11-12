@@ -111,20 +111,18 @@ class _NlbTimetableWebViewState extends State<_NlbTimetableWebView> {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colors = theme.colorScheme;
     final double scale = MediaQuery.textScalerOf(context).scale(1);
-    final double fontSize =
-        (theme.textTheme.bodySmall?.fontSize ?? 12) * scale;
+    final double fontSize = (theme.textTheme.bodySmall?.fontSize ?? 12) * scale;
     final String signature =
         '${widget.html}|${colors.surface.toARGB32()}|'
         '${colors.onSurface.toARGB32()}|${colors.primary.toARGB32()}|'
         '${colors.outlineVariant.toARGB32()}|$fontSize';
     if (signature == _loadedSignature) return;
     _loadedSignature = signature;
-    _controller.setBackgroundColor(colors.surface);
+    _controller.setBackgroundColor(Colors.transparent);
     _controller.loadHtmlString(_document(colors, theme, fontSize));
   }
 
   String _document(ColorScheme colors, ThemeData theme, double fontSize) {
-    final String background = _css(colors.surface);
     final String foreground = _css(colors.onSurface);
     final String primary = _css(colors.primary);
     final String border = _css(colors.outlineVariant);
@@ -139,13 +137,13 @@ class _NlbTimetableWebViewState extends State<_NlbTimetableWebView> {
 html, body {
   margin: 0;
   padding: 0;
-  background: $background;
+  background: transparent;
   color: $foreground;
   font-family: $fontFamily, sans-serif;
   font-size: ${fontSize.toStringAsFixed(1)}px;
   line-height: 1.45;
 }
-body { padding: 8px 14px 24px; }
+body { padding: 8px 14px 24px; background: transparent; }
 p { margin: 10px 0 6px; font-weight: 600; color: $primary; }
 h1, h2, h3, h4 { margin: 10px 0 6px; color: $primary; font-size: 1.05em; }
 table {
@@ -163,6 +161,22 @@ td, th {
 td:first-child, th:first-child {
   width: 32% !important;
   font-variant-numeric: tabular-nums;
+}
+.nlb-timetable-legend {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border: 1px solid $border;
+  border-radius: 8px;
+}
+.nlb-timetable-legend-title {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: $primary;
+}
+.nlb-timetable-legend p {
+  margin: 2px 0;
+  font-weight: 400;
+  color: $foreground;
 }
 </style>
 </head>

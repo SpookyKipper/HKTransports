@@ -58,6 +58,9 @@ void main() {
     expect(html, contains('Monday to Saturday'));
     expect(html, contains('<table>'));
     expect(html, contains('T via Mui Wo Old Town'));
+    expect(html, contains('nlb-timetable-legend'));
+    expect(html, contains('備註'));
+    expect(html!.indexOf('備註'), lessThan(html.indexOf('Monday to Saturday')));
   });
 
   test('parses NLB stop fares and nearby locations', () {
@@ -104,6 +107,7 @@ void main() {
     final String? html = await service.fetchTimetableHtml(_route(), 'en');
 
     expect(html, isNotNull);
+    expect(html, contains('Notes'));
     expect(requested.path, '/en/route/123');
     expect(requested.host, 'www.nlb.com.hk');
   });
