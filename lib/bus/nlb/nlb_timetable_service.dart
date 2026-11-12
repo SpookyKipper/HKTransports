@@ -176,8 +176,17 @@ String? parseNlbTimetableHtml(String html, {String language = 'tc'}) {
     }
   }
   if (content == null) return null;
+  final Element? fareNote =
+      document.querySelector(
+        '#route-fare > div:nth-child(2) > div:nth-child(1)',
+      ) ??
+      document.querySelector('#route-fare div.ck-content');
+  final String noteHtml =
+      fareNote != null && _cleanText(fareNote.text).isNotEmpty
+      ? '<div class="nlb-fare-note">${fareNote.outerHtml}</div>'
+      : '';
   _addTimetableLegend(content, language);
-  return content.outerHtml;
+  return '$noteHtml${content.outerHtml}';
 }
 
 void _addTimetableLegend(Element content, String language) {
