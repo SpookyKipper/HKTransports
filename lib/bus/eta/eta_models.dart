@@ -51,7 +51,12 @@ class BusEta {
 
   bool get hasEta => eta != null;
 
-  BusEta copyWith({String? statusZh, String? statusEn, double? distanceKm}) {
+  BusEta copyWith({
+    String? statusZh,
+    String? statusEn,
+    double? distanceKm,
+    int? etaSeq,
+  }) {
     return BusEta(
       company: company,
       eta: eta,
@@ -59,7 +64,7 @@ class BusEta {
       remarkEn: remarkEn,
       destZh: destZh,
       destEn: destEn,
-      etaSeq: etaSeq,
+      etaSeq: etaSeq ?? this.etaSeq,
       scheduled: scheduled,
       platform: platform,
       statusZh: statusZh ?? this.statusZh,

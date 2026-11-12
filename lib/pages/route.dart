@@ -86,7 +86,12 @@ class _RoutePageState extends State<_RoutePage> {
   void initState() {
     super.initState();
     final AppSettings settings = context.read<AppSettings>();
-    _etaService = EtaService(language: settings.language, settings: settings);
+    final BusRepository repository = context.read<BusRepository>();
+    _etaService = EtaService(
+      language: settings.language,
+      settings: settings,
+      databaseProvider: () => repository.database,
+    );
     _statusSubscription = _etaService.statusUpdates.listen(_onStatusUpdate);
     final int initialIndex = widget.route.primaryStops.indexOf(
       widget.initialStopId ?? '',
@@ -1001,10 +1006,13 @@ class _EtaLine extends StatelessWidget {
         : '';
     final String? status = eta.status(settings.language);
     final String? distance = eta.distanceLabel(settings.language);
+    final String? platform = eta.platform;
     final List<String> segments = [
       parts,
       if (showCompany) company,
       if (remark.isNotEmpty) remark,
+      if (platform != null && platform.isNotEmpty)
+        '${settings.text('月台', 'Platform')} $platform',
       if (eta.scheduled && remark.isEmpty) settings.text('預定班次', 'Scheduled'),
       if (via.isNotEmpty) via,
     ];
