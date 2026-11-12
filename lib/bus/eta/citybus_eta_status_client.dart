@@ -390,6 +390,7 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
       }
     }
     if (statusText == null || statusText.isEmpty) continue;
+    statusText = _stripOperatorPrefix(statusText);
 
     double? distanceKm;
     final RegExpMatch? distance = RegExp(
@@ -421,6 +422,12 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
 
 String _cleanText(String value) {
   return value.replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
+String _stripOperatorPrefix(String status) {
+  return status
+      .replaceFirst(RegExp(r'^(?:城巴|Citybus)\s+', caseSensitive: false), '')
+      .trim();
 }
 
 String _translateStatus(String status) {
