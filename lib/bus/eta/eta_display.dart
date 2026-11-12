@@ -15,6 +15,7 @@ String etaDisplayKey(BusEta eta) {
     eta.remarkZh,
     eta.remarkEn,
     eta.scheduled.toString(),
+    eta.platform ?? '',
     eta.destZh,
     eta.destEn,
   ].join('|');

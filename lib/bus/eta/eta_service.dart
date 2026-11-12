@@ -6,27 +6,38 @@ import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/eta/citybus_eta_match.dart';
 import 'package:hktransports/bus/eta/citybus_eta_status_client.dart';
 import 'package:hktransports/bus/eta/clients/ctb_eta_client.dart';
+import 'package:hktransports/bus/eta/clients/ferry_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/gmb_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/kmb_eta_client.dart';
+import 'package:hktransports/bus/eta/clients/lightrail_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/lrtfeeder_eta_client.dart';
+import 'package:hktransports/bus/eta/clients/mtr_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/nlb_eta_client.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 
 class EtaService {
-  EtaService({String language = 'zh', AppSettings? settings})
-    : _language = language,
-      _settings = settings;
+  EtaService({
+    String language = 'zh',
+    AppSettings? settings,
+    BusDatabase? Function()? databaseProvider,
+  }) : _language = language,
+       _settings = settings,
+       _databaseProvider = databaseProvider;
 
   String _language;
   final AppSettings? _settings;
+  final BusDatabase? Function()? _databaseProvider;
 
   final KmbEtaClient _kmb = KmbEtaClient();
   final CtbEtaClient _ctb = CtbEtaClient();
   final NlbEtaClient _nlb = NlbEtaClient();
   final GmbEtaClient _gmb = GmbEtaClient();
   final LrtFeederEtaClient _lrtFeeder = LrtFeederEtaClient();
+  final MtrEtaClient _mtr = MtrEtaClient();
+  final LightRailEtaClient _lightRail = LightRailEtaClient();
+  final FerryEtaClient _ferry = FerryEtaClient();
   final CitybusEtaStatusClient _ctbStatus = CitybusEtaStatusClient();
   static const Duration _statusCacheTtl = Duration(seconds: 90);
 
@@ -107,11 +118,28 @@ class EtaService {
           language: _language,
         );
       case BusCompany.mtr:
+        return _mtr.fetch(
+          route: route,
+          company: company,
+          seq: seq,
+          language: _language,
+        );
       case BusCompany.lightRail:
+        return _lightRail.fetch(
+          route: route,
+          company: company,
+          seq: seq,
+          language: _language,
+        );
       case BusCompany.sunferry:
       case BusCompany.fortuneferry:
       case BusCompany.hkkf:
-        return Future.value(const []);
+        return _ferry.fetch(
+          route: route,
+          company: company,
+          seq: seq,
+          database: _databaseProvider?.call(),
+        );
     }
   }
 

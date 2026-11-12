@@ -223,8 +223,11 @@ void main() async {
         ChangeNotifierProvider<BusRepository>.value(value: repository),
         Provider<AppConfigController>.value(value: appConfig),
         Provider<EtaService>(
-          create: (_) =>
-              EtaService(language: settings.language, settings: settings),
+          create: (_) => EtaService(
+            language: settings.language,
+            settings: settings,
+            databaseProvider: () => repository.database,
+          ),
         ),
         ChangeNotifierProvider<PinnedStopsController>(
           create: (_) => PinnedStopsController(),
