@@ -17,7 +17,7 @@ extension AutoUpdateNetworkInfo on AutoUpdateNetwork {
   }
 }
 
-enum ProprietaryGroup { notice, kmb, citybus }
+enum ProprietaryGroup { notice, kmb, citybus, nlb }
 
 enum ProprietaryEndpoint {
   noticeFeed,
@@ -30,6 +30,7 @@ enum ProprietaryEndpoint {
   citybusInterchange,
   citybusDatabase,
   citybusEtaStatus,
+  nlbFareTable,
 }
 
 extension ProprietaryEndpointInfo on ProprietaryEndpoint {
@@ -57,6 +58,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return 'ctb-routedata';
       case ProprietaryEndpoint.citybusEtaStatus:
         return 'ctb-eta';
+      case ProprietaryEndpoint.nlbFareTable:
+        return 'nlb-faretable';
     }
   }
 
@@ -76,6 +79,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return 'proprietary.citybus';
       case ProprietaryEndpoint.citybusEtaStatus:
         return 'proprietary.citybus.etaStatus';
+      case ProprietaryEndpoint.nlbFareTable:
+        return 'proprietary.nlb.fareTable';
     }
   }
 
@@ -94,6 +99,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.citybusDatabase:
       case ProprietaryEndpoint.citybusEtaStatus:
         return ProprietaryGroup.citybus;
+      case ProprietaryEndpoint.nlbFareTable:
+        return ProprietaryGroup.nlb;
     }
   }
 
@@ -119,6 +126,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return settings.text('城巴路線資料庫', 'Citybus route database');
       case ProprietaryEndpoint.citybusEtaStatus:
         return settings.text('城巴實時到站狀態', 'Citybus live ETA status');
+      case ProprietaryEndpoint.nlbFareTable:
+        return settings.text('嶼巴車費表', 'NLB fare table');
     }
   }
 
@@ -153,6 +162,11 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
           '未開出及距離等狀態 · 需城巴路線資料庫',
           'Not yet departed, distance status etc. · requires Citybus route database',
         );
+      case ProprietaryEndpoint.nlbFareTable:
+        return settings.text(
+          '在嶼巴路線通告顯示永久車費表連結',
+          'Show a permanent fare table link in NLB route notices',
+        );
     }
   }
 }
@@ -166,6 +180,8 @@ extension ProprietaryGroupInfo on ProprietaryGroup {
         return settings.text('九巴/龍運', 'KMB / LWB');
       case ProprietaryGroup.citybus:
         return settings.text('城巴', 'Citybus');
+      case ProprietaryGroup.nlb:
+        return settings.text('嶼巴', 'NLB');
     }
   }
 }

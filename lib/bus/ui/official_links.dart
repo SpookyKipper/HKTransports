@@ -50,6 +50,11 @@ class OfficialLinks extends StatelessWidget {
   }
 }
 
+String nlbFareTableUrl(String route) {
+  return 'https://www.nlb.com.hk/route/'
+      '${Uri.encodeComponent(route)}/fare-table';
+}
+
 String officialUrl({
   required RouteEntry route,
   required BusCompany company,
@@ -69,7 +74,8 @@ String officialUrl({
       return 'https://h2-app-rr.hkemobility.gov.hk/ris_page/get_gmb_detail.php'
           '?lang=${zh ? 'TC' : 'EN'}&route_id=$gtfsId';
     case BusCompany.nlb:
-      return 'https://www.nlb.com.hk/${zh ? 'tc' : 'en'}/route?q=${route.route}';
+      return 'https://www.nlb.com.hk/${zh ? 'tc' : 'en'}'
+          '/route?q=${Uri.encodeQueryComponent(route.route)}';
     case BusCompany.lrtfeeder:
       return 'https://www.mtr.com.hk/${zh ? 'ch' : 'en'}'
           '/customer/services/searchBusRouteDetails.php?routeID=${route.route}';

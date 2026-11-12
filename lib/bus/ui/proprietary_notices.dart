@@ -4,8 +4,10 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/notice/proprietary_notice_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/official_links.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProprietaryNoticesTab extends StatelessWidget {
   const ProprietaryNoticesTab({super.key, required this.route});
@@ -17,6 +19,9 @@ class ProprietaryNoticesTab extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
     final bool hasKmb = route.companies.contains(BusCompany.kmb);
     final bool hasCtb = route.companies.contains(BusCompany.ctb);
+    final bool showNlbFareTable =
+        route.companies.contains(BusCompany.nlb) &&
+        settings.isProprietaryEnabled(ProprietaryEndpoint.nlbFareTable);
     final bool showKmbNews =
         hasKmb &&
         settings.isProprietaryEnabled(ProprietaryEndpoint.kmbAnnouncements);
@@ -37,6 +42,7 @@ class ProprietaryNoticesTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
+        if (showNlbFareTable) _NlbFareTableNotice(route: route),
         if (showKmbNews)
           _AsyncNoticeSection(
             key: ValueKey<String>('kmb-${settings.language}'),
@@ -63,6 +69,33 @@ class ProprietaryNoticesTab extends StatelessWidget {
             topMargin: showKmbBbi ? 0 : 12,
           ),
       ],
+    );
+  }
+}
+
+class _NlbFareTableNotice extends StatelessWidget {
+  const _NlbFareTableNotice({required this.route});
+
+  final RouteEntry route;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final Uri uri = Uri.parse(nlbFareTableUrl(route.route));
+    return Card.filled(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: const Icon(Icons.receipt_long_outlined),
+        title: Text(settings.text('車資表', 'Fare Table')),
+        subtitle: Text(
+          settings.text(
+            '${route.route} 號線 · NLB 官方車費表',
+            'Route ${route.route} · NLB official fare table',
+          ),
+        ),
+        trailing: const Icon(Icons.open_in_new),
+        onTap: () => launchUrl(uri, mode: LaunchMode.externalApplication),
+      ),
     );
   }
 }
