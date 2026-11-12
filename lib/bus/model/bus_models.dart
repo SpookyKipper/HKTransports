@@ -305,6 +305,12 @@ class RouteEntry {
 
   String? boundFor(BusCompany company) => bound[company];
 
+  /// Direction-specific NLB route id used by the official NLB website.
+  String get nlbRouteId {
+    final String id = nlbId?.trim() ?? '';
+    return id.isEmpty ? route : id;
+  }
+
   String? fareAt(int index, {required bool holiday}) {
     final List<String>? list = holiday ? faresHoliday : fares;
     if (list == null || index < 0 || index >= list.length) return null;

@@ -50,9 +50,9 @@ class OfficialLinks extends StatelessWidget {
   }
 }
 
-String nlbFareTableUrl(String route) {
+String nlbFareTableUrl(String routeId) {
   return 'https://www.nlb.com.hk/route/'
-      '${Uri.encodeComponent(route)}/fare-table';
+      '${Uri.encodeComponent(routeId)}/fare-table';
 }
 
 String officialUrl({
@@ -75,7 +75,7 @@ String officialUrl({
           '?lang=${zh ? 'TC' : 'EN'}&route_id=$gtfsId';
     case BusCompany.nlb:
       return 'https://www.nlb.com.hk/${zh ? 'tc' : 'en'}'
-          '/route/${Uri.encodeQueryComponent(route.route)}';
+          '/route/${Uri.encodeComponent(route.nlbRouteId)}';
     case BusCompany.lrtfeeder:
       return 'https://www.mtr.com.hk/${zh ? 'ch' : 'en'}'
           '/customer/services/searchBusRouteDetails.php?routeID=${route.route}';

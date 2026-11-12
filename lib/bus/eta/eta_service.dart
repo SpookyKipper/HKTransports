@@ -237,7 +237,7 @@ class EtaService {
     _nlbLoading.add(key);
     try {
       final List<NlbEtaArrival> arrivals = await _nlbData.fetch(
-        route: route.route,
+        route: route.nlbRouteId,
         stationIndex: seq + 1,
         language: _language,
       );
