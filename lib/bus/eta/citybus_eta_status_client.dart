@@ -58,20 +58,31 @@ class CitybusEtaStatusClient {
     'Connection': 'keep-alive',
   };
 
-  static const Duration _scriptCacheTtl = Duration(minutes: 10);
-
   final Duration _timeout;
+
+  // Reuse the nwp3 session until a request indicates it has expired or the
+  // hashed result endpoint has changed.
+  String? _ssid;
   String? _resultPath;
-  DateTime? _resultPathAt;
+  Map<String, String> _cookies = const <String, String>{};
+
+  bool get _hasSession =>
+      _ssid != null && _resultPath != null && _cookies.isNotEmpty;
 
   Future<List<CitybusEtaStatus>> fetch(CitybusEtaArguments args) async {
     Object? lastError;
     for (int attempt = 0; attempt < 2; attempt++) {
+      final bool hadSession = _hasSession;
       try {
-        final String body = await _fetchBody(args);
+        final String body = await _fetchBody(args, bootstrap: !hadSession);
         return parseCitybusEtaStatuses(body);
       } on _Nwp3ConnectionException catch (error) {
         lastError = error;
+        _clearSession();
+      } on _Nwp3Exception catch (error) {
+        lastError = error;
+        if (!hadSession) break;
+        _clearSession();
       }
     }
     if (lastError != null) {
@@ -80,7 +91,10 @@ class CitybusEtaStatusClient {
     return const <CitybusEtaStatus>[];
   }
 
-  Future<String> _fetchBody(CitybusEtaArguments args) async {
+  Future<String> _fetchBody(
+    CitybusEtaArguments args, {
+    required bool bootstrap,
+  }) async {
     _HttpConnection? connection;
     try {
       final SecureSocket socket = await SecureSocket.connect(
@@ -89,21 +103,33 @@ class CitybusEtaStatusClient {
         timeout: _timeout,
         supportedProtocols: const <String>['http/1.1'],
       );
-      connection = _HttpConnection(socket, timeout: _timeout);
-
-      final _HttpResponse home = await connection.get(
-        _uri('$_basePath/'),
-        _homeHeaders,
+      connection = _HttpConnection(
+        socket,
+        timeout: _timeout,
+        cookies: _cookies,
       );
-      _requireOk(home);
-      final String? ssid = _firstMatch(home.text, <RegExp>[
-        RegExp(r'''var\s+ssid\s*=\s*["']([0-9a-fA-F]+)["']'''),
-        RegExp(r'fb\.php\?ssid=([0-9a-fA-F]+)'),
-      ]);
-      if (ssid == null || ssid.isEmpty) {
-        throw const _Nwp3Exception('nwp3 homepage did not contain an ssid');
+
+      String ssid;
+      String resultPath;
+      if (bootstrap) {
+        final _HttpResponse home = await connection.get(
+          _uri('$_basePath/'),
+          _homeHeaders,
+        );
+        _requireOk(home);
+        final String? parsedSsid = _firstMatch(home.text, <RegExp>[
+          RegExp(r'''var\s+ssid\s*=\s*["']([0-9a-fA-F]+)["']'''),
+          RegExp(r'fb\.php\?ssid=([0-9a-fA-F]+)'),
+        ]);
+        if (parsedSsid == null || parsedSsid.isEmpty) {
+          throw const _Nwp3Exception('nwp3 homepage did not contain an ssid');
+        }
+        ssid = parsedSsid;
+        resultPath = await _fetchResultScriptPath(connection, ssid);
+      } else {
+        ssid = _ssid!;
+        resultPath = _resultPath!;
       }
-      final String resultPath = await _resultScriptPath(connection, ssid);
 
       final _HttpResponse menu = await connection.get(
         _uri('$_basePath/menu2.php', <String, String>{
@@ -194,7 +220,15 @@ class CitybusEtaStatusClient {
         throw const _Nwp3Exception('nwp3 verification did not complete');
       }
 
-      return await _resultBody(connection, ssid, resultPath);
+      final ({String body, String path}) result = await _resultBody(
+        connection,
+        ssid,
+        resultPath,
+      );
+      _ssid = ssid;
+      _resultPath = result.path;
+      _cookies = Map<String, String>.unmodifiable(connection.cookies);
+      return result.body;
     } on _Nwp3Exception {
       rethrow;
     } on IOException catch (error) {
@@ -206,19 +240,10 @@ class CitybusEtaStatusClient {
     }
   }
 
-  Future<String> _resultScriptPath(
+  Future<String> _fetchResultScriptPath(
     _HttpConnection connection,
-    String ssid, {
-    bool force = false,
-  }) async {
-    final String? cached = _resultPath;
-    final DateTime? cachedAt = _resultPathAt;
-    if (!force &&
-        cached != null &&
-        cachedAt != null &&
-        DateTime.now().difference(cachedAt) < _scriptCacheTtl) {
-      return cached;
-    }
+    String ssid,
+  ) async {
     final _HttpResponse response = await connection.get(
       _uri('$_basePath/fb.php', <String, String>{'ssid': ssid}),
       _xhrHeaders,
@@ -230,12 +255,10 @@ class CitybusEtaStatusClient {
         'nwp3 script did not contain a result endpoint',
       );
     }
-    _resultPath = resultPath;
-    _resultPathAt = DateTime.now();
     return resultPath;
   }
 
-  Future<String> _resultBody(
+  Future<({String body, String path})> _resultBody(
     _HttpConnection connection,
     String ssid,
     String resultPath,
@@ -243,11 +266,17 @@ class CitybusEtaStatusClient {
     String path = resultPath;
     _HttpResponse response = await _getResult(connection, ssid, path);
     if (response.statusCode == 404 || response.statusCode == 410) {
-      path = await _resultScriptPath(connection, ssid, force: true);
+      path = await _fetchResultScriptPath(connection, ssid);
       response = await _getResult(connection, ssid, path);
     }
     _requireOk(response);
-    return response.text;
+    return (body: response.text, path: path);
+  }
+
+  void _clearSession() {
+    _ssid = null;
+    _resultPath = null;
+    _cookies = const <String, String>{};
   }
 
   Future<_HttpResponse> _getResult(
@@ -421,15 +450,21 @@ class _HttpResponse {
 }
 
 class _HttpConnection {
-  _HttpConnection(this._socket, {required this.timeout})
-    : _iterator = StreamIterator<List<int>>(_socket);
+  _HttpConnection(
+    this._socket, {
+    required this.timeout,
+    Map<String, String> cookies = const <String, String>{},
+  }) : _iterator = StreamIterator<List<int>>(_socket),
+       _cookies = Map<String, String>.of(cookies);
 
   final SecureSocket _socket;
   final Duration timeout;
   final StreamIterator<List<int>> _iterator;
   final List<int> _buffer = <int>[];
-  final Map<String, String> _cookies = <String, String>{};
+  final Map<String, String> _cookies;
   bool _closed = false;
+
+  Map<String, String> get cookies => Map<String, String>.unmodifiable(_cookies);
 
   Future<_HttpResponse> get(Uri uri, Map<String, String> headers) async {
     final String target = uri.hasQuery ? '${uri.path}?${uri.query}' : uri.path;
