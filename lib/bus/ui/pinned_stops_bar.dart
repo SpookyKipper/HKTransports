@@ -8,7 +8,6 @@ import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
-import 'package:hktransports/bus/ui/eta_text.dart';
 import 'package:hktransports/bus/ui/fade_in.dart';
 import 'package:intl/intl.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -261,10 +260,7 @@ class _PinnedChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final ({String base, String appended}) label = _etaLabelParts(
-      item.eta,
-      settings,
-    );
+    final String label = _etaLabel(item.eta, settings);
     return Container(
       width: 214,
       padding: const EdgeInsets.fromLTRB(12, 2, 4, 2),
@@ -291,18 +287,29 @@ class _PinnedChip extends StatelessWidget {
                         ? 'empty|${item.pin.id}'
                         : etaDisplayKey(item.eta!),
                   ),
-                  child: EtaText(
-                    base: label.base,
-                    appended: label.appended.isEmpty ? null : label.appended,
-                    appendedKey: item.eta == null
-                        ? ''
-                        : etaLiveStatusKey(item.eta!),
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                    ),
-                    color: theme.colorScheme.primary,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (item.eta?.isScheduledLike ?? false)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Icon(
+                            Icons.schedule,
+                            size: 14,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -321,18 +328,12 @@ class _PinnedChip extends StatelessWidget {
     );
   }
 
-  ({String base, String appended}) _etaLabelParts(
-    BusEta? eta,
-    AppSettings settings,
-  ) {
-    if (eta == null) return (base: '--', appended: '');
-    final String? status = eta.status(settings.language);
-    final String? distance = eta.distanceLabel(settings.language);
-    final String appended = <String>[?status, ?distance].join(' · ');
+  String _etaLabel(BusEta? eta, AppSettings settings) {
+    if (eta == null) return '--';
     final DateTime? time = eta.eta;
     if (time == null) {
       final String remark = eta.remark(settings.language);
-      return (base: remark.isEmpty ? '--' : remark, appended: appended);
+      return remark.isEmpty ? '--' : remark;
     }
     final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
     final String clock = DateFormat('HH:mm').format(hkTime);
@@ -341,13 +342,12 @@ class _PinnedChip extends StatelessWidget {
     final String wait = minutes < 1
         ? settings.text('即將到達', 'Arriving')
         : '$minutes ${settings.text('分', 'min')}';
-    final String base = departed != null
+    return departed != null
         ? '$clock · $departed'
         : switch (settings.etaFormat) {
             EtaFormat.diff => wait,
             EtaFormat.exact => clock,
             EtaFormat.mixed => '$clock · $wait',
           };
-    return (base: base, appended: appended);
   }
 }
