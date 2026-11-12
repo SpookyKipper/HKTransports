@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hktransports/bus/fare/joyyou_fare.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/nlb/nlb_timetable_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -133,26 +132,6 @@ class _NlbFareLabelState extends State<NlbFareLabel> {
         Text(
           '${settings.text('假日', 'Holiday')}: \$$holiday',
           style: widget.holiday ? normalStyle : disabledStyle,
-        ),
-      );
-    }
-    final String? current = widget.holiday ? holiday : weekday;
-    final double? currentValue = current == null
-        ? null
-        : double.tryParse(current);
-    final String? joyYouFare =
-        settings.showJoyYouFare && currentValue != null && currentValue > 0
-        ? calculateJoyYouFare(
-            route: widget.route.route,
-            companies: widget.route.companies,
-            adultFare: currentValue,
-          )
-        : null;
-    if (joyYouFare != null) {
-      children.add(
-        Text(
-          '${settings.text('樂悠', 'JoyYou')}: \$$joyYouFare',
-          style: normalStyle,
         ),
       );
     }

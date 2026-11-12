@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/app/m3e_scope.dart';
+import 'package:hktransports/app/notice_link.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/nlb/nlb_http.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -37,7 +38,7 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
   void initState() {
     super.initState();
     final Uri? uri = Uri.tryParse(widget.url);
-    final bool isNlbNews = uri != null && _isNlbNewsUri(uri);
+    final bool isNlbNews = uri != null && isNlbNewsUri(uri);
     _isPdf = !isNlbNews && (widget.forcePdf || (uri != null && _isPdfUri(uri)));
     if (_isPdf || uri == null) {
       _loading = false;
@@ -266,14 +267,6 @@ bool _isPdfUri(Uri uri) {
 
 bool _isNlbHost(Uri uri) {
   return uri.host == 'nlb.com.hk' || uri.host.endsWith('.nlb.com.hk');
-}
-
-bool _isNlbNewsUri(Uri uri) {
-  if (!_isNlbHost(uri)) return false;
-  final List<String> segments = uri.pathSegments;
-  return segments.length >= 3 &&
-      (segments[0] == 'tc' || segments[0] == 'en') &&
-      segments[1] == 'news';
 }
 
 class _NlbPdfView extends StatefulWidget {
