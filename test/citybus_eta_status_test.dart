@@ -72,6 +72,33 @@ void main() {
     expect(statuses[1].distanceKm, 1.2);
   });
 
+  test('strips the operator name from joint-route statuses', () {
+    final List<CitybusEtaStatus> statuses = parseCitybusEtaStatuses('''
+      <div id="nextbus_listitem">
+        <table><tr>
+          <td><table><tr><td>12:05</td></tr></table></td>
+          <td><table>
+            <tr><td>往: 康盛花園</td></tr>
+            <tr><td>城巴 未開出</td></tr>
+          </table></td>
+        </tr></table>
+        <table><tr>
+          <td><table><tr><td>12:35</td></tr></table></td>
+          <td><table>
+            <tr><td>往: 康盛花園</td></tr>
+            <tr><td>城巴 距離 1.2公里</td></tr>
+          </table></td>
+        </tr></table>
+      </div>
+    ''');
+
+    expect(statuses, hasLength(2));
+    expect(statuses[0].statusZh, '未開出');
+    expect(statuses[0].statusEn, 'Not yet departed');
+    expect(statuses[1].statusZh, isNull);
+    expect(statuses[1].distanceKm, 1.2);
+  });
+
   test('strips a UTF-8 BOM and caps the rows at three', () {
     final String row = '''
       <table><tr>
