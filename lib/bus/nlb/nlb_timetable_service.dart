@@ -1,8 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/nlb/nlb_http.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
@@ -40,7 +39,6 @@ class NlbTimetableService {
 
   final http.Client? _client;
   final Map<String, _CachedTimetable> _cache = <String, _CachedTimetable>{};
-  Future<SecurityContext>? _securityContextFuture;
 
   Future<NlbTimetable?> fetch(
     RouteEntry route,
@@ -93,125 +91,16 @@ class NlbTimetableService {
     return _fetchHtmlRaw(uri, language);
   }
 
-  Future<String?> _fetchHtmlRaw(Uri uri, String language) async {
-    final SecurityContext context = await (_securityContextFuture ??=
-        _createSecurityContext());
-    final SecureSocket socket = await SecureSocket.connect(
-      uri.host,
-      443,
-      context: context,
-      supportedProtocols: const <String>['http/1.1'],
-      timeout: const Duration(seconds: 20),
+  Future<String?> _fetchHtmlRaw(Uri uri, String language) {
+    return NlbHttp.get(
+      uri,
+      headers: <String, String>{
+        'Accept':
+            'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': language == 'en' ? 'en' : 'zh-Hant-HK',
+      },
     );
-    try {
-      final String target = uri.hasQuery
-          ? '${uri.path}?${uri.query}'
-          : uri.path;
-      final String request =
-          'GET $target HTTP/1.1\r\n'
-          'Host: ${uri.host}\r\n'
-          'User-Agent: Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 '
-          '(KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36\r\n'
-          'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n'
-          'Accept-Language: ${language == 'en' ? 'en' : 'zh-Hant-HK'}\r\n'
-          'Connection: close\r\n\r\n';
-      socket.add(latin1.encode(request));
-      await socket.flush();
-      final List<int> bytes = await socket
-          .fold<List<int>>(<int>[], (List<int> data, List<int> chunk) {
-            data.addAll(chunk);
-            return data;
-          })
-          .timeout(const Duration(seconds: 25));
-      return _decodeHttpResponse(bytes);
-    } finally {
-      socket.destroy();
-    }
   }
-
-  Future<SecurityContext> _createSecurityContext() async {
-    final ByteData data = await rootBundle.load(
-      'assets/certs/godaddy_g2_bundle.pem',
-    );
-    return SecurityContext(withTrustedRoots: true)
-      ..setTrustedCertificatesBytes(data.buffer.asUint8List());
-  }
-}
-
-String? _decodeHttpResponse(List<int> bytes) {
-  int headerEnd = -1;
-  for (int index = 0; index + 3 < bytes.length; index++) {
-    if (bytes[index] == 13 &&
-        bytes[index + 1] == 10 &&
-        bytes[index + 2] == 13 &&
-        bytes[index + 3] == 10) {
-      headerEnd = index;
-      break;
-    }
-  }
-  if (headerEnd < 0) return null;
-  final String headerText = latin1.decode(bytes.sublist(0, headerEnd));
-  final List<String> lines = headerText.split('\r\n');
-  if (lines.isEmpty) return null;
-  final List<String> statusParts = lines.first.split(' ');
-  if (statusParts.length < 2 || statusParts[1] != '200') return null;
-  final Map<String, String> headers = <String, String>{};
-  for (final String line in lines.skip(1)) {
-    final int colon = line.indexOf(':');
-    if (colon <= 0) continue;
-    headers[line.substring(0, colon).trim().toLowerCase()] = line
-        .substring(colon + 1)
-        .trim();
-  }
-  final List<int> body = bytes.sublist(headerEnd + 4);
-  if (headers['content-encoding']?.toLowerCase().contains('gzip') ?? false) {
-    return utf8.decode(gzip.decode(body), allowMalformed: true);
-  }
-  if (headers['transfer-encoding']?.toLowerCase().contains('chunked') ??
-      false) {
-    final List<int>? decoded = _decodeChunked(body);
-    if (decoded == null) return null;
-    return utf8.decode(decoded, allowMalformed: true);
-  }
-  final int? length = int.tryParse(headers['content-length'] ?? '');
-  final List<int> content = length != null && length <= body.length
-      ? body.sublist(0, length)
-      : body;
-  return utf8.decode(content, allowMalformed: true);
-}
-
-List<int>? _decodeChunked(List<int> body) {
-  final List<int> result = <int>[];
-  int offset = 0;
-  int lineEnd(int start) {
-    for (int index = start; index + 1 < body.length; index++) {
-      if (body[index] == 13 && body[index + 1] == 10) return index;
-    }
-    return -1;
-  }
-
-  while (offset < body.length) {
-    final int end = lineEnd(offset);
-    if (end < 0) return null;
-    final String sizeText = latin1
-        .decode(body.sublist(offset, end))
-        .split(';')
-        .first
-        .trim();
-    final int? size = int.tryParse(sizeText, radix: 16);
-    if (size == null) return null;
-    offset = end + 2;
-    if (size == 0) return result;
-    if (offset + size > body.length) return null;
-    result.addAll(body.sublist(offset, offset + size));
-    offset += size;
-    if (offset + 1 < body.length &&
-        body[offset] == 13 &&
-        body[offset + 1] == 10) {
-      offset += 2;
-    }
-  }
-  return result;
 }
 
 NlbTimetable? parseNlbTimetable(String html) {
