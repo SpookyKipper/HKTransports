@@ -445,7 +445,7 @@ class _RoutePageState extends State<_RoutePage> {
             variant: M3EIconButtonVariant.standard,
             onPressed: () =>
                 _showTimetable(context, route, _expandedIndex ?? 0),
-            icon: const Icon(Icons.tune),
+            icon: const Icon(Icons.info_outline),
           ),
         ],
       ),
