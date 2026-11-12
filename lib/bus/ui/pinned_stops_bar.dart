@@ -260,6 +260,10 @@ class _PinnedChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final ({String base, String appended}) label = _etaLabelParts(
+      item.eta,
+      settings,
+    );
     return Container(
       width: 214,
       padding: const EdgeInsets.fromLTRB(12, 2, 4, 2),
@@ -286,13 +290,34 @@ class _PinnedChip extends StatelessWidget {
                         ? 'empty|${item.pin.id}'
                         : etaDisplayKey(item.eta!),
                   ),
-                  child: Text(
-                    _etaLabel(item.eta, settings),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          label.base,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                      if (item.eta != null && label.appended.isNotEmpty)
+                        FadeIn(
+                          key: ValueKey<String>(
+                            'append|${etaLiveStatusKey(item.eta!)}',
+                          ),
+                          child: Text(
+                            ' · ${label.appended}',
+                            maxLines: 1,
+                            softWrap: false,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -311,19 +336,18 @@ class _PinnedChip extends StatelessWidget {
     );
   }
 
-  String _etaLabel(BusEta? eta, AppSettings settings) {
-    if (eta == null) return '--';
+  ({String base, String appended}) _etaLabelParts(
+    BusEta? eta,
+    AppSettings settings,
+  ) {
+    if (eta == null) return (base: '--', appended: '');
     final String? status = eta.status(settings.language);
     final String? distance = eta.distanceLabel(settings.language);
+    final String appended = <String>[?status, ?distance].join(' · ');
     final DateTime? time = eta.eta;
     if (time == null) {
       final String remark = eta.remark(settings.language);
-      final List<String> parts = <String>[
-        if (remark.isNotEmpty) remark,
-        ?status,
-        ?distance,
-      ];
-      return parts.isEmpty ? '--' : parts.join(' · ');
+      return (base: remark.isEmpty ? '--' : remark, appended: appended);
     }
     final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
     final String clock = DateFormat('HH:mm').format(hkTime);
@@ -339,7 +363,6 @@ class _PinnedChip extends StatelessWidget {
             EtaFormat.exact => clock,
             EtaFormat.mixed => '$clock · $wait',
           };
-    final List<String> parts = <String>[base, ?status, ?distance];
-    return parts.join(' · ');
+    return (base: base, appended: appended);
   }
 }

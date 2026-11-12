@@ -196,7 +196,7 @@ class _RouteEtaLine extends StatelessWidget {
           };
     final String? status = eta.status(settings.language);
     final String? distance = eta.distanceLabel(settings.language);
-    final String text = <String>[base, ?status, ?distance].join(' · ');
+    final List<String> appended = <String>[?status, ?distance];
     final Color color = first
         ? Theme.of(context).colorScheme.primary
         : Theme.of(context).colorScheme.onSurfaceVariant;
@@ -213,12 +213,30 @@ class _RouteEtaLine extends StatelessWidget {
             child: Icon(Icons.schedule, size: first ? 16 : 14, color: color),
           ),
         Flexible(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.end,
-            style: style,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Flexible(
+                child: Text(
+                  base,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: style,
+                ),
+              ),
+              if (appended.isNotEmpty)
+                FadeIn(
+                  key: ValueKey<String>('append|${etaLiveStatusKey(eta)}'),
+                  child: Text(
+                    ' · ${appended.join(' · ')}',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: style,
+                  ),
+                ),
+            ],
           ),
         ),
       ],

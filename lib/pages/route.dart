@@ -1004,11 +1004,10 @@ class _EtaLine extends StatelessWidget {
       parts,
       if (showCompany) company,
       if (remark.isNotEmpty) remark,
-      ?status,
-      ?distance,
       if (eta.scheduled && remark.isEmpty) settings.text('預定班次', 'Scheduled'),
       if (via.isNotEmpty) via,
     ];
+    final List<String> appended = <String>[?status, ?distance];
 
     final TextStyle? style = first
         ? Theme.of(context).textTheme.titleMedium?.copyWith(color: color)
@@ -1016,7 +1015,27 @@ class _EtaLine extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(segments.join(' · '), style: style),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: segments.join(' · ')),
+            if (appended.isNotEmpty)
+              WidgetSpan(
+                alignment: PlaceholderAlignment.baseline,
+                baseline: TextBaseline.alphabetic,
+                child: FadeIn(
+                  key: ValueKey<String>('append|${etaLiveStatusKey(eta)}'),
+                  child: Text(
+                    ' · ${appended.join(' · ')}',
+                    style: style,
+                    softWrap: false,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        style: style,
+      ),
     );
   }
 
