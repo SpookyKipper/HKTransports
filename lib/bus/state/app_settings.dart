@@ -102,13 +102,13 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.noticeFeed:
         return 'notice.hkbus.app';
       case ProprietaryEndpoint.kmbAnnouncements:
-        return settings.text('九巴路線通告', 'KMB route announcements');
+        return settings.text('九巴/龍運路線通告', 'KMB/LWB route announcements');
       case ProprietaryEndpoint.kmbInterchange:
         return settings.text('九巴/龍運轉乘優惠', 'KMB/LWB interchange discounts');
       case ProprietaryEndpoint.citybusSpecialNotices:
         return settings.text('城巴特別通告', 'Citybus special notices');
       case ProprietaryEndpoint.citybusRouteNotices:
-        return settings.text('城巴路線乘客通告', 'Citybus route notices');
+        return settings.text('城巴路線通告', 'Citybus route notices');
       case ProprietaryEndpoint.citybusStopNotices:
         return settings.text('城巴站務通告', 'Citybus stop notices');
       case ProprietaryEndpoint.citybusRemarks:
@@ -130,8 +130,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return settings.text('九巴路線最新消息', 'KMB route news');
       case ProprietaryEndpoint.kmbInterchange:
         return settings.text(
-          '九巴/龍運轉乘優惠資料 · 約 61 MB',
-          'KMB/LWB transfer data · approx. 61 MB',
+          '九巴/龍運轉乘優惠資料 ~ 61 MB',
+          'KMB/LWB transfer data ~ 61 MB',
         );
       case ProprietaryEndpoint.citybusSpecialNotices:
         return settings.text('城巴特別通告', 'Citybus special notices');
@@ -142,16 +142,16 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.citybusRemarks:
         return settings.text('城巴路線備註', 'Citybus route remarks');
       case ProprietaryEndpoint.citybusInterchange:
-        return settings.text('城巴轉乘優惠資料', 'Citybus transfer data');
+        return settings.text('城巴轉乘優惠資料', 'Citybus interchange data');
       case ProprietaryEndpoint.citybusDatabase:
         return settings.text(
-          '路線名稱、車站地標、車費及特別路線說明 · 約 65 MB',
-          'Route names, stop landmarks, fares, and special route descriptions · approx. 65 MB',
+          '路線名稱、車站地標、車費及特別路線說明 ~ 65 MB',
+          'Route names, stop landmarks, fares, and special route descriptions ~ 65 MB',
         );
       case ProprietaryEndpoint.citybusEtaStatus:
         return settings.text(
-          '未開出、前往中及距離等狀態 · 需城巴路線資料庫',
-          'Not yet departed, en route, and distance status · requires Citybus route database',
+          '未開出及距離等狀態 · 需城巴路線資料庫',
+          'Not yet departed, distance status etc. · requires Citybus route database',
         );
     }
   }
