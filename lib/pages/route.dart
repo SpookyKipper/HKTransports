@@ -426,11 +426,11 @@ class _RoutePageState extends State<_RoutePage> {
               icon: const Icon(Icons.swap_horiz),
             ),
           M3EIconButton(
-            tooltip: settings.text('時間表', 'Timetable'),
+            tooltip: settings.text('路線屬性', 'Route Properties'),
             variant: M3EIconButtonVariant.standard,
             onPressed: () =>
                 _showTimetable(context, route, _expandedIndex ?? 0),
-            icon: const Icon(Icons.schedule),
+            icon: const Icon(Icons.tune),
           ),
         ],
       ),

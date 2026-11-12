@@ -63,6 +63,16 @@ class TimetableSheet extends StatelessWidget {
         height: MediaQuery.sizeOf(context).height * 0.85,
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  settings.text('路線屬性', 'Route Properties'),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+            ),
             TabBar(
               dividerColor: Colors.transparent,
               dividerHeight: 0,
