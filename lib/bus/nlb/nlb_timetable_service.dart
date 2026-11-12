@@ -245,6 +245,10 @@ void _addTimetableLegend(Element content, String language) {
       continue;
     }
     if (!seenTable || child.localName != 'p') continue;
+    if (_cleanText(child.text).isEmpty) {
+      child.remove();
+      continue;
+    }
     final bool nextIsTable =
         index + 1 < children.length && children[index + 1].localName == 'table';
     if (!nextIsTable) notes.add(child);
