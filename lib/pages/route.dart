@@ -1030,6 +1030,7 @@ class _EtaLine extends StatelessWidget {
         appendedKey: etaLiveStatusKey(eta),
         style: style,
         color: color,
+        wheelchair: eta.wheelchair,
       ),
     );
   }

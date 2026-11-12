@@ -31,6 +31,7 @@ enum ProprietaryEndpoint {
   citybusDatabase,
   citybusEtaStatus,
   nlbProprietaryData,
+  nlbEtaData,
 }
 
 extension ProprietaryEndpointInfo on ProprietaryEndpoint {
@@ -60,6 +61,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return 'ctb-eta';
       case ProprietaryEndpoint.nlbProprietaryData:
         return 'nlb-proprietary';
+      case ProprietaryEndpoint.nlbEtaData:
+        return 'nlb-eta';
     }
   }
 
@@ -81,6 +84,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return 'proprietary.citybus.etaStatus';
       case ProprietaryEndpoint.nlbProprietaryData:
         return 'proprietary.nlb.data';
+      case ProprietaryEndpoint.nlbEtaData:
+        return 'proprietary.nlb.eta';
     }
   }
 
@@ -100,6 +105,7 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.citybusEtaStatus:
         return ProprietaryGroup.citybus;
       case ProprietaryEndpoint.nlbProprietaryData:
+      case ProprietaryEndpoint.nlbEtaData:
         return ProprietaryGroup.nlb;
     }
   }
@@ -128,6 +134,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return settings.text('城巴實時到站狀態', 'Citybus live ETA status');
       case ProprietaryEndpoint.nlbProprietaryData:
         return settings.text('嶼巴專有資料', 'NLB proprietary data');
+      case ProprietaryEndpoint.nlbEtaData:
+        return settings.text('專有 ETA 資料', 'Proprietary ETA data');
     }
   }
 
@@ -164,6 +172,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         );
       case ProprietaryEndpoint.nlbProprietaryData:
         return settings.text('車費表及官方時間表', 'Fare table and official timetable');
+      case ProprietaryEndpoint.nlbEtaData:
+        return settings.text('輪椅狀態', 'Wheelchair status');
     }
   }
 }

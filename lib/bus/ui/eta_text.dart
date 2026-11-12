@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hktransports/bus/ui/fade_in.dart';
 
 /// ETA text with an optional appended status that fades in on its own.
 class EtaText extends StatelessWidget {
@@ -9,6 +10,7 @@ class EtaText extends StatelessWidget {
     required this.style,
     required this.color,
     required this.appendedKey,
+    this.wheelchair = false,
     this.maxLines,
     this.overflow,
     this.textAlign,
@@ -19,6 +21,7 @@ class EtaText extends StatelessWidget {
   final TextStyle? style;
   final Color color;
   final String appendedKey;
+  final bool wheelchair;
   final int? maxLines;
   final TextOverflow? overflow;
   final TextAlign? textAlign;
@@ -26,9 +29,35 @@ class EtaText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String? text = appended;
+    List<InlineSpan> spans(double opacity) {
+      return <InlineSpan>[
+        TextSpan(text: base),
+        if (text != null && text.isNotEmpty)
+          TextSpan(
+            text: ' · $text',
+            style: TextStyle(color: color.withValues(alpha: opacity)),
+          ),
+        if (wheelchair)
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: FadeIn(
+                key: const ValueKey<String>('wheelchair'),
+                child: Icon(
+                  Icons.accessible,
+                  size: style?.fontSize ?? 14,
+                  color: color,
+                ),
+              ),
+            ),
+          ),
+      ];
+    }
+
     if (text == null || text.isEmpty) {
       return Text.rich(
-        TextSpan(text: base),
+        TextSpan(children: spans(1)),
         style: style,
         maxLines: maxLines,
         overflow: overflow,
@@ -46,15 +75,7 @@ class EtaText extends StatelessWidget {
       curve: Curves.easeOut,
       builder: (BuildContext context, double opacity, Widget? child) {
         return Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(text: base),
-              TextSpan(
-                text: ' · $text',
-                style: TextStyle(color: color.withValues(alpha: opacity)),
-              ),
-            ],
-          ),
+          TextSpan(children: spans(opacity)),
           style: style,
           maxLines: maxLines,
           overflow: overflow,
