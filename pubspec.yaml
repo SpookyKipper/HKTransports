@@ -45,6 +45,7 @@ flutter:
     - assets/images/logo.png
     - assets/images/landsd.png
     - assets/images/route_arrow.png
+    - assets/certs/godaddy_g2_bundle.pem
     # - assets/images/mapbox-logo-black.png
     # - assets/images/mapbox-logo-white.png
 
