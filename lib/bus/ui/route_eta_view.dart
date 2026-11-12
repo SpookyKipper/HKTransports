@@ -204,7 +204,7 @@ class _RouteEtaLine extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (eta.isScheduledLike)
+        if (eta.shouldShowScheduleIcon(DateTime.now()))
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: Icon(Icons.schedule, size: first ? 16 : 14, color: color),

@@ -59,6 +59,34 @@ void main() {
     expect(eta.isScheduledLike, isTrue);
   });
 
+  test('schedule icon is hidden for imminent and departed ETAs', () {
+    BusEta scheduled(DateTime time) =>
+        busEta(time).copyWith(statusZh: '未開出', statusEn: 'Not yet departed');
+
+    expect(
+      scheduled(
+        now.add(const Duration(minutes: 5)),
+      ).shouldShowScheduleIcon(now),
+      isTrue,
+    );
+    expect(
+      scheduled(
+        now.add(const Duration(seconds: 30)),
+      ).shouldShowScheduleIcon(now),
+      isFalse,
+    );
+    expect(
+      scheduled(
+        now.subtract(const Duration(minutes: 1)),
+      ).shouldShowScheduleIcon(now),
+      isFalse,
+    );
+    expect(
+      busEta(now.add(const Duration(minutes: 5))).shouldShowScheduleIcon(now),
+      isFalse,
+    );
+  });
+
   test('live status does not change the base ETA animation key', () {
     final BusEta base = busEta(now);
     final BusEta enriched = base.copyWith(

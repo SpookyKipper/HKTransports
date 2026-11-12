@@ -89,6 +89,14 @@ class BusEta {
 
   bool get isScheduledLike => scheduled || isScheduledMark;
 
+  bool shouldShowScheduleIcon(DateTime now) {
+    if (!isScheduledLike) return false;
+    final DateTime? time = eta;
+    if (time == null) return true;
+    if (hasDepartedAt(now)) return false;
+    return time.toUtc().difference(now.toUtc()).inMinutes >= 1;
+  }
+
   bool get isDelayedJourney {
     final String en = remarkEn.toLowerCase();
     return en.contains('delayed journey') ||
