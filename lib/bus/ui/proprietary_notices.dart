@@ -56,15 +56,16 @@ class ProprietaryNoticesTab extends StatelessWidget {
               'Could not load NLB route notices',
             ),
             loader: () async {
-              final NlbRouteNotice? notice = await NlbTimetableService.instance
-                  .fetchRouteNotice(route, settings.language);
-              if (notice == null) return const <ProprietaryNotice>[];
+              final List<NlbRouteNotice> notices = await NlbTimetableService
+                  .instance
+                  .fetchRouteNotices(route, settings.language);
               return <ProprietaryNotice>[
-                ProprietaryNotice(
-                  title: notice.title,
-                  date: notice.date,
-                  url: notice.url,
-                ),
+                for (final NlbRouteNotice notice in notices)
+                  ProprietaryNotice(
+                    title: notice.title,
+                    date: notice.date,
+                    url: notice.url,
+                  ),
               ];
             },
           ),

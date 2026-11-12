@@ -37,7 +37,8 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
   void initState() {
     super.initState();
     final Uri? uri = Uri.tryParse(widget.url);
-    _isPdf = widget.forcePdf || (uri != null && _isPdfUri(uri));
+    final bool isNlbNews = uri != null && _isNlbNewsUri(uri);
+    _isPdf = !isNlbNews && (widget.forcePdf || (uri != null && _isPdfUri(uri)));
     if (_isPdf || uri == null) {
       _loading = false;
       _failed = uri == null;
@@ -134,7 +135,7 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
     if (_isPdf) {
       final Uri? uri = Uri.tryParse(widget.url);
       if (uri == null) return _error(context, settings);
-      if (widget.forcePdf && uri.host.endsWith('nlb.com.hk')) {
+      if (widget.forcePdf && _isNlbHost(uri)) {
         return _NlbPdfView(uri: uri, settings: settings);
       }
       final ThemeData theme = Theme.of(context);
@@ -261,6 +262,18 @@ bool _isPdfUri(Uri uri) {
   if (uri.path.toLowerCase().endsWith('.pdf')) return true;
   final String source = uri.queryParameters['url']?.toLowerCase() ?? '';
   return source.endsWith('.pdf');
+}
+
+bool _isNlbHost(Uri uri) {
+  return uri.host == 'nlb.com.hk' || uri.host.endsWith('.nlb.com.hk');
+}
+
+bool _isNlbNewsUri(Uri uri) {
+  if (!_isNlbHost(uri)) return false;
+  final List<String> segments = uri.pathSegments;
+  return segments.length >= 3 &&
+      (segments[0] == 'tc' || segments[0] == 'en') &&
+      segments[1] == 'news';
 }
 
 class _NlbPdfView extends StatefulWidget {

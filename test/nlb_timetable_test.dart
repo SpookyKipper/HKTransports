@@ -47,6 +47,11 @@ const String _sampleHtml = '''
       <p>發佈日期 : 2026-05-07</p>
       <a href="/tc/news/630">閱讀更多</a>
     </div>
+    <div>
+      <h3>Second route notice</h3>
+      <p>發佈日期 : 2026-05-08</p>
+      <a href="/tc/news/631">閱讀更多</a>
+    </div>
   </div>
   <section class="space-y-4">
     <div></div>
@@ -106,21 +111,28 @@ void main() {
     expect(html!.indexOf('備註'), lessThan(html.indexOf('Monday to Saturday')));
   });
 
-  test('parses the NLB route notice card', () {
-    final NlbRouteNotice? notice = parseNlbRouteNotice('''
+  test('parses all NLB route notice cards', () {
+    final List<NlbRouteNotice> notices = parseNlbRouteNotices('''
       <div class="space-y-3">
         <div>
           <div><h3>嶼巴路線B6S延續學生及小童優惠</h3></div>
           <p>發佈日期 : 2026-05-07</p>
           <a href="/tc/news/630">閱讀更多</a>
         </div>
+        <div>
+          <div><h3>長者免費乘車日</h3></div>
+          <p>發佈日期 : 2026-05-08</p>
+          <a href="/tc/news/631">閱讀更多</a>
+        </div>
       </div>
       ''', baseUri: Uri.parse('https://www.nlb.com.hk/tc/route/111'));
 
-    expect(notice, isNotNull);
-    expect(notice!.title, '嶼巴路線B6S延續學生及小童優惠');
-    expect(notice.date, '發佈日期 : 2026-05-07');
-    expect(notice.url, Uri.parse('https://www.nlb.com.hk/tc/news/630'));
+    expect(notices, hasLength(2));
+    expect(notices.first.title, '嶼巴路線B6S延續學生及小童優惠');
+    expect(notices.first.date, '發佈日期 : 2026-05-07');
+    expect(notices.first.url, Uri.parse('https://www.nlb.com.hk/tc/news/630'));
+    expect(notices.last.title, '長者免費乘車日');
+    expect(notices.last.url, Uri.parse('https://www.nlb.com.hk/tc/news/631'));
   });
 
   test('parses NLB stop fares and nearby locations', () {
@@ -176,13 +188,15 @@ void main() {
     final List<Object?> results = await Future.wait<Object?>(<Future<Object?>>[
       service.fetchTimetableHtml(_route(), 'tc'),
       service.fetchRouteData(_route(), 'tc'),
-      service.fetchRouteNotice(_route(), 'tc'),
+      service.fetchRouteNotices(_route(), 'tc'),
     ]);
 
-    expect(results, everyElement(isNotNull));
+    expect(results[0], isNotNull);
+    expect(results[1], isNotNull);
+    expect((results[2]! as List<NlbRouteNotice>), hasLength(2));
     expect(requests, 1);
 
-    await service.fetchRouteNotice(_route(), 'tc');
+    await service.fetchRouteNotices(_route(), 'tc');
     await service.fetchRouteData(_route(), 'tc');
     await service.fetchTimetableHtml(_route(), 'tc');
     expect(requests, 1);
