@@ -58,6 +58,12 @@ class NlbTimetableService {
   final Map<String, Future<NlbRoutePageData?>> _routeDataLoading =
       <String, Future<NlbRoutePageData?>>{};
   final Map<String, _CachedNotice> _noticeCache = <String, _CachedNotice>{};
+  final Map<String, _CachedPageHtml> _pageCache = <String, _CachedPageHtml>{};
+  final Map<String, Future<String?>> _pageLoading = <String, Future<String?>>{};
+
+  Future<void> prefetchPage(RouteEntry route, String language) async {
+    await _getPageHtml(route, language);
+  }
 
   Future<String?> fetchTimetableHtml(
     RouteEntry route,
@@ -71,13 +77,8 @@ class NlbTimetableService {
         DateTime.now().difference(cached.fetchedAt) < _cacheTtl) {
       return cached.html;
     }
-    final String languagePath = language == 'en' ? 'en' : 'tc';
-    final Uri uri = Uri.https(
-      'www.nlb.com.hk',
-      '/$languagePath/route/${Uri.encodeComponent(route.nlbRouteId)}',
-    );
     try {
-      final String? page = await _fetchHtml(uri, language);
+      final String? page = await _getPageHtml(route, language, force: force);
       if (page == null) return null;
       final String? html = parseNlbTimetableHtml(page, language: language);
       if (html == null) return null;
@@ -103,15 +104,13 @@ class NlbTimetableService {
         DateTime.now().difference(cached.fetchedAt) < _cacheTtl) {
       return cached.notice;
     }
-    final String languagePath = language == 'en' ? 'en' : 'tc';
-    final Uri uri = Uri.https(
-      'www.nlb.com.hk',
-      '/$languagePath/route/${Uri.encodeComponent(route.nlbRouteId)}',
-    );
     try {
-      final String? html = await _fetchHtml(uri, language);
+      final String? html = await _getPageHtml(route, language, force: force);
       if (html == null) return null;
-      final NlbRouteNotice? notice = parseNlbRouteNotice(html, baseUri: uri);
+      final NlbRouteNotice? notice = parseNlbRouteNotice(
+        html,
+        baseUri: _pageUri(route, language),
+      );
       if (notice == null) return null;
       _noticeCache[key] = _CachedNotice(
         notice: notice,
@@ -157,13 +156,8 @@ class NlbTimetableService {
     String language,
     String key,
   ) async {
-    final String languagePath = language == 'en' ? 'en' : 'tc';
-    final Uri uri = Uri.https(
-      'www.nlb.com.hk',
-      '/$languagePath/route/${Uri.encodeComponent(route.nlbRouteId)}',
-    );
     try {
-      final String? html = await _fetchHtml(uri, language);
+      final String? html = await _getPageHtml(route, language);
       if (html == null) return null;
       final NlbRoutePageData? data = parseNlbRouteData(html);
       if (data == null) return null;
@@ -175,6 +169,54 @@ class NlbTimetableService {
     } catch (_) {
       return null;
     }
+  }
+
+  Future<String?> _getPageHtml(
+    RouteEntry route,
+    String language, {
+    bool force = false,
+  }) {
+    final String key = '${route.nlbRouteId}|${language == 'en' ? 'en' : 'tc'}';
+    final _CachedPageHtml? cached = _pageCache[key];
+    if (!force &&
+        cached != null &&
+        DateTime.now().difference(cached.fetchedAt) < _cacheTtl) {
+      return Future<String?>.value(cached.html);
+    }
+    if (!force) {
+      final Future<String?>? running = _pageLoading[key];
+      if (running != null) return running;
+    }
+    final Future<String?> future = _loadPage(
+      _pageUri(route, language),
+      language,
+      key,
+    );
+    _pageLoading[key] = future;
+    return future.whenComplete(() {
+      if (identical(_pageLoading[key], future)) {
+        _pageLoading.remove(key);
+      }
+    });
+  }
+
+  Future<String?> _loadPage(Uri uri, String language, String key) async {
+    try {
+      final String? html = await _fetchHtml(uri, language);
+      if (html == null) return null;
+      _pageCache[key] = _CachedPageHtml(html: html, fetchedAt: DateTime.now());
+      return html;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Uri _pageUri(RouteEntry route, String language) {
+    final String languagePath = language == 'en' ? 'en' : 'tc';
+    return Uri.https(
+      'www.nlb.com.hk',
+      '/$languagePath/route/${Uri.encodeComponent(route.nlbRouteId)}',
+    );
   }
 
   Future<String?> _fetchHtml(Uri uri, String language) async {
@@ -371,6 +413,13 @@ class _CachedNotice {
   const _CachedNotice({required this.notice, required this.fetchedAt});
 
   final NlbRouteNotice notice;
+  final DateTime fetchedAt;
+}
+
+class _CachedPageHtml {
+  const _CachedPageHtml({required this.html, required this.fetchedAt});
+
+  final String html;
   final DateTime fetchedAt;
 }
 
