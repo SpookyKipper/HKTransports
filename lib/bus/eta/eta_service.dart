@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_reader.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
+import 'package:hktransports/bus/eta/citybus_eta_match.dart';
 import 'package:hktransports/bus/eta/citybus_eta_status_client.dart';
 import 'package:hktransports/bus/eta/clients/ctb_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/gmb_eta_client.dart';
@@ -147,7 +148,7 @@ class EtaService {
       });
 
     final String key = _statusKey(route, seq);
-    final List<BusEta> result = _applyCitybusStatuses(
+    final List<BusEta> result = applyCitybusStatusesByTime(
       sorted,
       _cachedStatuses(key),
     );
@@ -160,7 +161,10 @@ class EtaService {
     int seq,
     List<BusEta> etas,
   ) {
-    return _applyCitybusStatuses(etas, _cachedStatuses(_statusKey(route, seq)));
+    return applyCitybusStatusesByTime(
+      etas,
+      _cachedStatuses(_statusKey(route, seq)),
+    );
   }
 
   List<CitybusEtaStatus>? _cachedStatuses(String key) {
@@ -171,34 +175,6 @@ class EtaService {
       return null;
     }
     return cached.statuses;
-  }
-
-  List<BusEta> _applyCitybusStatuses(
-    List<BusEta> etas,
-    List<CitybusEtaStatus>? statuses,
-  ) {
-    if (statuses == null || statuses.isEmpty) return etas;
-    final List<BusEta> result = <BusEta>[];
-    int statusIndex = 0;
-    bool changed = false;
-    for (final BusEta eta in etas) {
-      if (eta.company != BusCompany.ctb ||
-          eta.eta == null ||
-          statusIndex >= statuses.length) {
-        result.add(eta);
-        continue;
-      }
-      final CitybusEtaStatus status = statuses[statusIndex++];
-      result.add(
-        eta.copyWith(
-          statusZh: status.statusZh,
-          statusEn: status.statusEn,
-          distanceKm: status.distanceKm,
-        ),
-      );
-      changed = true;
-    }
-    return changed ? result : etas;
   }
 
   Future<void> _refreshCitybusStatus(

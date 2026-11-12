@@ -68,8 +68,10 @@ void main() {
     expect(statuses[0].statusZh, '未開出');
     expect(statuses[0].statusEn, 'Not yet departed');
     expect(statuses[0].distanceKm, isNull);
+    expect(statuses[0].timeMinutes, 22 * 60 + 10);
     expect(statuses[1].statusZh, isNull);
     expect(statuses[1].distanceKm, 1.2);
+    expect(statuses[1].timeMinutes, 22 * 60 + 35);
   });
 
   test('strips the operator name from joint-route statuses', () {
