@@ -13,7 +13,8 @@ class NlbFareLabel extends StatefulWidget {
     required this.language,
     required this.enabled,
     required this.holiday,
-    this.fallbackFare,
+    this.fallbackWeekdayFare,
+    this.fallbackHolidayFare,
     this.alightingOnly = false,
   });
 
@@ -22,7 +23,8 @@ class NlbFareLabel extends StatefulWidget {
   final String language;
   final bool enabled;
   final bool holiday;
-  final String? fallbackFare;
+  final String? fallbackWeekdayFare;
+  final String? fallbackHolidayFare;
   final bool alightingOnly;
 
   @override
@@ -71,13 +73,18 @@ class _NlbFareLabelState extends State<NlbFareLabel> {
           (BuildContext context, AsyncSnapshot<NlbRoutePageData?> snapshot) {
             final NlbRouteStopData? stop =
                 snapshot.data?.stops[widget.stopIndex + 1];
-            final String? pageFare = widget.holiday
-                ? stop?.holidayFare
-                : stop?.weekdayFare;
-            if (pageFare == null || pageFare.isEmpty) {
+            final String? weekday = _nonEmpty(
+              stop?.weekdayFare,
+              widget.fallbackWeekdayFare,
+            );
+            final String? holiday = _nonEmpty(
+              stop?.holidayFare,
+              widget.fallbackHolidayFare,
+            );
+            if (weekday == null && holiday == null) {
               return _buildFallback(context);
             }
-            return _buildFare(context, pageFare);
+            return _buildFares(context, weekday, holiday);
           },
     );
   }
@@ -92,33 +99,63 @@ class _NlbFareLabelState extends State<NlbFareLabel> {
     );
   }
 
-  Widget _buildFallback(BuildContext context) {
-    final String? fallback = widget.fallbackFare;
-    if (fallback == null) return const SizedBox.shrink();
-    return _buildFare(context, fallback);
+  String? _nonEmpty(String? primary, String? fallback) {
+    if (primary != null && primary.trim().isNotEmpty) return primary.trim();
+    if (fallback != null && fallback.trim().isNotEmpty) return fallback.trim();
+    return null;
   }
 
-  Widget _buildFare(BuildContext context, String adultFare) {
+  Widget _buildFallback(BuildContext context) {
+    final String? weekday = _nonEmpty(null, widget.fallbackWeekdayFare);
+    final String? holiday = _nonEmpty(null, widget.fallbackHolidayFare);
+    if (weekday == null && holiday == null) return const SizedBox.shrink();
+    return _buildFares(context, weekday, holiday);
+  }
+
+  Widget _buildFares(BuildContext context, String? weekday, String? holiday) {
     final AppSettings settings = context.watch<AppSettings>();
-    final TextStyle? style = Theme.of(context).textTheme.bodySmall;
-    final double? adultValue = double.tryParse(adultFare);
+    final ThemeData theme = Theme.of(context);
+    final TextStyle? normalStyle = theme.textTheme.bodySmall;
+    final TextStyle? disabledStyle = normalStyle?.copyWith(
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.38),
+    );
+    final List<Widget> children = <Widget>[];
+    if (weekday != null) {
+      children.add(
+        Text(
+          '${settings.text('車費', 'Fare')}: \$$weekday',
+          style: widget.holiday ? disabledStyle : normalStyle,
+        ),
+      );
+    }
+    if (holiday != null) {
+      children.add(
+        Text(
+          '${settings.text('假日', 'Holiday')}: \$$holiday',
+          style: widget.holiday ? normalStyle : disabledStyle,
+        ),
+      );
+    }
+    final String? current = widget.holiday ? holiday : weekday;
+    final double? currentValue = current == null
+        ? null
+        : double.tryParse(current);
     final String? joyYouFare =
-        settings.showJoyYouFare && adultValue != null && adultValue > 0
+        settings.showJoyYouFare && currentValue != null && currentValue > 0
         ? calculateJoyYouFare(
             route: widget.route.route,
             companies: widget.route.companies,
-            adultFare: adultValue,
+            adultFare: currentValue,
           )
         : null;
-    final String adultLabel = '${settings.text('車費', 'Fare')} \$$adultFare';
-    if (joyYouFare == null) return Text(adultLabel, style: style);
-    return Wrap(
-      spacing: 8,
-      runSpacing: 4,
-      children: [
-        Text(adultLabel, style: style),
-        Text('${settings.text('樂悠', 'JoyYou')} \$$joyYouFare', style: style),
-      ],
-    );
+    if (joyYouFare != null) {
+      children.add(
+        Text(
+          '${settings.text('樂悠', 'JoyYou')}: \$$joyYouFare',
+          style: normalStyle,
+        ),
+      );
+    }
+    return Wrap(spacing: 8, runSpacing: 4, children: children);
   }
 }
