@@ -84,7 +84,8 @@ class TimetableSheet extends StatelessWidget {
               ],
             ),
             Expanded(
-              child: TabBarView(
+              child: _RouteTabView(
+                disableSwipeOnFirstTab: showNlbProprietary,
                 children: [
                   _TimetableTab(route: route),
                   _JourneyTab(route: route, initialStopIndex: initialStopIndex),
@@ -96,6 +97,58 @@ class TimetableSheet extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _RouteTabView extends StatefulWidget {
+  const _RouteTabView({
+    required this.disableSwipeOnFirstTab,
+    required this.children,
+  });
+
+  final bool disableSwipeOnFirstTab;
+  final List<Widget> children;
+
+  @override
+  State<_RouteTabView> createState() => _RouteTabViewState();
+}
+
+class _RouteTabViewState extends State<_RouteTabView> {
+  TabController? _controller;
+  int _index = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final TabController controller = DefaultTabController.of(context);
+    if (identical(controller, _controller)) return;
+    _controller?.removeListener(_handleIndexChanged);
+    _controller = controller;
+    _index = controller.index;
+    controller.addListener(_handleIndexChanged);
+  }
+
+  void _handleIndexChanged() {
+    final TabController? controller = _controller;
+    if (!mounted || controller == null || controller.index == _index) return;
+    setState(() => _index = controller.index);
+  }
+
+  @override
+  void dispose() {
+    _controller?.removeListener(_handleIndexChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TabBarView(
+      controller: _controller,
+      physics: widget.disableSwipeOnFirstTab && _index == 0
+          ? const NeverScrollableScrollPhysics()
+          : null,
+      children: widget.children,
     );
   }
 }
