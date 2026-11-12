@@ -252,6 +252,7 @@ class AppSettings extends ChangeNotifier {
   int _refreshSeconds = 30;
   int _textScalePercent = 110;
   bool _routeFilter = false;
+  bool _showJoyYouFare = false;
   bool _dimMapInDarkMode = true;
   bool _autoRenew = true;
   int _autoUpdateHours = 24;
@@ -272,6 +273,7 @@ class AppSettings extends ChangeNotifier {
   int get textScalePercent => _textScalePercent;
   double get textScale => _textScalePercent / 100;
   bool get routeFilter => _routeFilter;
+  bool get showJoyYouFare => _showJoyYouFare;
   bool get dimMapInDarkMode => _dimMapInDarkMode;
   bool get autoRenew => _autoRenew;
   int get autoUpdateHours => _autoUpdateHours;
@@ -317,6 +319,7 @@ class AppSettings extends ChangeNotifier {
     _refreshSeconds = (sp.getInt('refreshSeconds') ?? 30).clamp(5, 120);
     _textScalePercent = (sp.getInt('textScalePercent') ?? 110).clamp(80, 160);
     _routeFilter = sp.getBool('routeFilter') ?? false;
+    _showJoyYouFare = sp.getBool('showJoyYouFare') ?? false;
     _dimMapInDarkMode = sp.getBool('dimMapInDarkMode') ?? true;
     _autoRenew = sp.getBool('autoRenew') ?? true;
     _autoUpdateHours = (sp.getInt('autoUpdateHours') ?? 24).clamp(1, 168);
@@ -392,6 +395,13 @@ class AppSettings extends ChangeNotifier {
     if (_routeFilter == value) return;
     _routeFilter = value;
     sp.setBool('routeFilter', value);
+    notifyListeners();
+  }
+
+  void setShowJoyYouFare(bool value) {
+    if (_showJoyYouFare == value) return;
+    _showJoyYouFare = value;
+    sp.setBool('showJoyYouFare', value);
     notifyListeners();
   }
 

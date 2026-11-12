@@ -119,6 +119,18 @@ class SettingsPage extends StatelessWidget {
             ],
             onChanged: settings.setEtaFormat,
           ),
+          SwitchListTile(
+            secondary: const Icon(Icons.credit_card_outlined),
+            title: Text(settings.text('顯示樂悠車費', 'Show JoyYou fares')),
+            subtitle: Text(
+              settings.text(
+                '在成人車費旁顯示樂悠咭車費',
+                'Show JoyYou Card fares next to adult fares',
+              ),
+            ),
+            value: settings.showJoyYouFare,
+            onChanged: settings.setShowJoyYouFare,
+          ),
           _SliderSetting(
             icon: Icons.refresh,
             title: settings.text('更新頻率', 'Refresh interval'),
