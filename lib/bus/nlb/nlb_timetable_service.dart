@@ -58,7 +58,7 @@ class NlbTimetableService {
       <String, _CachedRoutePage>{};
   final Map<String, Future<NlbRoutePageData?>> _routeDataLoading =
       <String, Future<NlbRoutePageData?>>{};
-  final Map<String, _CachedNotice> _noticeCache = <String, _CachedNotice>{};
+  final Map<String, _CachedNotices> _noticeCache = <String, _CachedNotices>{};
   final Map<String, _CachedPageHtml> _pageCache = <String, _CachedPageHtml>{};
   final Map<String, Future<String?>> _pageLoading = <String, Future<String?>>{};
 
@@ -93,33 +93,32 @@ class NlbTimetableService {
     }
   }
 
-  Future<NlbRouteNotice?> fetchRouteNotice(
+  Future<List<NlbRouteNotice>> fetchRouteNotices(
     RouteEntry route,
     String language, {
     bool force = false,
   }) async {
     final String key = '${route.nlbRouteId}|${language == 'en' ? 'en' : 'tc'}';
-    final _CachedNotice? cached = _noticeCache[key];
+    final _CachedNotices? cached = _noticeCache[key];
     if (!force &&
         cached != null &&
         DateTime.now().difference(cached.fetchedAt) < _cacheTtl) {
-      return cached.notice;
+      return cached.notices;
     }
     try {
       final String? html = await _getPageHtml(route, language, force: force);
-      if (html == null) return null;
-      final NlbRouteNotice? notice = parseNlbRouteNotice(
+      if (html == null) return const <NlbRouteNotice>[];
+      final List<NlbRouteNotice> notices = parseNlbRouteNotices(
         html,
         baseUri: _pageUri(route, language),
       );
-      if (notice == null) return null;
-      _noticeCache[key] = _CachedNotice(
-        notice: notice,
+      _noticeCache[key] = _CachedNotices(
+        notices: notices,
         fetchedAt: DateTime.now(),
       );
-      return notice;
+      return notices;
     } catch (_) {
-      return null;
+      return const <NlbRouteNotice>[];
     }
   }
 
@@ -444,21 +443,21 @@ List<String> _blockTexts(Element element) {
   return lines;
 }
 
-NlbRouteNotice? parseNlbRouteNotice(String html, {required Uri baseUri}) {
+List<NlbRouteNotice> parseNlbRouteNotices(String html, {required Uri baseUri}) {
   final Document document = html_parser.parse(html);
-  final Element? card =
-      document.querySelector('.space-y-3 > div:nth-child(1)') ??
-      document.querySelector('div.space-y-3 > div');
-  if (card == null) return null;
-  final String title = _cleanText(card.querySelector('h3')?.text ?? '');
-  if (title.isEmpty) return null;
-  final String date = _cleanText(card.querySelector('p')?.text ?? '');
-  final String? href = card.querySelector('a[href]')?.attributes['href'];
-  Uri? url;
-  if (href != null && href.isNotEmpty) {
-    url = baseUri.resolve(href);
+  final List<NlbRouteNotice> notices = <NlbRouteNotice>[];
+  for (final Element card in document.querySelectorAll('.space-y-3 > div')) {
+    final String title = _cleanText(card.querySelector('h3')?.text ?? '');
+    if (title.isEmpty) continue;
+    final String date = _cleanText(card.querySelector('p')?.text ?? '');
+    final String? href = card.querySelector('a[href]')?.attributes['href'];
+    Uri? url;
+    if (href != null && href.isNotEmpty) {
+      url = baseUri.resolve(href);
+    }
+    notices.add(NlbRouteNotice(title: title, date: date, url: url));
   }
-  return NlbRouteNotice(title: title, date: date, url: url);
+  return notices;
 }
 
 String _cleanText(String value) {
@@ -472,10 +471,10 @@ String _firstTextByClass(Element element, String className) {
   return '';
 }
 
-class _CachedNotice {
-  const _CachedNotice({required this.notice, required this.fetchedAt});
+class _CachedNotices {
+  const _CachedNotices({required this.notices, required this.fetchedAt});
 
-  final NlbRouteNotice notice;
+  final List<NlbRouteNotice> notices;
   final DateTime fetchedAt;
 }
 
