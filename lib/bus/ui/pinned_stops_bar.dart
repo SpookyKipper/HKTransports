@@ -290,7 +290,8 @@ class _PinnedChip extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (item.eta?.isScheduledLike ?? false)
+                      if (item.eta?.shouldShowScheduleIcon(DateTime.now()) ??
+                          false)
                         Padding(
                           padding: const EdgeInsets.only(right: 4),
                           child: Icon(
