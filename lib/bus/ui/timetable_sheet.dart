@@ -31,8 +31,12 @@ class TimetableSheet extends StatelessWidget {
     final bool showNlbProprietary =
         hasNlb &&
         settings.isProprietaryEnabled(ProprietaryEndpoint.nlbProprietaryData);
+    final bool showNlbRouteNotices =
+        hasNlb &&
+        settings.isProprietaryEnabled(ProprietaryEndpoint.nlbRouteNotices);
     final bool showNotices =
         showNlbProprietary ||
+        showNlbRouteNotices ||
         (hasKmb &&
             (settings.isProprietaryEnabled(
                   ProprietaryEndpoint.kmbAnnouncements,

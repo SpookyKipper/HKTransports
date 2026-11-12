@@ -31,6 +31,7 @@ enum ProprietaryEndpoint {
   citybusDatabase,
   citybusEtaStatus,
   nlbProprietaryData,
+  nlbRouteNotices,
   nlbEtaData,
 }
 
@@ -61,6 +62,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return 'ctb-eta';
       case ProprietaryEndpoint.nlbProprietaryData:
         return 'nlb-proprietary';
+      case ProprietaryEndpoint.nlbRouteNotices:
+        return 'nlb-routenotice';
       case ProprietaryEndpoint.nlbEtaData:
         return 'nlb-eta';
     }
@@ -84,6 +87,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return 'proprietary.citybus.etaStatus';
       case ProprietaryEndpoint.nlbProprietaryData:
         return 'proprietary.nlb.data';
+      case ProprietaryEndpoint.nlbRouteNotices:
+        return 'proprietary.nlb.routeNotice';
       case ProprietaryEndpoint.nlbEtaData:
         return 'proprietary.nlb.eta';
     }
@@ -105,6 +110,7 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.citybusEtaStatus:
         return ProprietaryGroup.citybus;
       case ProprietaryEndpoint.nlbProprietaryData:
+      case ProprietaryEndpoint.nlbRouteNotices:
       case ProprietaryEndpoint.nlbEtaData:
         return ProprietaryGroup.nlb;
     }
@@ -134,6 +140,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return settings.text('城巴實時到站狀態', 'Citybus live ETA status');
       case ProprietaryEndpoint.nlbProprietaryData:
         return settings.text('嶼巴專有路線資料', 'NLB proprietary route data');
+      case ProprietaryEndpoint.nlbRouteNotices:
+        return settings.text('嶼巴路線通告', 'NLB route notices');
       case ProprietaryEndpoint.nlbEtaData:
         return settings.text('專有 ETA 資料', 'Proprietary ETA data');
     }
@@ -175,6 +183,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
           '車費、附近地標及官方時間表',
           'Fares, nearby landmarks, and official timetable',
         );
+      case ProprietaryEndpoint.nlbRouteNotices:
+        return settings.text('官方路線通告', 'Official route notices');
       case ProprietaryEndpoint.nlbEtaData:
         return settings.text('輪椅狀態', 'Wheelchair status');
     }

@@ -4,6 +4,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/notice/proprietary_notice_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/nlb/nlb_timetable_service.dart';
 import 'package:hktransports/bus/ui/official_links.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +22,9 @@ class ProprietaryNoticesTab extends StatelessWidget {
     final bool showNlbFareTable =
         route.companies.contains(BusCompany.nlb) &&
         settings.isProprietaryEnabled(ProprietaryEndpoint.nlbProprietaryData);
+    final bool showNlbRouteNotices =
+        route.companies.contains(BusCompany.nlb) &&
+        settings.isProprietaryEnabled(ProprietaryEndpoint.nlbRouteNotices);
     final bool showKmbNews =
         hasKmb &&
         settings.isProprietaryEnabled(ProprietaryEndpoint.kmbAnnouncements);
@@ -42,6 +46,28 @@ class ProprietaryNoticesTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
         if (showNlbFareTable) _NlbFareTableNotice(route: route),
+        if (showNlbRouteNotices)
+          _AsyncNoticeSection(
+            key: ValueKey<String>('nlb-route-${settings.language}'),
+            title: settings.text('嶼巴路線通告', 'NLB route notices'),
+            creditHost: 'www.nlb.com.hk',
+            errorText: settings.text(
+              '未能載入嶼巴路線通告',
+              'Could not load NLB route notices',
+            ),
+            loader: () async {
+              final NlbRouteNotice? notice = await NlbTimetableService.instance
+                  .fetchRouteNotice(route, settings.language);
+              if (notice == null) return const <ProprietaryNotice>[];
+              return <ProprietaryNotice>[
+                ProprietaryNotice(
+                  title: notice.title,
+                  date: notice.date,
+                  url: notice.url,
+                ),
+              ];
+            },
+          ),
         if (showKmbNews)
           _AsyncNoticeSection(
             key: ValueKey<String>('kmb-${settings.language}'),
