@@ -6,6 +6,7 @@ import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/eta_text.dart';
 import 'package:hktransports/bus/ui/fade_in.dart';
 import 'package:intl/intl.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -213,30 +214,15 @@ class _RouteEtaLine extends StatelessWidget {
             child: Icon(Icons.schedule, size: first ? 16 : 14, color: color),
           ),
         Flexible(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Flexible(
-                child: Text(
-                  base,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                  style: style,
-                ),
-              ),
-              if (appended.isNotEmpty)
-                FadeIn(
-                  key: ValueKey<String>('append|${etaLiveStatusKey(eta)}'),
-                  child: Text(
-                    ' · ${appended.join(' · ')}',
-                    maxLines: 1,
-                    softWrap: false,
-                    style: style,
-                  ),
-                ),
-            ],
+          child: EtaText(
+            base: base,
+            appended: appended.isEmpty ? null : appended.join(' · '),
+            appendedKey: etaLiveStatusKey(eta),
+            style: style,
+            color: color,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
           ),
         ),
       ],
