@@ -69,6 +69,23 @@ void main() {
     expect(html!.indexOf('備註'), lessThan(html.indexOf('Monday to Saturday')));
   });
 
+  test('parses the NLB route notice card', () {
+    final NlbRouteNotice? notice = parseNlbRouteNotice('''
+      <div class="space-y-3">
+        <div>
+          <div><h3>嶼巴路線B6S延續學生及小童優惠</h3></div>
+          <p>發佈日期 : 2026-05-07</p>
+          <a href="/tc/news/630">閱讀更多</a>
+        </div>
+      </div>
+      ''', baseUri: Uri.parse('https://www.nlb.com.hk/tc/route/111'));
+
+    expect(notice, isNotNull);
+    expect(notice!.title, '嶼巴路線B6S延續學生及小童優惠');
+    expect(notice.date, '發佈日期 : 2026-05-07');
+    expect(notice.url, Uri.parse('https://www.nlb.com.hk/tc/news/630'));
+  });
+
   test('parses NLB stop fares and nearby locations', () {
     final NlbRoutePageData? data = parseNlbRouteData('''
       <ol class="relative w-full space-y-0 ms-3">

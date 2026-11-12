@@ -28,6 +28,18 @@ class NlbRoutePageData {
   final Map<int, NlbRouteStopData> stops;
 }
 
+class NlbRouteNotice {
+  const NlbRouteNotice({
+    required this.title,
+    required this.date,
+    required this.url,
+  });
+
+  final String title;
+  final String date;
+  final Uri? url;
+}
+
 class NlbTimetableService {
   NlbTimetableService({http.Client? client}) : _client = client;
 
@@ -45,6 +57,7 @@ class NlbTimetableService {
       <String, _CachedRoutePage>{};
   final Map<String, Future<NlbRoutePageData?>> _routeDataLoading =
       <String, Future<NlbRoutePageData?>>{};
+  final Map<String, _CachedNotice> _noticeCache = <String, _CachedNotice>{};
 
   Future<String?> fetchTimetableHtml(
     RouteEntry route,
@@ -73,6 +86,38 @@ class NlbTimetableService {
         fetchedAt: DateTime.now(),
       );
       return html;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<NlbRouteNotice?> fetchRouteNotice(
+    RouteEntry route,
+    String language, {
+    bool force = false,
+  }) async {
+    final String key = '${route.nlbRouteId}|${language == 'en' ? 'en' : 'tc'}';
+    final _CachedNotice? cached = _noticeCache[key];
+    if (!force &&
+        cached != null &&
+        DateTime.now().difference(cached.fetchedAt) < _cacheTtl) {
+      return cached.notice;
+    }
+    final String languagePath = language == 'en' ? 'en' : 'tc';
+    final Uri uri = Uri.https(
+      'www.nlb.com.hk',
+      '/$languagePath/route/${Uri.encodeComponent(route.nlbRouteId)}',
+    );
+    try {
+      final String? html = await _fetchHtml(uri, language);
+      if (html == null) return null;
+      final NlbRouteNotice? notice = parseNlbRouteNotice(html, baseUri: uri);
+      if (notice == null) return null;
+      _noticeCache[key] = _CachedNotice(
+        notice: notice,
+        fetchedAt: DateTime.now(),
+      );
+      return notice;
     } catch (_) {
       return null;
     }
@@ -290,6 +335,23 @@ NlbRoutePageData? parseNlbRouteData(String html) {
   return NlbRoutePageData(stops: stops);
 }
 
+NlbRouteNotice? parseNlbRouteNotice(String html, {required Uri baseUri}) {
+  final Document document = html_parser.parse(html);
+  final Element? card =
+      document.querySelector('.space-y-3 > div:nth-child(1)') ??
+      document.querySelector('div.space-y-3 > div');
+  if (card == null) return null;
+  final String title = _cleanText(card.querySelector('h3')?.text ?? '');
+  if (title.isEmpty) return null;
+  final String date = _cleanText(card.querySelector('p')?.text ?? '');
+  final String? href = card.querySelector('a[href]')?.attributes['href'];
+  Uri? url;
+  if (href != null && href.isNotEmpty) {
+    url = baseUri.resolve(href);
+  }
+  return NlbRouteNotice(title: title, date: date, url: url);
+}
+
 String _cleanText(String value) {
   return value.replaceAll(RegExp(r'\s+'), ' ').trim();
 }
@@ -299,6 +361,13 @@ String _firstTextByClass(Element element, String className) {
     if (child.className.contains(className)) return _cleanText(child.text);
   }
   return '';
+}
+
+class _CachedNotice {
+  const _CachedNotice({required this.notice, required this.fetchedAt});
+
+  final NlbRouteNotice notice;
+  final DateTime fetchedAt;
 }
 
 class _CachedRoutePage {
