@@ -88,7 +88,12 @@ class _NlbFareTableNotice extends StatelessWidget {
       child: ListTile(
         title: Text(title),
         trailing: const Icon(Icons.open_in_new),
-        onTap: () => openNotice(context, url: uri.toString(), title: title),
+        onTap: () => openNotice(
+          context,
+          url: uri.toString(),
+          title: title,
+          forcePdf: true,
+        ),
       ),
     );
   }

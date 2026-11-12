@@ -1,7 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
-void openNotice(BuildContext context, {required String url, String? title}) {
+void openNotice(
+  BuildContext context, {
+  required String url,
+  String? title,
+  bool forcePdf = false,
+}) {
   final Uri? uri = Uri.tryParse(url);
   if (uri == null) return;
   context.push(
@@ -10,6 +15,7 @@ void openNotice(BuildContext context, {required String url, String? title}) {
       queryParameters: {
         'url': url,
         if (title != null && title.isNotEmpty) 'title': title,
+        if (forcePdf) 'pdf': '1',
       },
     ).toString(),
   );

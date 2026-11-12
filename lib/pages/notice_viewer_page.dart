@@ -11,10 +11,16 @@ import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class NoticeViewerPage extends StatefulWidget {
-  const NoticeViewerPage({super.key, required this.url, this.title});
+  const NoticeViewerPage({
+    super.key,
+    required this.url,
+    this.title,
+    this.forcePdf = false,
+  });
 
   final String url;
   final String? title;
+  final bool forcePdf;
 
   @override
   State<NoticeViewerPage> createState() => _NoticeViewerPageState();
@@ -30,7 +36,7 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
   void initState() {
     super.initState();
     final Uri? uri = Uri.tryParse(widget.url);
-    _isPdf = uri != null && _isPdfUri(uri);
+    _isPdf = widget.forcePdf || (uri != null && _isPdfUri(uri));
     if (_isPdf || uri == null) {
       _loading = false;
       _failed = uri == null;
