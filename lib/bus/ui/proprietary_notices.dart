@@ -98,28 +98,89 @@ class ProprietaryNoticesTab extends StatelessWidget {
   }
 }
 
-class _NlbFareTableNotice extends StatelessWidget {
+class _NlbFareTableNotice extends StatefulWidget {
   const _NlbFareTableNotice({required this.route});
 
   final RouteEntry route;
 
   @override
+  State<_NlbFareTableNotice> createState() => _NlbFareTableNoticeState();
+}
+
+class _NlbFareTableNoticeState extends State<_NlbFareTableNotice> {
+  Future<NlbRoutePageData?>? _future;
+  String? _language;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final String language = context.read<AppSettings>().language;
+    if (_language == language) return;
+    _language = language;
+    _load(language);
+  }
+
+  @override
+  void didUpdateWidget(covariant _NlbFareTableNotice oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.route.key != widget.route.key ||
+        oldWidget.route.nlbRouteId != widget.route.nlbRouteId) {
+      _load(_language ?? context.read<AppSettings>().language);
+    }
+  }
+
+  void _load(String language) {
+    _future = NlbTimetableService.instance.fetchRouteData(
+      widget.route,
+      language,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
-    final Uri uri = Uri.parse(nlbFareTableUrl(route.nlbRouteId));
+    final ThemeData theme = Theme.of(context);
+    final Uri uri = Uri.parse(nlbFareTableUrl(widget.route.nlbRouteId));
     final String title = settings.text('車資表', 'Fare Table');
+    final Future<NlbRoutePageData?>? future = _future;
     return Card.filled(
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        title: Text(title),
-        trailing: const Icon(Icons.open_in_new),
-        onTap: () => openNotice(
-          context,
-          url: uri.toString(),
-          title: title,
-          forcePdf: true,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+            title: Text(title),
+            trailing: const Icon(Icons.open_in_new),
+            onTap: () => openNotice(
+              context,
+              url: uri.toString(),
+              title: title,
+              forcePdf: true,
+            ),
+          ),
+          if (future != null)
+            FutureBuilder<NlbRoutePageData?>(
+              future: future,
+              builder:
+                  (
+                    BuildContext context,
+                    AsyncSnapshot<NlbRoutePageData?> snapshot,
+                  ) {
+                    final String note = snapshot.data?.fareNote?.trim() ?? '';
+                    if (note.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Text(
+                        note,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    );
+                  },
+            ),
+        ],
       ),
     );
   }

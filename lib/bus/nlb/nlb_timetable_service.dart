@@ -23,9 +23,10 @@ class NlbRouteStopData {
 }
 
 class NlbRoutePageData {
-  const NlbRoutePageData({required this.stops});
+  const NlbRoutePageData({required this.stops, required this.fareNote});
 
   final Map<int, NlbRouteStopData> stops;
+  final String? fareNote;
 }
 
 class NlbRouteNotice {
@@ -263,17 +264,8 @@ String? parseNlbTimetableHtml(String html, {String language = 'tc'}) {
     }
   }
   if (content == null) return null;
-  final Element? fareNote =
-      document.querySelector(
-        '#route-fare > div:nth-child(2) > div:nth-child(1)',
-      ) ??
-      document.querySelector('#route-fare div.ck-content');
-  final String noteHtml =
-      fareNote != null && _cleanText(fareNote.text).isNotEmpty
-      ? '<div class="nlb-fare-note">${fareNote.outerHtml}</div>'
-      : '';
   _addTimetableLegend(content, language);
-  return '$noteHtml${content.outerHtml}';
+  return content.outerHtml;
 }
 
 void _addTimetableLegend(Element content, String language) {
@@ -312,6 +304,7 @@ void _addTimetableLegend(Element content, String language) {
 
 NlbRoutePageData? parseNlbRouteData(String html) {
   final Document document = html_parser.parse(html);
+  final String? fareNote = _parseNlbFareNote(document);
   Element? list = document.querySelector('ol.relative.w-full.space-y-0.ms-3');
   if (list == null) {
     for (final Element candidate in document.querySelectorAll('ol')) {
@@ -321,7 +314,14 @@ NlbRoutePageData? parseNlbRouteData(String html) {
       }
     }
   }
-  if (list == null) return null;
+  if (list == null) {
+    return fareNote == null
+        ? null
+        : NlbRoutePageData(
+            stops: const <int, NlbRouteStopData>{},
+            fareNote: fareNote,
+          );
+  }
 
   final Map<int, NlbRouteStopData> stops = <int, NlbRouteStopData>{};
   int fallbackIndex = 0;
@@ -377,8 +377,71 @@ NlbRoutePageData? parseNlbRouteData(String html) {
       holidayFare: holidayFare,
     );
   }
-  if (stops.isEmpty) return null;
-  return NlbRoutePageData(stops: stops);
+  if (stops.isEmpty && fareNote == null) return null;
+  return NlbRoutePageData(stops: stops, fareNote: fareNote);
+}
+
+String? _parseNlbFareNote(Document document) {
+  final Element? note =
+      document.querySelector(
+        '#route-fare > div:nth-child(2) > div:nth-child(1)',
+      ) ??
+      document.querySelector('#route-fare div.ck-content');
+  if (note == null) return null;
+  final List<String> lines = _blockTexts(note);
+  return lines.isEmpty ? null : lines.join('\n');
+}
+
+const Set<String> _blockTags = <String>{
+  'address',
+  'article',
+  'aside',
+  'blockquote',
+  'div',
+  'dl',
+  'fieldset',
+  'figcaption',
+  'figure',
+  'footer',
+  'form',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'header',
+  'hr',
+  'li',
+  'main',
+  'nav',
+  'ol',
+  'p',
+  'pre',
+  'section',
+  'table',
+  'ul',
+};
+
+List<String> _blockTexts(Element element) {
+  final List<String> lines = <String>[];
+  final List<Element> children = element.children;
+  if (children.isEmpty) {
+    final String text = _cleanText(element.text);
+    if (text.isNotEmpty) lines.add(text);
+    return lines;
+  }
+  bool sawBlock = false;
+  for (final Element child in children) {
+    if (!_blockTags.contains(child.localName)) continue;
+    sawBlock = true;
+    lines.addAll(_blockTexts(child));
+  }
+  if (!sawBlock) {
+    final String text = _cleanText(element.text);
+    if (text.isNotEmpty) lines.add(text);
+  }
+  return lines;
 }
 
 NlbRouteNotice? parseNlbRouteNotice(String html, {required Uri baseUri}) {

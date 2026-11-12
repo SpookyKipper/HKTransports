@@ -11,7 +11,15 @@ const String _sampleHtml = '''
   <div></div>
   <div id="route-fare">
     <div></div>
-    <div><div><div class="ck-content">Fare note example</div></div></div>
+    <div>
+      <div>
+        <div class="ck-content">
+          <h2>Fare note example</h2>
+          <h2>&nbsp;</h2>
+          <p>Second line</p>
+        </div>
+      </div>
+    </div>
   </div>
   <ol class="relative w-full space-y-0 ms-3">
     <li>
@@ -92,8 +100,8 @@ void main() {
     expect(html, contains('<table>'));
     expect(html, contains('T via Mui Wo Old Town'));
     expect(html, contains('nlb-timetable-legend'));
-    expect(html, contains('nlb-fare-note'));
-    expect(html, contains('Fare note example'));
+    expect(html, isNot(contains('nlb-fare-note')));
+    expect(html, isNot(contains('Fare note example')));
     expect(html, contains('備註'));
     expect(html!.indexOf('備註'), lessThan(html.indexOf('Monday to Saturday')));
   });
@@ -145,6 +153,12 @@ void main() {
     expect(data.stops[1]?.weekdayFare, '12.7');
     expect(data.stops[1]?.holidayFare, '21.4');
     expect(data.stops[7]?.location, '嶼南道');
+  });
+
+  test('parses the NLB fare note without blank lines', () {
+    final NlbRoutePageData? data = parseNlbRouteData(_sampleHtml);
+
+    expect(data?.fareNote, 'Fare note example\nSecond line');
   });
 
   test('fetches one NLB page for timetable, fares, and notices', () async {
