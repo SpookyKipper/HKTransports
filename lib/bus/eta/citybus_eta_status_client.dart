@@ -65,11 +65,27 @@ class CitybusEtaStatusClient {
   String? _ssid;
   String? _resultPath;
   Map<String, String> _cookies = const <String, String>{};
+  Future<void> _queue = Future<void>.value();
 
   bool get _hasSession =>
       _ssid != null && _resultPath != null && _cookies.isNotEmpty;
 
-  Future<List<CitybusEtaStatus>> fetch(CitybusEtaArguments args) async {
+  Future<List<CitybusEtaStatus>> fetch(CitybusEtaArguments args) {
+    final Completer<List<CitybusEtaStatus>> completer =
+        Completer<List<CitybusEtaStatus>>();
+    _queue = _queue.then((_) async {
+      try {
+        completer.complete(await _fetchWithRetry(args));
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    });
+    return completer.future;
+  }
+
+  Future<List<CitybusEtaStatus>> _fetchWithRetry(
+    CitybusEtaArguments args,
+  ) async {
     Object? lastError;
     for (int attempt = 0; attempt < 2; attempt++) {
       final bool hadSession = _hasSession;
