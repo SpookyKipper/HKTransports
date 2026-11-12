@@ -7,6 +7,15 @@ class NlbHttp {
   static Future<SecurityContext>? _securityContextFuture;
 
   static Future<String?> get(Uri uri, {Map<String, String>? headers}) async {
+    final Uint8List? bytes = await getBytes(uri, headers: headers);
+    if (bytes == null) return null;
+    return utf8.decode(bytes, allowMalformed: true);
+  }
+
+  static Future<Uint8List?> getBytes(
+    Uri uri, {
+    Map<String, String>? headers,
+  }) async {
     final SecurityContext context = await (_securityContextFuture ??=
         _createSecurityContext());
     final SecureSocket socket = await SecureSocket.connect(
@@ -63,7 +72,7 @@ class NlbHttp {
   }
 }
 
-String? _decodeResponse(List<int> bytes) {
+Uint8List? _decodeResponse(List<int> bytes) {
   int headerEnd = -1;
   for (int index = 0; index + 3 < bytes.length; index++) {
     if (bytes[index] == 13 &&
@@ -90,19 +99,19 @@ String? _decodeResponse(List<int> bytes) {
   }
   final List<int> body = bytes.sublist(headerEnd + 4);
   if (headers['content-encoding']?.toLowerCase().contains('gzip') ?? false) {
-    return utf8.decode(gzip.decode(body), allowMalformed: true);
+    return Uint8List.fromList(gzip.decode(body));
   }
   if (headers['transfer-encoding']?.toLowerCase().contains('chunked') ??
       false) {
     final List<int>? decoded = _decodeChunked(body);
     if (decoded == null) return null;
-    return utf8.decode(decoded, allowMalformed: true);
+    return Uint8List.fromList(decoded);
   }
   final int? length = int.tryParse(headers['content-length'] ?? '');
   final List<int> content = length != null && length <= body.length
       ? body.sublist(0, length)
       : body;
-  return utf8.decode(content, allowMalformed: true);
+  return Uint8List.fromList(content);
 }
 
 List<int>? _decodeChunked(List<int> body) {

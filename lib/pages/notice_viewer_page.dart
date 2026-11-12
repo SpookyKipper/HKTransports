@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/app_theme.dart';
 import 'package:hktransports/app/m3e_scope.dart';
 import 'package:hktransports/app/page_bar.dart';
+import 'package:hktransports/bus/nlb/nlb_http.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:pdfrx/pdfrx.dart';
@@ -133,6 +134,9 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
     if (_isPdf) {
       final Uri? uri = Uri.tryParse(widget.url);
       if (uri == null) return _error(context, settings);
+      if (widget.forcePdf && uri.host.endsWith('nlb.com.hk')) {
+        return _NlbPdfView(uri: uri, settings: settings);
+      }
       final ThemeData theme = Theme.of(context);
       return PdfViewer.uri(
         uri,
@@ -257,4 +261,79 @@ bool _isPdfUri(Uri uri) {
   if (uri.path.toLowerCase().endsWith('.pdf')) return true;
   final String source = uri.queryParameters['url']?.toLowerCase() ?? '';
   return source.endsWith('.pdf');
+}
+
+class _NlbPdfView extends StatefulWidget {
+  const _NlbPdfView({required this.uri, required this.settings});
+
+  final Uri uri;
+  final AppSettings settings;
+
+  @override
+  State<_NlbPdfView> createState() => _NlbPdfViewState();
+}
+
+class _NlbPdfViewState extends State<_NlbPdfView> {
+  Future<Uint8List?>? _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  void _load() {
+    _future = NlbHttp.getBytes(widget.uri);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return FutureBuilder<Uint8List?>(
+      future: _future,
+      builder: (BuildContext context, AsyncSnapshot<Uint8List?> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const M3ELoadingIndicator(size: 36),
+                  const SizedBox(height: 12),
+                  Text(widget.settings.text('正在載入通告', 'Loading notice')),
+                ],
+              ),
+            ),
+          );
+        }
+        final Uint8List? bytes = snapshot.data;
+        if (bytes == null) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.error_outline, color: theme.colorScheme.error),
+                  const SizedBox(height: 12),
+                  Text(widget.settings.text('未能載入通告', 'Could not load notice')),
+                  const SizedBox(height: 12),
+                  M3EButton.text(
+                    onPressed: () => setState(_load),
+                    child: Text(widget.settings.text('重試', 'Retry')),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return PdfViewer.data(
+          bytes,
+          sourceName: widget.uri.toString(),
+          params: PdfViewerParams(backgroundColor: theme.colorScheme.surface),
+        );
+      },
+    );
+  }
 }
