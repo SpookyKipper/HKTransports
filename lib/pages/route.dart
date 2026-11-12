@@ -13,6 +13,7 @@ import 'package:hktransports/bus/eta/eta_display.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/nlb/nlb_timetable_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
 import 'package:hktransports/bus/ui/citybus_fare_label.dart';
@@ -95,6 +96,7 @@ class _RoutePageState extends State<_RoutePage> {
       databaseProvider: () => repository.database,
     );
     _statusSubscription = _etaService.statusUpdates.listen(_onStatusUpdate);
+    _prefetchNlbPage(settings);
     final int initialIndex = widget.route.primaryStops.indexOf(
       widget.initialStopId ?? '',
     );
@@ -175,6 +177,19 @@ class _RoutePageState extends State<_RoutePage> {
     super.didChangeDependencies();
     final AppSettings settings = context.read<AppSettings>();
     _etaService.setLanguage(settings.language);
+    _prefetchNlbPage(settings);
+  }
+
+  void _prefetchNlbPage(AppSettings settings) {
+    final RouteEntry route = widget.route;
+    if (!route.companies.contains(BusCompany.nlb)) return;
+    final bool pageDataEnabled =
+        settings.isProprietaryEnabled(ProprietaryEndpoint.nlbProprietaryData) ||
+        settings.isProprietaryEnabled(ProprietaryEndpoint.nlbRouteNotices);
+    if (!pageDataEnabled) return;
+    unawaited(
+      NlbTimetableService.instance.prefetchPage(route, settings.language),
+    );
   }
 
   @override

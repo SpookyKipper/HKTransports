@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/nlb/nlb_timetable_service.dart';
@@ -10,6 +12,33 @@ const String _sampleHtml = '''
   <div id="route-fare">
     <div></div>
     <div><div><div class="ck-content">Fare note example</div></div></div>
+  </div>
+  <ol class="relative w-full space-y-0 ms-3">
+    <li>
+      <p class="text-sm">第 1 站</p>
+      <div><div><p class="text-lg">梅窩碼頭</p></div></div>
+      <p class="text-xs">梅窩碼頭</p>
+      <dl>
+        <div><dt>平日車資:</dt><dd>12.7</dd></div>
+        <div><dt>假日車資:</dt><dd>21.4</dd></div>
+      </dl>
+    </li>
+    <li>
+      <p class="text-sm">第 7 站</p>
+      <div><div><p class="text-lg">荔枝園</p></div></div>
+      <p class="text-xs">嶼南道</p>
+      <dl>
+        <div><dt>平日車資:</dt><dd>12.7</dd></div>
+        <div><dt>假日車資:</dt><dd>21.4</dd></div>
+      </dl>
+    </li>
+  </ol>
+  <div class="space-y-3">
+    <div>
+      <h3>Route notice</h3>
+      <p>發佈日期 : 2026-05-07</p>
+      <a href="/tc/news/630">閱讀更多</a>
+    </div>
   </div>
   <section class="space-y-4">
     <div></div>
@@ -118,12 +147,39 @@ void main() {
     expect(data.stops[7]?.location, '嶼南道');
   });
 
+  test('fetches one NLB page for timetable, fares, and notices', () async {
+    int requests = 0;
+    final NlbTimetableService service = NlbTimetableService(
+      client: MockClient((http.Request request) async {
+        requests++;
+        return http.Response.bytes(utf8.encode(_sampleHtml), 200);
+      }),
+    );
+
+    await service.prefetchPage(_route(), 'tc');
+    expect(requests, 1);
+
+    final List<Object?> results = await Future.wait<Object?>(<Future<Object?>>[
+      service.fetchTimetableHtml(_route(), 'tc'),
+      service.fetchRouteData(_route(), 'tc'),
+      service.fetchRouteNotice(_route(), 'tc'),
+    ]);
+
+    expect(results, everyElement(isNotNull));
+    expect(requests, 1);
+
+    await service.fetchRouteNotice(_route(), 'tc');
+    await service.fetchRouteData(_route(), 'tc');
+    await service.fetchTimetableHtml(_route(), 'tc');
+    expect(requests, 1);
+  });
+
   test('uses the language-specific NLB page URL', () async {
     late Uri requested;
     final NlbTimetableService service = NlbTimetableService(
       client: MockClient((http.Request request) async {
         requested = request.url;
-        return http.Response(_sampleHtml, 200);
+        return http.Response.bytes(utf8.encode(_sampleHtml), 200);
       }),
     );
 
