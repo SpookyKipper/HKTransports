@@ -19,6 +19,7 @@ import 'package:hktransports/bus/ui/citybus_fare_label.dart';
 import 'package:hktransports/bus/ui/citybus_route_description.dart';
 import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
+import 'package:hktransports/bus/ui/eta_text.dart';
 import 'package:hktransports/bus/ui/fade_in.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:hktransports/bus/ui/route_map.dart';
@@ -1015,26 +1016,12 @@ class _EtaLine extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text.rich(
-        TextSpan(
-          children: [
-            TextSpan(text: segments.join(' · ')),
-            if (appended.isNotEmpty)
-              WidgetSpan(
-                alignment: PlaceholderAlignment.baseline,
-                baseline: TextBaseline.alphabetic,
-                child: FadeIn(
-                  key: ValueKey<String>('append|${etaLiveStatusKey(eta)}'),
-                  child: Text(
-                    ' · ${appended.join(' · ')}',
-                    style: style,
-                    softWrap: false,
-                  ),
-                ),
-              ),
-          ],
-        ),
+      child: EtaText(
+        base: segments.join(' · '),
+        appended: appended.isEmpty ? null : appended.join(' · '),
+        appendedKey: etaLiveStatusKey(eta),
         style: style,
+        color: color,
       ),
     );
   }

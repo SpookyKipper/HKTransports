@@ -8,6 +8,7 @@ import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
+import 'package:hktransports/bus/ui/eta_text.dart';
 import 'package:hktransports/bus/ui/fade_in.dart';
 import 'package:intl/intl.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -290,34 +291,18 @@ class _PinnedChip extends StatelessWidget {
                         ? 'empty|${item.pin.id}'
                         : etaDisplayKey(item.eta!),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          label.base,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                      if (item.eta != null && label.appended.isNotEmpty)
-                        FadeIn(
-                          key: ValueKey<String>(
-                            'append|${etaLiveStatusKey(item.eta!)}',
-                          ),
-                          child: Text(
-                            ' · ${label.appended}',
-                            maxLines: 1,
-                            softWrap: false,
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                    ],
+                  child: EtaText(
+                    base: label.base,
+                    appended: label.appended.isEmpty ? null : label.appended,
+                    appendedKey: item.eta == null
+                        ? ''
+                        : etaLiveStatusKey(item.eta!),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                    color: theme.colorScheme.primary,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
