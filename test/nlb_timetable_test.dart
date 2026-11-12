@@ -51,15 +51,13 @@ RouteEntry _route() {
 }
 
 void main() {
-  test('parses NLB timetable sections and notes', () {
-    final NlbTimetable? timetable = parseNlbTimetable(_sampleHtml);
+  test('extracts the NLB timetable HTML without parsing it', () {
+    final String? html = parseNlbTimetableHtml(_sampleHtml);
 
-    expect(timetable, isNotNull);
-    expect(timetable!.sections, hasLength(2));
-    expect(timetable.sections[0].title, 'Monday to Saturday');
-    expect(timetable.sections[0].rows, hasLength(2));
-    expect(timetable.sections[0].rows[1].note, 'T');
-    expect(timetable.notes, <String>['T via Mui Wo Old Town']);
+    expect(html, isNotNull);
+    expect(html, contains('Monday to Saturday'));
+    expect(html, contains('<table>'));
+    expect(html, contains('T via Mui Wo Old Town'));
   });
 
   test('parses NLB stop fares and nearby locations', () {
@@ -103,9 +101,9 @@ void main() {
       }),
     );
 
-    final NlbTimetable? timetable = await service.fetch(_route(), 'en');
+    final String? html = await service.fetchTimetableHtml(_route(), 'en');
 
-    expect(timetable, isNotNull);
+    expect(html, isNotNull);
     expect(requested.path, '/en/route/123');
     expect(requested.host, 'www.nlb.com.hk');
   });
