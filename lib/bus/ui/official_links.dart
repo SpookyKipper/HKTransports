@@ -75,7 +75,7 @@ String officialUrl({
           '?lang=${zh ? 'TC' : 'EN'}&route_id=$gtfsId';
     case BusCompany.nlb:
       return 'https://www.nlb.com.hk/${zh ? 'tc' : 'en'}'
-          '/route?q=${Uri.encodeQueryComponent(route.route)}';
+          '/route/${Uri.encodeQueryComponent(route.route)}';
     case BusCompany.lrtfeeder:
       return 'https://www.mtr.com.hk/${zh ? 'ch' : 'en'}'
           '/customer/services/searchBusRouteDetails.php?routeID=${route.route}';
