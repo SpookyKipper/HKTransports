@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hktransports/bus/eta/eta_display.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 
@@ -56,5 +57,17 @@ void main() {
     expect(eta.distanceLabel('zh'), '距離 1.2 公里');
     expect(eta.distanceLabel('en'), '1.2 km away');
     expect(eta.isScheduledLike, isTrue);
+  });
+
+  test('live status does not change the base ETA animation key', () {
+    final BusEta base = busEta(now);
+    final BusEta enriched = base.copyWith(
+      statusZh: '未開出',
+      statusEn: 'Not yet departed',
+      distanceKm: 1.2,
+    );
+
+    expect(etaDisplayKey(enriched), etaDisplayKey(base));
+    expect(etaLiveStatusKey(enriched), isNot(etaLiveStatusKey(base)));
   });
 }
