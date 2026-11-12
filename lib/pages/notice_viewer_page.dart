@@ -57,7 +57,9 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
               _failed = false;
             });
           },
-          onPageFinished: (_) {
+          onPageFinished: (_) async {
+            if (!mounted) return;
+            await _applyNlbNoticeStyles();
             if (!mounted) return;
             setState(() => _loading = false);
           },
@@ -212,6 +214,17 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
     );
   }
 
+  Future<void> _applyNlbNoticeStyles() async {
+    final WebViewController? controller = _webViewController;
+    final Uri? uri = Uri.tryParse(widget.url);
+    if (controller == null || uri == null || !isNlbNewsUri(uri)) return;
+    try {
+      await controller.runJavaScript(_nlbNoticeStyleScript);
+    } catch (_) {
+      // Leave the page usable even if the style injection fails.
+    }
+  }
+
   Widget _error(BuildContext context, AppSettings settings) {
     final ThemeData theme = Theme.of(context);
     return Center(
@@ -272,6 +285,38 @@ class _ViewerCredit extends StatelessWidget {
     );
   }
 }
+
+const String _nlbNoticeStyleScript = r'''
+(() => {
+  let style = document.getElementById('hktransports-nlb-notice-style');
+  if (!style) {
+    style = document.createElement('style');
+    style.id = 'hktransports-nlb-notice-style';
+    document.head.appendChild(style);
+  }
+  style.textContent = `
+    #__nuxt > div > header,
+    #__nuxt > div > footer,
+    #__nuxt > div > aside,
+    body > div:not(#__nuxt):not(#teleports),
+    body > iframe,
+    article > a[href*="/news"] {
+      display: none !important;
+    }
+    main > div {
+      padding-top: 8px !important;
+      padding-bottom: 24px !important;
+    }
+    article {
+      margin: 0 !important;
+      max-width: none !important;
+    }
+    article > header {
+      margin-top: 0 !important;
+    }
+  `;
+})();
+''';
 
 bool _isPdfUri(Uri uri) {
   if (uri.path.toLowerCase().endsWith('.pdf')) return true;
