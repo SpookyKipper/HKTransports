@@ -4,6 +4,7 @@ import 'package:hktransports/bus/nlb/nlb_timetable_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class NlbTimetablePanel extends StatefulWidget {
   const NlbTimetablePanel({super.key, required this.route});
@@ -15,7 +16,8 @@ class NlbTimetablePanel extends StatefulWidget {
 }
 
 class _NlbTimetablePanelState extends State<NlbTimetablePanel> {
-  Future<NlbTimetable?>? _future;
+  Future<String?>? _future;
+  String? _language;
 
   @override
   void initState() {
@@ -28,17 +30,15 @@ class _NlbTimetablePanelState extends State<NlbTimetablePanel> {
     super.didUpdateWidget(oldWidget);
     final String language = context.read<AppSettings>().language;
     if (oldWidget.route.key != widget.route.key ||
-        oldWidget.route.route != widget.route.route ||
+        oldWidget.route.nlbRouteId != widget.route.nlbRouteId ||
         _language != language) {
       _load();
     }
   }
 
-  String? _language;
-
   void _load({bool force = false}) {
     _language = context.read<AppSettings>().language;
-    _future = NlbTimetableService.instance.fetch(
+    _future = NlbTimetableService.instance.fetchTimetableHtml(
       widget.route,
       _language!,
       force: force,
@@ -49,20 +49,18 @@ class _NlbTimetablePanelState extends State<NlbTimetablePanel> {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final ThemeData theme = Theme.of(context);
-    return FutureBuilder<NlbTimetable?>(
+    return FutureBuilder<String?>(
       future: _future,
-      builder: (BuildContext context, AsyncSnapshot<NlbTimetable?> snapshot) {
+      builder: (BuildContext context, AsyncSnapshot<String?> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: M3ELoadingIndicator(size: 24),
-          );
+          return const Center(child: M3ELoadingIndicator(size: 24));
         }
-        final NlbTimetable? timetable = snapshot.data;
-        if (timetable == null) {
+        final String? html = snapshot.data;
+        if (html == null) {
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -81,66 +79,106 @@ class _NlbTimetablePanelState extends State<NlbTimetablePanel> {
             ),
           );
         }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              settings.text('官方時間表', 'Official timetable'),
-              style: theme.textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            for (final NlbTimetableSection section in timetable.sections) ...[
-              if (section.title.isNotEmpty) ...[
-                Text(
-                  section.title,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-              ],
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  for (final NlbTimetableRow row in section.rows)
-                    _TimeChip(row: row),
-                ],
-              ),
-              const SizedBox(height: 12),
-            ],
-            if (timetable.notes.isNotEmpty)
-              Text(
-                timetable.notes.join(' · '),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-          ],
-        );
+        return _NlbTimetableWebView(html: html);
       },
     );
   }
 }
 
-class _TimeChip extends StatelessWidget {
-  const _TimeChip({required this.row});
+class _NlbTimetableWebView extends StatefulWidget {
+  const _NlbTimetableWebView({required this.html});
 
-  final NlbTimetableRow row;
+  final String html;
+
+  @override
+  State<_NlbTimetableWebView> createState() => _NlbTimetableWebViewState();
+}
+
+class _NlbTimetableWebViewState extends State<_NlbTimetableWebView> {
+  late final WebViewController _controller;
+  String? _loadedSignature;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.disabled);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colors = theme.colorScheme;
+    final double scale = MediaQuery.textScalerOf(context).scale(1);
+    final double fontSize =
+        (theme.textTheme.bodySmall?.fontSize ?? 12) * scale;
+    final String signature =
+        '${widget.html}|${colors.surface.toARGB32()}|'
+        '${colors.onSurface.toARGB32()}|${colors.primary.toARGB32()}|'
+        '${colors.outlineVariant.toARGB32()}|$fontSize';
+    if (signature == _loadedSignature) return;
+    _loadedSignature = signature;
+    _controller.setBackgroundColor(colors.surface);
+    _controller.loadHtmlString(_document(colors, theme, fontSize));
+  }
+
+  String _document(ColorScheme colors, ThemeData theme, double fontSize) {
+    final String background = _css(colors.surface);
+    final String foreground = _css(colors.onSurface);
+    final String primary = _css(colors.primary);
+    final String border = _css(colors.outlineVariant);
+    final String fontFamily =
+        theme.textTheme.bodyMedium?.fontFamily ?? 'sans-serif';
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: $background;
+  color: $foreground;
+  font-family: $fontFamily, sans-serif;
+  font-size: ${fontSize.toStringAsFixed(1)}px;
+  line-height: 1.45;
+}
+body { padding: 8px 14px 24px; }
+p { margin: 10px 0 6px; font-weight: 600; color: $primary; }
+h1, h2, h3, h4 { margin: 10px 0 6px; color: $primary; font-size: 1.05em; }
+table {
+  width: 100% !important;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+td, th {
+  width: auto !important;
+  padding: 4px 6px;
+  border-bottom: 1px solid $border;
+  vertical-align: top;
+  word-break: break-word;
+}
+td:first-child, th:first-child {
+  width: 32% !important;
+  font-variant-numeric: tabular-nums;
+}
+</style>
+</head>
+<body>
+${widget.html}
+</body>
+</html>
+''';
+  }
+
+  String _css(Color color) {
+    return '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        row.note.isEmpty ? row.time : '${row.time} ${row.note}',
-        style: theme.textTheme.bodySmall,
-      ),
-    );
+    return WebViewWidget(controller: _controller);
   }
 }

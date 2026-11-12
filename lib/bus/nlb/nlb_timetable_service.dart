@@ -6,27 +6,6 @@ import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
 
-class NlbTimetable {
-  const NlbTimetable({required this.sections, required this.notes});
-
-  final List<NlbTimetableSection> sections;
-  final List<String> notes;
-}
-
-class NlbTimetableSection {
-  const NlbTimetableSection({required this.title, required this.rows});
-
-  final String title;
-  final List<NlbTimetableRow> rows;
-}
-
-class NlbTimetableRow {
-  const NlbTimetableRow({required this.time, required this.note});
-
-  final String time;
-  final String note;
-}
-
 class NlbRouteStopData {
   const NlbRouteStopData({
     required this.index,
@@ -60,23 +39,24 @@ class NlbTimetableService {
       '> div:nth-child(1) > div:nth-child(1)';
 
   final http.Client? _client;
-  final Map<String, _CachedTimetable> _cache = <String, _CachedTimetable>{};
+  final Map<String, _CachedTimetableHtml> _timetableCache =
+      <String, _CachedTimetableHtml>{};
   final Map<String, _CachedRoutePage> _routeDataCache =
       <String, _CachedRoutePage>{};
   final Map<String, Future<NlbRoutePageData?>> _routeDataLoading =
       <String, Future<NlbRoutePageData?>>{};
 
-  Future<NlbTimetable?> fetch(
+  Future<String?> fetchTimetableHtml(
     RouteEntry route,
     String language, {
     bool force = false,
   }) async {
     final String key = '${route.nlbRouteId}|${language == 'en' ? 'en' : 'tc'}';
-    final _CachedTimetable? cached = _cache[key];
+    final _CachedTimetableHtml? cached = _timetableCache[key];
     if (!force &&
         cached != null &&
         DateTime.now().difference(cached.fetchedAt) < _cacheTtl) {
-      return cached.timetable;
+      return cached.html;
     }
     final String languagePath = language == 'en' ? 'en' : 'tc';
     final Uri uri = Uri.https(
@@ -84,15 +64,15 @@ class NlbTimetableService {
       '/$languagePath/route/${Uri.encodeComponent(route.nlbRouteId)}',
     );
     try {
-      final String? body = await _fetchHtml(uri, language);
-      if (body == null) return null;
-      final NlbTimetable? timetable = parseNlbTimetable(body);
-      if (timetable == null) return null;
-      _cache[key] = _CachedTimetable(
-        timetable: timetable,
+      final String? page = await _fetchHtml(uri, language);
+      if (page == null) return null;
+      final String? html = parseNlbTimetableHtml(page);
+      if (html == null) return null;
+      _timetableCache[key] = _CachedTimetableHtml(
+        html: html,
         fetchedAt: DateTime.now(),
       );
-      return timetable;
+      return html;
     } catch (_) {
       return null;
     }
@@ -168,10 +148,6 @@ class NlbTimetableService {
       if (response.statusCode != 200) return null;
       return utf8.decode(response.bodyBytes, allowMalformed: true);
     }
-    return _fetchHtmlRaw(uri, language);
-  }
-
-  Future<String?> _fetchHtmlRaw(Uri uri, String language) {
     return NlbHttp.get(
       uri,
       headers: <String, String>{
@@ -183,7 +159,8 @@ class NlbTimetableService {
   }
 }
 
-NlbTimetable? parseNlbTimetable(String html) {
+/// Returns the selected timetable HTML exactly as rendered by NLB.
+String? parseNlbTimetableHtml(String html) {
   final Document document = html_parser.parse(html);
   Element? content = document.querySelector(NlbTimetableService._selector);
   if (content == null) {
@@ -198,60 +175,7 @@ NlbTimetable? parseNlbTimetable(String html) {
       }
     }
   }
-  if (content == null) return null;
-
-  final List<NlbTimetableSection> sections = <NlbTimetableSection>[];
-  final List<String> notes = <String>[];
-  NlbTimetableSection? current;
-  final List<Element> children = content.children;
-  for (int index = 0; index < children.length; index++) {
-    final Element child = children[index];
-    if (child.localName == 'table') {
-      current ??= const NlbTimetableSection(
-        title: '',
-        rows: <NlbTimetableRow>[],
-      );
-      final List<NlbTimetableRow> rows = current.rows.toList();
-      for (final Element row in child.querySelectorAll('tr')) {
-        final List<Element> cells = row
-            .querySelectorAll('td, th')
-            .toList(growable: false);
-        if (cells.isEmpty) continue;
-        final String time = _cleanText(cells.first.text);
-        if (!RegExp(r'^\d{1,2}:\d{2}$').hasMatch(time)) continue;
-        final String note = cells
-            .skip(1)
-            .map((Element cell) => _cleanText(cell.text))
-            .where((String value) => value.isNotEmpty)
-            .join(' ');
-        rows.add(NlbTimetableRow(time: time, note: note));
-      }
-      if (rows.isEmpty) continue;
-      current = NlbTimetableSection(title: current.title, rows: rows);
-      continue;
-    }
-    if (child.localName != 'p') continue;
-    final String text = _cleanText(child.text);
-    if (text.isEmpty) continue;
-    final bool followedByTable =
-        index + 1 < children.length && children[index + 1].localName == 'table';
-    if (followedByTable) {
-      if (current != null && current.rows.isNotEmpty) sections.add(current);
-      current = NlbTimetableSection(
-        title: text,
-        rows: const <NlbTimetableRow>[],
-      );
-    } else if (current != null && current.rows.isNotEmpty) {
-      notes.add(text);
-    }
-  }
-  if (current != null && current.rows.isNotEmpty) sections.add(current);
-  if (sections.isEmpty) return null;
-  return NlbTimetable(sections: sections, notes: notes);
-}
-
-String _cleanText(String value) {
-  return value.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return content?.outerHtml;
 }
 
 NlbRoutePageData? parseNlbRouteData(String html) {
@@ -325,6 +249,10 @@ NlbRoutePageData? parseNlbRouteData(String html) {
   return NlbRoutePageData(stops: stops);
 }
 
+String _cleanText(String value) {
+  return value.replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
 String _firstTextByClass(Element element, String className) {
   for (final Element child in element.querySelectorAll('p')) {
     if (child.className.contains(className)) return _cleanText(child.text);
@@ -339,9 +267,9 @@ class _CachedRoutePage {
   final DateTime fetchedAt;
 }
 
-class _CachedTimetable {
-  const _CachedTimetable({required this.timetable, required this.fetchedAt});
+class _CachedTimetableHtml {
+  const _CachedTimetableHtml({required this.html, required this.fetchedAt});
 
-  final NlbTimetable timetable;
+  final String html;
   final DateTime fetchedAt;
 }

@@ -99,12 +99,13 @@ class _TimetableTab extends StatelessWidget {
         route.companies.contains(BusCompany.nlb) &&
         settings.isProprietaryEnabled(ProprietaryEndpoint.nlbProprietaryData);
     if (showNlbTimetable) {
-      return ListView(
-        padding: const EdgeInsets.only(bottom: 24),
+      return Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: NlbTimetablePanel(route: route),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+              child: NlbTimetablePanel(route: route),
+            ),
           ),
           OfficialLinks(route: route),
         ],
