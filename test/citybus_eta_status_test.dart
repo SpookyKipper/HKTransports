@@ -2,6 +2,48 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hktransports/bus/eta/citybus_eta_status_client.dart';
 
 void main() {
+  test('parses the current nwp3 registration and result endpoints', () {
+    const String popup = '''
+      showblank();
+      if (callweb('auto_02c219c8a43745bb8ee85cfda4ce140c.php?info=002917||798-FTC-1||1||O')=='OK')
+        showeta();
+    ''';
+    final CitybusNwp3Registration? registration = parseCitybusNwp3Registration(
+      popup,
+    );
+    expect(registration, isNotNull);
+    expect(registration!.path, 'auto_02c219c8a43745bb8ee85cfda4ce140c.php');
+    expect(registration.info, '002917||798-FTC-1||1||O');
+
+    const String script = '''
+      function showeta_bak(stopid, rdv, seq, bound){
+        makeRequestref('auto_11111111111111111111111111111111.php?stopid='+stopid,'popupboxlist');
+      }
+      function showeta(){
+        makeRequestref('auto_d302d8c29bdb4f169f2f727260ec02e3.php?l='+lang,'popupboxlist');
+      }
+      function showroute_eta_extra(stopid){
+        makeRequest('auto_37af99947aff497180ecad7a80561add.php?l='+lang,'popupboxlist');
+      }
+    ''';
+    expect(
+      parseCitybusNwp3ResultPath(script),
+      'auto_d302d8c29bdb4f169f2f727260ec02e3.php',
+    );
+  });
+
+  test('decodes an encoded registration info value', () {
+    final CitybusNwp3Registration? registration = parseCitybusNwp3Registration(
+      "auto_02c219c8a43745bb8ee85cfda4ce140c.php?info=002917%7C%7C798-FTC-1%7C%7C1%7C%7CO",
+    );
+    expect(registration?.info, '002917||798-FTC-1||1||O');
+  });
+
+  test('ignores pages without dynamic nwp3 endpoints', () {
+    expect(parseCitybusNwp3Registration('<div>no registration</div>'), isNull);
+    expect(parseCitybusNwp3ResultPath('function showeta(){ return; }'), isNull);
+  });
+
   test('parses Citybus nwp3 statuses in display order', () {
     final List<CitybusEtaStatus> statuses = parseCitybusEtaStatuses('''
       <div id="nextbus_listitem">
