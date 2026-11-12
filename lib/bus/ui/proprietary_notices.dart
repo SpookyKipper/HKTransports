@@ -80,7 +80,7 @@ class _NlbFareTableNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
-    final Uri uri = Uri.parse(nlbFareTableUrl(route.route));
+    final Uri uri = Uri.parse(nlbFareTableUrl(route.nlbRouteId));
     final String title = settings.text('車資表', 'Fare Table');
     return Card.filled(
       margin: const EdgeInsets.only(bottom: 8),

@@ -21,6 +21,8 @@ import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
 import 'package:hktransports/bus/ui/eta_text.dart';
 import 'package:hktransports/bus/ui/fade_in.dart';
+import 'package:hktransports/bus/ui/nlb_fare_label.dart';
+import 'package:hktransports/bus/ui/nlb_stop_landmark.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:hktransports/bus/ui/route_map.dart';
 import 'package:hktransports/bus/ui/route_group_sheet.dart';
@@ -595,16 +597,29 @@ class _RoutePageState extends State<_RoutePage> {
                               ),
                         ),
                       ),
-                    CitybusFareLabel(
-                      route: route,
-                      stopIndex: index,
-                      language: settings.language,
-                      enabled: settings.isProprietaryEnabled(
-                        ProprietaryEndpoint.citybusDatabase,
+                    if (route.companies.contains(BusCompany.nlb))
+                      NlbFareLabel(
+                        route: route,
+                        stopIndex: index,
+                        language: settings.language,
+                        enabled: settings.isProprietaryEnabled(
+                          ProprietaryEndpoint.nlbProprietaryData,
+                        ),
+                        holiday: holiday,
+                        fallbackFare: fare ?? normalFare,
+                        alightingOnly: kmbAlightingOnly,
+                      )
+                    else
+                      CitybusFareLabel(
+                        route: route,
+                        stopIndex: index,
+                        language: settings.language,
+                        enabled: settings.isProprietaryEnabled(
+                          ProprietaryEndpoint.citybusDatabase,
+                        ),
+                        fallbackFare: fare ?? normalFare,
+                        alightingOnly: kmbAlightingOnly,
                       ),
-                      fallbackFare: fare ?? normalFare,
-                      alightingOnly: kmbAlightingOnly,
-                    ),
                     if (code != null)
                       Text(
                         '${settings.text('站碼', 'Code')} $code',
@@ -666,6 +681,15 @@ class _RoutePageState extends State<_RoutePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (route.companies.contains(BusCompany.nlb))
+          NlbStopLandmark(
+            route: route,
+            stopIndex: index,
+            language: settings.language,
+            enabled: settings.isProprietaryEnabled(
+              ProprietaryEndpoint.nlbProprietaryData,
+            ),
+          ),
         CitybusStopLandmark(
           route: route,
           stopIndex: index,

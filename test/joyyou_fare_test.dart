@@ -20,6 +20,17 @@ void main() {
     expect(fare(27.9), '5.6');
   });
 
+  test('calculates JoyYou fares for NLB routes', () {
+    expect(
+      calculateJoyYouFare(
+        route: '1',
+        companies: <BusCompany>[BusCompany.nlb],
+        adultFare: 12.7,
+      ),
+      '2.5',
+    );
+  });
+
   test('excludes A, NA, H, and P CTB/KMB routes', () {
     for (final String route in <String>['A22', 'NA21', 'H1', 'P960']) {
       expect(

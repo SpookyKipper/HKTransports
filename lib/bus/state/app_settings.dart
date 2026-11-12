@@ -133,7 +133,7 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.citybusEtaStatus:
         return settings.text('城巴實時到站狀態', 'Citybus live ETA status');
       case ProprietaryEndpoint.nlbProprietaryData:
-        return settings.text('嶼巴專有資料', 'NLB proprietary data');
+        return settings.text('嶼巴專有路線資料', 'NLB proprietary route data');
       case ProprietaryEndpoint.nlbEtaData:
         return settings.text('專有 ETA 資料', 'Proprietary ETA data');
     }
@@ -171,7 +171,10 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
           'Not yet departed, distance status etc. · requires Citybus route database',
         );
       case ProprietaryEndpoint.nlbProprietaryData:
-        return settings.text('車費表及官方時間表', 'Fare table and official timetable');
+        return settings.text(
+          '車費、附近地標及官方時間表',
+          'Fares, nearby landmarks, and official timetable',
+        );
       case ProprietaryEndpoint.nlbEtaData:
         return settings.text('輪椅狀態', 'Wheelchair status');
     }
