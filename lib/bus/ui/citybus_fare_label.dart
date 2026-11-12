@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_reader.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
+import 'package:hktransports/bus/fare/joyyou_fare.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:provider/provider.dart';
@@ -72,9 +73,10 @@ class _CitybusFareLabelState extends State<CitybusFareLabel> {
             final double? fare = snapshot.data?.adultFare;
             if (fare == null) return _buildFallback(context);
             if (fare == 0) return _buildAlightingOnly(context);
-            return Text(
+            return _buildFare(
+              context,
               '${settings.text('車費', 'Fare')} \$${formatCitybusFare(fare)}',
-              style: Theme.of(context).textTheme.bodySmall,
+              fare,
             );
           },
     );
@@ -94,9 +96,38 @@ class _CitybusFareLabelState extends State<CitybusFareLabel> {
     final String? fallback = widget.fallbackFare;
     if (fallback == null) return const SizedBox.shrink();
     final AppSettings settings = context.watch<AppSettings>();
-    return Text(
+    return _buildFare(
+      context,
       '${settings.text('車費', 'Fare')} \$$fallback',
-      style: Theme.of(context).textTheme.bodySmall,
+      double.tryParse(fallback),
+    );
+  }
+
+  Widget _buildFare(
+    BuildContext context,
+    String adultLabel,
+    double? adultFare,
+  ) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final TextStyle? style = Theme.of(context).textTheme.bodySmall;
+    final String? joyYouFare =
+        settings.showJoyYouFare && adultFare != null && adultFare > 0
+        ? calculateJoyYouFare(
+            route: widget.route.route,
+            companies: widget.route.companies,
+            adultFare: adultFare,
+          )
+        : null;
+    if (joyYouFare == null) {
+      return Text(adultLabel, style: style);
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: [
+        Text(adultLabel, style: style),
+        Text('${settings.text('樂悠', 'JoyYou')} \$$joyYouFare', style: style),
+      ],
     );
   }
 }
