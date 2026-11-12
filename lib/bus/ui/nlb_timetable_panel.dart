@@ -181,17 +181,6 @@ td:first-child, th:first-child {
   font-weight: 400;
   color: $foreground;
 }
-.nlb-fare-note {
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  border: 1px solid $border;
-  border-radius: 8px;
-}
-.nlb-fare-note p {
-  margin: 0;
-  font-weight: 400;
-  color: $foreground;
-}
 </style>
 </head>
 <body>
