@@ -26,7 +26,12 @@ class TimetableSheet extends StatelessWidget {
     final AppSettings settings = context.watch<AppSettings>();
     final bool hasKmb = route.companies.contains(BusCompany.kmb);
     final bool hasCtb = route.companies.contains(BusCompany.ctb);
+    final bool hasNlb = route.companies.contains(BusCompany.nlb);
+    final bool showNlbFareTable =
+        hasNlb &&
+        settings.isProprietaryEnabled(ProprietaryEndpoint.nlbFareTable);
     final bool showNotices =
+        showNlbFareTable ||
         (hasKmb &&
             (settings.isProprietaryEnabled(
                   ProprietaryEndpoint.kmbAnnouncements,
@@ -91,8 +96,16 @@ class _TimetableTab extends StatelessWidget {
     final BusRepository repository = context.watch<BusRepository>();
     final Map<String, Map<String, List<String>?>>? freq = route.freq;
     if (freq == null || freq.isEmpty) {
-      return Center(
-        child: Text(settings.text('此路線沒有時間表資料', 'No timetable for this route')),
+      return ListView(
+        padding: const EdgeInsets.only(top: 24, bottom: 24),
+        children: [
+          Center(
+            child: Text(
+              settings.text('此路線沒有時間表資料', 'No timetable for this route'),
+            ),
+          ),
+          OfficialLinks(route: route),
+        ],
       );
     }
     final bool holiday = isHoliday(
