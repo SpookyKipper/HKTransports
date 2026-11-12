@@ -9,11 +9,19 @@ import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 
 class CitybusEtaStatus {
-  const CitybusEtaStatus({this.statusZh, this.statusEn, this.distanceKm});
+  const CitybusEtaStatus({
+    this.statusZh,
+    this.statusEn,
+    this.distanceKm,
+    this.timeMinutes,
+  });
 
   final String? statusZh;
   final String? statusEn;
   final double? distanceKm;
+
+  /// Minutes after midnight reported by nwp3, for matching open-data ETAs.
+  final int? timeMinutes;
 }
 
 /// Reads Citybus' proprietary nwp3 ETA popup.
@@ -390,9 +398,17 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
         .toList(growable: false);
     String? destination;
     String? statusText;
+    int? timeMinutes;
     for (final Element cell in cells) {
       final String text = _cleanText(cell.text);
       if (text.isEmpty) continue;
+      if (timeMinutes == null) {
+        final int? parsedTime = _parseTimeMinutes(text);
+        if (parsedTime != null) {
+          timeMinutes = parsedTime;
+          continue;
+        }
+      }
       if (destination == null &&
           (text.startsWith('往:') ||
               text.startsWith('往：') ||
@@ -429,6 +445,7 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
         statusZh: statusZh,
         statusEn: statusEn,
         distanceKm: distanceKm,
+        timeMinutes: timeMinutes,
       ),
     );
     if (statuses.length >= 3) break;
@@ -438,6 +455,17 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
 
 String _cleanText(String value) {
   return value.replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
+int? _parseTimeMinutes(String value) {
+  final RegExpMatch? match = RegExp(
+    r'^(\d{1,2}):(\d{2})$',
+  ).firstMatch(value.trim());
+  if (match == null) return null;
+  final int? hour = int.tryParse(match.group(1) ?? '');
+  final int? minute = int.tryParse(match.group(2) ?? '');
+  if (hour == null || minute == null || hour > 23 || minute > 59) return null;
+  return hour * 60 + minute;
 }
 
 String _stripOperatorPrefix(String status) {
