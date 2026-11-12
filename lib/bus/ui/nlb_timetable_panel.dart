@@ -139,6 +139,9 @@ html, body {
   padding: 0;
   background: transparent;
   color: $foreground;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
   font-family: $fontFamily, sans-serif;
   font-size: ${fontSize.toStringAsFixed(1)}px;
   line-height: 1.45;
