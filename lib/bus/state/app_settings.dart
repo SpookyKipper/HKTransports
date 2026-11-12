@@ -30,7 +30,7 @@ enum ProprietaryEndpoint {
   citybusInterchange,
   citybusDatabase,
   citybusEtaStatus,
-  nlbFareTable,
+  nlbProprietaryData,
 }
 
 extension ProprietaryEndpointInfo on ProprietaryEndpoint {
@@ -58,8 +58,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return 'ctb-routedata';
       case ProprietaryEndpoint.citybusEtaStatus:
         return 'ctb-eta';
-      case ProprietaryEndpoint.nlbFareTable:
-        return 'nlb-faretable';
+      case ProprietaryEndpoint.nlbProprietaryData:
+        return 'nlb-proprietary';
     }
   }
 
@@ -79,8 +79,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return 'proprietary.citybus';
       case ProprietaryEndpoint.citybusEtaStatus:
         return 'proprietary.citybus.etaStatus';
-      case ProprietaryEndpoint.nlbFareTable:
-        return 'proprietary.nlb.fareTable';
+      case ProprietaryEndpoint.nlbProprietaryData:
+        return 'proprietary.nlb.data';
     }
   }
 
@@ -99,7 +99,7 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.citybusDatabase:
       case ProprietaryEndpoint.citybusEtaStatus:
         return ProprietaryGroup.citybus;
-      case ProprietaryEndpoint.nlbFareTable:
+      case ProprietaryEndpoint.nlbProprietaryData:
         return ProprietaryGroup.nlb;
     }
   }
@@ -126,8 +126,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return settings.text('城巴路線資料庫', 'Citybus route database');
       case ProprietaryEndpoint.citybusEtaStatus:
         return settings.text('城巴實時到站狀態', 'Citybus live ETA status');
-      case ProprietaryEndpoint.nlbFareTable:
-        return settings.text('嶼巴車費表', 'NLB fare table');
+      case ProprietaryEndpoint.nlbProprietaryData:
+        return settings.text('嶼巴專有資料', 'NLB proprietary data');
     }
   }
 
@@ -162,11 +162,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
           '未開出及距離等狀態 · 需城巴路線資料庫',
           'Not yet departed, distance status etc. · requires Citybus route database',
         );
-      case ProprietaryEndpoint.nlbFareTable:
-        return settings.text(
-          '在嶼巴路線通告顯示永久車費表連結',
-          'Show a permanent fare table link in NLB route notices',
-        );
+      case ProprietaryEndpoint.nlbProprietaryData:
+        return settings.text('車費表及官方時間表', 'Fare table and official timetable');
     }
   }
 }

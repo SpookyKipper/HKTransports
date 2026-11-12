@@ -5,6 +5,7 @@ import 'package:hktransports/bus/journey/journey_time.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/notice/citybus_remarks_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/nlb_timetable_panel.dart';
 import 'package:hktransports/bus/ui/official_links.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -27,11 +28,11 @@ class TimetableSheet extends StatelessWidget {
     final bool hasKmb = route.companies.contains(BusCompany.kmb);
     final bool hasCtb = route.companies.contains(BusCompany.ctb);
     final bool hasNlb = route.companies.contains(BusCompany.nlb);
-    final bool showNlbFareTable =
+    final bool showNlbProprietary =
         hasNlb &&
-        settings.isProprietaryEnabled(ProprietaryEndpoint.nlbFareTable);
+        settings.isProprietaryEnabled(ProprietaryEndpoint.nlbProprietaryData);
     final bool showNotices =
-        showNlbFareTable ||
+        showNlbProprietary ||
         (hasKmb &&
             (settings.isProprietaryEnabled(
                   ProprietaryEndpoint.kmbAnnouncements,
@@ -94,6 +95,21 @@ class _TimetableTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
+    final bool showNlbTimetable =
+        route.companies.contains(BusCompany.nlb) &&
+        settings.isProprietaryEnabled(ProprietaryEndpoint.nlbProprietaryData);
+    if (showNlbTimetable) {
+      return ListView(
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: NlbTimetablePanel(route: route),
+          ),
+          OfficialLinks(route: route),
+        ],
+      );
+    }
     final Map<String, Map<String, List<String>?>>? freq = route.freq;
     if (freq == null || freq.isEmpty) {
       return ListView(

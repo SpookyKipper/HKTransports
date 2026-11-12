@@ -21,7 +21,7 @@ class ProprietaryNoticesTab extends StatelessWidget {
     final bool hasCtb = route.companies.contains(BusCompany.ctb);
     final bool showNlbFareTable =
         route.companies.contains(BusCompany.nlb) &&
-        settings.isProprietaryEnabled(ProprietaryEndpoint.nlbFareTable);
+        settings.isProprietaryEnabled(ProprietaryEndpoint.nlbProprietaryData);
     final bool showKmbNews =
         hasKmb &&
         settings.isProprietaryEnabled(ProprietaryEndpoint.kmbAnnouncements);
