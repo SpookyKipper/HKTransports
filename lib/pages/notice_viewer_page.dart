@@ -47,7 +47,7 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
     }
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.white)
+      ..setBackgroundColor(Colors.transparent)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (_) {
@@ -109,40 +109,46 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final String title = settings.text('通告', 'Notice');
+    final Uri? uri = Uri.tryParse(widget.url);
+    final bool nlb = uri != null && _isNlbHost(uri);
     final ColorScheme lightScheme =
         AppColorSchemes.lightOf(context) ?? fallbackLightScheme();
+    final ColorScheme scheme = nlb
+        ? Theme.of(context).colorScheme
+        : lightScheme;
+    final bool dark = scheme.brightness == Brightness.dark;
+    Widget page(BuildContext pageContext) {
+      return Scaffold(
+        appBar: buildPageBar(pageContext, title: title, subtitle: widget.title),
+        body: Column(
+          children: [
+            Expanded(child: _body(pageContext, settings)),
+            _ViewerCredit(host: _host),
+          ],
+        ),
+      );
+    }
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-        systemNavigationBarColor: lightScheme.surface,
-        systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: scheme.surface,
+        systemNavigationBarIconBrightness: dark
+            ? Brightness.light
+            : Brightness.dark,
         systemNavigationBarDividerColor: Colors.transparent,
       ),
-      child: M3EScope(
-        scheme: lightScheme,
-        child: Theme(
-          data: buildAppTheme(lightScheme, settings.transitionStyle),
-          child: Builder(
-            builder: (BuildContext context) {
-              return Scaffold(
-                appBar: buildPageBar(
-                  context,
-                  title: title,
-                  subtitle: widget.title,
-                ),
-                body: Column(
-                  children: [
-                    Expanded(child: _body(context, settings)),
-                    _ViewerCredit(host: _host),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ),
+      child: nlb
+          ? Builder(builder: page)
+          : M3EScope(
+              scheme: lightScheme,
+              child: Theme(
+                data: buildAppTheme(lightScheme, settings.transitionStyle),
+                child: Builder(builder: page),
+              ),
+            ),
     );
   }
 
