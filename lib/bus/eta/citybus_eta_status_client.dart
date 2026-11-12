@@ -21,7 +21,7 @@ class CitybusEtaStatus {
 /// Its timestamps are not reliable, so callers should only use the returned
 /// statuses in the same order as the open-data ETAs for the same stop.
 class CitybusEtaStatusClient {
-  const CitybusEtaStatusClient({Duration timeout = const Duration(seconds: 20)})
+  CitybusEtaStatusClient({Duration timeout = const Duration(seconds: 20)})
     : _timeout = timeout;
 
   static const String _host = 'mobile.citybus.com.hk';
@@ -58,7 +58,11 @@ class CitybusEtaStatusClient {
     'Connection': 'keep-alive',
   };
 
+  static const Duration _scriptCacheTtl = Duration(minutes: 10);
+
   final Duration _timeout;
+  String? _resultPath;
+  DateTime? _resultPathAt;
 
   Future<List<CitybusEtaStatus>> fetch(CitybusEtaArguments args) async {
     Object? lastError;
@@ -99,6 +103,7 @@ class CitybusEtaStatusClient {
       if (ssid == null || ssid.isEmpty) {
         throw const _Nwp3Exception('nwp3 homepage did not contain an ssid');
       }
+      final String resultPath = await _resultScriptPath(connection, ssid);
 
       final _HttpResponse menu = await connection.get(
         _uri('$_basePath/menu2.php', <String, String>{
@@ -130,14 +135,11 @@ class CitybusEtaStatusClient {
         _xhrHeaders,
       );
       _requireOk(popup);
-      final String rawInfo =
-          _firstMatch(popup.text, <RegExp>[
-            RegExp(
-              r'''auto_1e199618121a43189d5d0d9170f6c091\.php\?info=([^"']+)''',
-            ),
-          ]) ??
-          args.info;
-      final String info = _decodeComponent(rawInfo);
+      final CitybusNwp3Registration? registration =
+          parseCitybusNwp3Registration(popup.text);
+      if (registration == null) {
+        throw const _Nwp3Exception('nwp3 popup did not contain a registration');
+      }
 
       final _HttpResponse blank = await connection.get(
         _uri('$_basePath/blank.php', <String, String>{
@@ -149,15 +151,12 @@ class CitybusEtaStatusClient {
       _requireOk(blank);
 
       final _HttpResponse register = await connection.get(
-        _uri(
-          '$_basePath/auto_1e199618121a43189d5d0d9170f6c091.php',
-          <String, String>{
-            'info': info,
-            'ssid': ssid,
-            'sysid': '5',
-            '_': DateTime.now().millisecondsSinceEpoch.toString(),
-          },
-        ),
+        _uri('$_basePath/${registration.path}', <String, String>{
+          'info': registration.info,
+          'ssid': ssid,
+          'sysid': '5',
+          '_': DateTime.now().millisecondsSinceEpoch.toString(),
+        }),
         <String, String>{..._xhrHeaders, 'X-Requested-With': 'XMLHttpRequest'},
       );
       _requireOk(register);
@@ -195,15 +194,7 @@ class CitybusEtaStatusClient {
         throw const _Nwp3Exception('nwp3 verification did not complete');
       }
 
-      final _HttpResponse result = await connection.get(
-        _uri(
-          '$_basePath/auto_7014e6250fff4105bf33fc1d97ac2213.php',
-          <String, String>{'l': '0', 'ssid': ssid, 'sysid': '9'},
-        ),
-        _xhrHeaders,
-      );
-      _requireOk(result);
-      return result.text;
+      return await _resultBody(connection, ssid, resultPath);
     } on _Nwp3Exception {
       rethrow;
     } on IOException catch (error) {
@@ -213,6 +204,65 @@ class CitybusEtaStatusClient {
     } finally {
       await connection?.close();
     }
+  }
+
+  Future<String> _resultScriptPath(
+    _HttpConnection connection,
+    String ssid, {
+    bool force = false,
+  }) async {
+    final String? cached = _resultPath;
+    final DateTime? cachedAt = _resultPathAt;
+    if (!force &&
+        cached != null &&
+        cachedAt != null &&
+        DateTime.now().difference(cachedAt) < _scriptCacheTtl) {
+      return cached;
+    }
+    final _HttpResponse response = await connection.get(
+      _uri('$_basePath/fb.php', <String, String>{'ssid': ssid}),
+      _xhrHeaders,
+    );
+    _requireOk(response);
+    final String? resultPath = parseCitybusNwp3ResultPath(response.text);
+    if (resultPath == null) {
+      throw const _Nwp3Exception(
+        'nwp3 script did not contain a result endpoint',
+      );
+    }
+    _resultPath = resultPath;
+    _resultPathAt = DateTime.now();
+    return resultPath;
+  }
+
+  Future<String> _resultBody(
+    _HttpConnection connection,
+    String ssid,
+    String resultPath,
+  ) async {
+    String path = resultPath;
+    _HttpResponse response = await _getResult(connection, ssid, path);
+    if (response.statusCode == 404 || response.statusCode == 410) {
+      path = await _resultScriptPath(connection, ssid, force: true);
+      response = await _getResult(connection, ssid, path);
+    }
+    _requireOk(response);
+    return response.text;
+  }
+
+  Future<_HttpResponse> _getResult(
+    _HttpConnection connection,
+    String ssid,
+    String path,
+  ) {
+    return connection.get(
+      _uri('$_basePath/$path', <String, String>{
+        'l': '0',
+        'ssid': ssid,
+        'sysid': '9',
+      }),
+      _xhrHeaders,
+    );
   }
 
   Uri _uri(String path, [Map<String, String>? query]) {
@@ -237,13 +287,40 @@ class CitybusEtaStatusClient {
     }
     return null;
   }
+}
 
-  String _decodeComponent(String value) {
-    try {
-      return Uri.decodeComponent(value);
-    } catch (_) {
-      return value;
-    }
+class CitybusNwp3Registration {
+  const CitybusNwp3Registration({required this.path, required this.info});
+
+  final String path;
+  final String info;
+}
+
+CitybusNwp3Registration? parseCitybusNwp3Registration(String html) {
+  final RegExpMatch? match = RegExp(
+    r'''(auto_[0-9a-fA-F]+\.php)\?info=([^"']+)''',
+  ).firstMatch(html);
+  final String? path = match?.group(1);
+  final String? rawInfo = match?.group(2);
+  if (path == null || rawInfo == null) return null;
+  return CitybusNwp3Registration(
+    path: path,
+    info: _decodeQueryComponent(rawInfo),
+  );
+}
+
+String? parseCitybusNwp3ResultPath(String script) {
+  final RegExpMatch? match = RegExp(
+    r'function\s+showeta\s*\(\s*\)\s*\{[\s\S]*?(auto_[0-9a-fA-F]+\.php)\?l=',
+  ).firstMatch(script);
+  return match?.group(1);
+}
+
+String _decodeQueryComponent(String value) {
+  try {
+    return Uri.decodeComponent(value);
+  } catch (_) {
+    return value;
   }
 }
 

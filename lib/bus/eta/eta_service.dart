@@ -26,7 +26,7 @@ class EtaService {
   final NlbEtaClient _nlb = NlbEtaClient();
   final GmbEtaClient _gmb = GmbEtaClient();
   final LrtFeederEtaClient _lrtFeeder = LrtFeederEtaClient();
-  final CitybusEtaStatusClient _ctbStatus = const CitybusEtaStatusClient();
+  final CitybusEtaStatusClient _ctbStatus = CitybusEtaStatusClient();
   static const Duration _statusCacheTtl = Duration(seconds: 90);
 
   final StreamController<EtaStatusUpdate> _statusUpdates =
