@@ -146,6 +146,7 @@ final GoRouter _router = GoRouter(
           child: NoticeViewerPage(
             url: state.uri.queryParameters['url'] ?? '',
             title: state.uri.queryParameters['title'],
+            forcePdf: state.uri.queryParameters['pdf'] == '1',
           ),
         );
       },
