@@ -20,11 +20,26 @@ void main() {
     );
   });
 
-  test('widens the compact route column only for Chinese MTR names', () {
+  test('widens the compact route column for Chinese MTR names', () {
     expect(routeColumnWidth(_route('AEL'), 'zh'), routeWideColumnWidth);
     expect(routeColumnWidth(_route('AEL'), 'en'), routeCompactColumnWidth);
     expect(
       routeColumnWidth(_route('720', company: BusCompany.ctb), 'zh'),
+      routeCompactColumnWidth,
+    );
+  });
+
+  test('widens the compact route column for Chinese Cityflyer routes', () {
+    expect(
+      routeColumnWidth(_route('A21', company: BusCompany.ctb), 'zh'),
+      routeWideColumnWidth,
+    );
+    expect(
+      routeColumnWidth(_route('NA21', company: BusCompany.ctb), 'zh'),
+      routeWideColumnWidth,
+    );
+    expect(
+      routeColumnWidth(_route('A21', company: BusCompany.ctb), 'en'),
       routeCompactColumnWidth,
     );
   });
