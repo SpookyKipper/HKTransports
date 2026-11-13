@@ -25,9 +25,17 @@ const double routeWideColumnWidth = 100;
 /// Width for the compact route-number/company column in list rows.
 double routeColumnWidth(RouteEntry route, String language) {
   if (language == 'en') return routeCompactColumnWidth;
-  return routeDisplayName(route, language) == route.route
-      ? routeCompactColumnWidth
-      : routeWideColumnWidth;
+  if (routeDisplayName(route, language) != route.route) {
+    return routeWideColumnWidth;
+  }
+  if (_isCityflyerRoute(route)) return routeWideColumnWidth;
+  return routeCompactColumnWidth;
+}
+
+bool _isCityflyerRoute(RouteEntry route) {
+  if (!route.companies.contains(BusCompany.ctb)) return false;
+  final String code = route.route.trim().toUpperCase();
+  return code.startsWith('A') || code.startsWith('NA');
 }
 
 String routeDisplayName(
