@@ -438,7 +438,7 @@ class _FavoriteRouteTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(
-              width: 80,
+              width: routeColumnWidth(route, settings.language),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,

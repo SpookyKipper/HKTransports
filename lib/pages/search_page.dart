@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
@@ -60,6 +62,11 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     final List<RouteEntry> results = repository.searchRouteNumbers(_query);
+    final double leftColumnWidth = results.fold<double>(
+      routeCompactColumnWidth,
+      (double width, RouteEntry route) =>
+          math.max(width, routeColumnWidth(route, settings.language)),
+    );
     final Set<String> possibleChars = repository.possibleRouteChars(_query);
 
     return Column(
@@ -94,7 +101,7 @@ class _SearchPageState extends State<SearchPage> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             SizedBox(
-                              width: 80,
+                              width: leftColumnWidth,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,

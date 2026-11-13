@@ -19,6 +19,17 @@ const Map<String, ({String en, String zh})> _mtrLineNames =
 /// MTR line codes become their Chinese names everywhere. In English, the full
 /// line name is only used on the route details page; list-style surfaces keep
 /// the compact line code.
+const double routeCompactColumnWidth = 80;
+const double routeWideColumnWidth = 100;
+
+/// Width for the compact route-number/company column in list rows.
+double routeColumnWidth(RouteEntry route, String language) {
+  if (language == 'en') return routeCompactColumnWidth;
+  return routeDisplayName(route, language) == route.route
+      ? routeCompactColumnWidth
+      : routeWideColumnWidth;
+}
+
 String routeDisplayName(
   RouteEntry route,
   String language, {
