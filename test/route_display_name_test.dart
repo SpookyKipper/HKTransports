@@ -20,6 +20,15 @@ void main() {
     );
   });
 
+  test('widens the compact route column only for Chinese MTR names', () {
+    expect(routeColumnWidth(_route('AEL'), 'zh'), routeWideColumnWidth);
+    expect(routeColumnWidth(_route('AEL'), 'en'), routeCompactColumnWidth);
+    expect(
+      routeColumnWidth(_route('720', company: BusCompany.ctb), 'zh'),
+      routeCompactColumnWidth,
+    );
+  });
+
   test('leaves non-MTR route codes unchanged', () {
     expect(
       routeDisplayName(_route('720', company: BusCompany.ctb), 'zh'),
