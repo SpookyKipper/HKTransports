@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -47,7 +49,7 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
     }
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.transparent)
+      ..setBackgroundColor(Colors.white)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (_) {
@@ -57,8 +59,12 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
               _failed = false;
             });
           },
-          onPageFinished: (_) async {
+          onPageFinished: (String url) async {
             if (!mounted) return;
+            final Uri? finished = Uri.tryParse(url);
+            final bool targetLoaded =
+                !isNlbNews || (finished != null && isNlbNewsUri(finished));
+            if (!targetLoaded) return;
             await _applyNlbNoticeStyles();
             if (!mounted) return;
             setState(() => _loading = false);
@@ -101,54 +107,57 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
             return NavigationDecision.navigate;
           },
         ),
-      )
-      ..loadRequest(uri);
+      );
+    if (isNlbNews) {
+      // Nuxt reads its colour mode from localStorage during startup, so set it
+      // before navigating to the notice page.
+      _webViewController!.loadHtmlString(
+        _nlbLightBootstrap(uri.toString()),
+        baseUrl: '${uri.scheme}://${uri.host}/',
+      );
+    } else {
+      _webViewController!.loadRequest(uri);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final String title = settings.text('通告', 'Notice');
-    final Uri? uri = Uri.tryParse(widget.url);
-    final bool nlb = uri != null && _isNlbHost(uri);
     final ColorScheme lightScheme =
         AppColorSchemes.lightOf(context) ?? fallbackLightScheme();
-    final ColorScheme scheme = nlb
-        ? Theme.of(context).colorScheme
-        : lightScheme;
-    final bool dark = scheme.brightness == Brightness.dark;
-    Widget page(BuildContext pageContext) {
-      return Scaffold(
-        appBar: buildPageBar(pageContext, title: title, subtitle: widget.title),
-        body: Column(
-          children: [
-            Expanded(child: _body(pageContext, settings)),
-            _ViewerCredit(host: _host),
-          ],
-        ),
-      );
-    }
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
-        statusBarBrightness: dark ? Brightness.dark : Brightness.light,
-        systemNavigationBarColor: scheme.surface,
-        systemNavigationBarIconBrightness: dark
-            ? Brightness.light
-            : Brightness.dark,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: lightScheme.surface,
+        systemNavigationBarIconBrightness: Brightness.dark,
         systemNavigationBarDividerColor: Colors.transparent,
       ),
-      child: nlb
-          ? Builder(builder: page)
-          : M3EScope(
-              scheme: lightScheme,
-              child: Theme(
-                data: buildAppTheme(lightScheme, settings.transitionStyle),
-                child: Builder(builder: page),
-              ),
-            ),
+      child: M3EScope(
+        scheme: lightScheme,
+        child: Theme(
+          data: buildAppTheme(lightScheme, settings.transitionStyle),
+          child: Builder(
+            builder: (BuildContext context) {
+              return Scaffold(
+                appBar: buildPageBar(
+                  context,
+                  title: title,
+                  subtitle: widget.title,
+                ),
+                body: Column(
+                  children: [
+                    Expanded(child: _body(context, settings)),
+                    _ViewerCredit(host: _host),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 
@@ -218,6 +227,23 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
           ),
       ],
     );
+  }
+
+  String _nlbLightBootstrap(String target) {
+    return '''
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<script>
+try {
+  localStorage.setItem('nuxt-color-mode', 'light');
+} catch (_) {}
+location.replace(${jsonEncode(target)});
+</script>
+</body>
+</html>
+''';
   }
 
   Future<void> _applyNlbNoticeStyles() async {
