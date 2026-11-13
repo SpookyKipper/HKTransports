@@ -54,67 +54,92 @@ class _HomeShellState extends State<HomeShell> {
             heightFactor: 1,
             child: SizedBox(
               height: 64,
-              child: ValueListenableBuilder<bool>(
-                valueListenable: searchKeypadVisible,
-                builder: (BuildContext context, bool keypadVisible, _) {
-                  return M3EToolbar(
-                    expanded: true,
-                    size: M3EToolbarSize.medium,
-                    elevation: 0,
-                    screenOffset: 0,
-                    safeArea: false,
-                    fabExpandsToolbar: false,
-                    fabIcon: _index == 1
-                        ? Icon(
-                            keypadVisible
-                                ? Icons.keyboard_hide_outlined
-                                : Icons.keyboard_outlined,
-                          )
-                        : null,
-                    onFabPressed: _index == 1
-                        ? () => searchKeypadVisible.value = !keypadVisible
-                        : null,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 4,
-                    ),
-                    actions: [
-                      M3EToolbarWidget(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _ToolbarDestination(
-                              icon: Icons.home_outlined,
-                              selectedIcon: Icons.home,
-                              label: settings.text('主頁', 'Home'),
-                              selected: _index == 0,
-                              onTap: () => _selectPage(0),
-                            ),
-                            _ToolbarDestination(
-                              icon: Icons.search,
-                              selectedIcon: Icons.search,
-                              label: settings.text('搜尋', 'Search'),
-                              selected: _index == 1,
-                              onTap: () => _selectPage(1),
-                            ),
-                            _ToolbarDestination(
-                              icon: Icons.campaign_outlined,
-                              selectedIcon: Icons.campaign,
-                              label: settings.text('快訊', 'News'),
-                              selected: _index == 2,
-                              onTap: () => _selectPage(2),
-                            ),
-                          ],
+              child: M3EToolbar(
+                expanded: true,
+                size: M3EToolbarSize.medium,
+                elevation: 0,
+                screenOffset: 0,
+                safeArea: false,
+                fabExpandsToolbar: false,
+                floatingActionButton: _SearchKeypadFab(
+                  searchActive: _index == 1,
+                  onSearch: () => _selectPage(1),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                actions: [
+                  M3EToolbarWidget(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _ToolbarDestination(
+                          icon: Icons.home_outlined,
+                          selectedIcon: Icons.home,
+                          label: settings.text('主頁', 'Home'),
+                          selected: _index == 0,
+                          onTap: () => _selectPage(0),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                        _ToolbarDestination(
+                          icon: Icons.search,
+                          selectedIcon: Icons.search,
+                          label: settings.text('搜尋', 'Search'),
+                          selected: _index == 1,
+                          onTap: () => _selectPage(1),
+                        ),
+                        _ToolbarDestination(
+                          icon: Icons.campaign_outlined,
+                          selectedIcon: Icons.campaign,
+                          label: settings.text('快訊', 'News'),
+                          selected: _index == 2,
+                          onTap: () => _selectPage(2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SearchKeypadFab extends StatelessWidget {
+  const _SearchKeypadFab({required this.searchActive, required this.onSearch});
+
+  final bool searchActive;
+  final VoidCallback onSearch;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    if (!searchActive) {
+      return M3EFab(
+        icon: const Icon(Icons.search),
+        tooltip: settings.text('搜尋路線', 'Search routes'),
+        size: M3EFabSize.regular,
+        color: M3EFabColor.secondary,
+        onPressed: onSearch,
+      );
+    }
+    return ValueListenableBuilder<bool>(
+      valueListenable: searchKeypadVisible,
+      builder: (BuildContext context, bool keypadVisible, _) {
+        return M3EFab(
+          icon: Icon(
+            keypadVisible
+                ? Icons.keyboard_hide_outlined
+                : Icons.keyboard_outlined,
+          ),
+          tooltip: keypadVisible
+              ? settings.text('隱藏鍵盤', 'Hide keypad')
+              : settings.text('顯示鍵盤', 'Show keypad'),
+          size: M3EFabSize.regular,
+          color: M3EFabColor.secondary,
+          onPressed: () => searchKeypadVisible.value = !keypadVisible,
+        );
+      },
     );
   }
 }
