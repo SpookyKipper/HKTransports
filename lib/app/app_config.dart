@@ -20,6 +20,7 @@ class AppConfig {
     required this.app,
     required this.os,
     required this.latestVersionCode,
+    required this.latestVersionName,
     required this.lastCriticalVersionCode,
     required this.proprietaryApi,
   });
@@ -39,6 +40,7 @@ class AppConfig {
       app: json['app']?.toString().trim() ?? '',
       os: json['os']?.toString().trim().toLowerCase() ?? '',
       latestVersionCode: _asInt(json['latestVersionCode']) ?? 0,
+      latestVersionName: json['latestVersionName']?.toString().trim() ?? '',
       lastCriticalVersionCode: _asInt(json['lastCriticalVersionCode']) ?? 0,
       proprietaryApi: Map<String, int>.unmodifiable(proprietaryApi),
     );
@@ -47,6 +49,7 @@ class AppConfig {
   final String app;
   final String os;
   final int latestVersionCode;
+  final String latestVersionName;
   final int lastCriticalVersionCode;
   final Map<String, int> proprietaryApi;
 

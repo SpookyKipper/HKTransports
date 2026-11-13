@@ -60,7 +60,7 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.citybusEtaStatus:
         return 'ctb-eta';
       case ProprietaryEndpoint.nlbProprietaryData:
-        return 'nlb-proprietary';
+        return 'nlb-routedata';
       case ProprietaryEndpoint.nlbRouteNotices:
         return 'nlb-routenotice';
     }
