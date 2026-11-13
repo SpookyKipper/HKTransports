@@ -6,6 +6,7 @@ import 'package:hktransports/bus/eta/eta_display.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/model/route_display_name.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
 import 'package:hktransports/bus/ui/fade_in.dart';
@@ -276,7 +277,7 @@ class _PinnedChip extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${item.route.route} · ${item.stopName}',
+                  '${routeDisplayName(item.route, settings.language)} · ${item.stopName}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelLarge,

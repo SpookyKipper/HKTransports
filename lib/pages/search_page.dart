@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/model/route_display_name.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/citybus_route_description.dart';
 import 'package:hktransports/bus/ui/nlb_route_special_tag.dart';
@@ -98,11 +99,20 @@ class _SearchPageState extends State<SearchPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    route.route,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleLarge,
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      routeDisplayName(
+                                        route,
+                                        settings.language,
+                                      ),
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge,
+                                    ),
                                   ),
                                   Text(
                                     route.companiesLabel(settings.language),

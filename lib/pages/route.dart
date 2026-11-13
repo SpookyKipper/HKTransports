@@ -13,6 +13,7 @@ import 'package:hktransports/bus/eta/eta_display.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/model/route_display_name.dart';
 import 'package:hktransports/bus/nlb/nlb_timetable_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
@@ -395,7 +396,7 @@ class _RoutePageState extends State<_RoutePage> {
     return Scaffold(
       appBar: buildPageBar(
         context,
-        title: route.route,
+        title: routeDisplayName(route, settings.language, fullEnglish: true),
         titleTrailing: _RouteTitleMeta(
           company: route.companiesLabel(settings.language),
           special: route.isSpecial
@@ -1235,7 +1236,7 @@ class _StopInfoSheet extends StatelessWidget {
             for (final RouteStopRef ref in routes)
               ListTile(
                 title: Text(
-                  '${ref.route.route} ${settings.text('往', 'to')} ${ref.route.dest.get(settings.language)}',
+                  '${routeDisplayName(ref.route, settings.language)} ${settings.text('往', 'to')} ${ref.route.dest.get(settings.language)}',
                 ),
                 subtitle: Text(
                   '${ref.route.orig.get(settings.language)} · ${ref.route.companiesLabel(settings.language)}',
