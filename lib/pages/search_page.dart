@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/model/route_category.dart';
 import 'package:hktransports/bus/model/route_display_name.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/citybus_route_description.dart';
@@ -23,6 +24,7 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   String _query = '';
+  RouteCategory _category = RouteCategory.all;
 
   void _appendNumber(String value) {
     setState(() => _query += value);
@@ -61,7 +63,10 @@ class _SearchPageState extends State<SearchPage> {
       );
     }
 
-    final List<RouteEntry> results = repository.searchRouteNumbers(_query);
+    final List<RouteEntry> allResults = repository.searchRouteNumbers(_query);
+    final List<RouteEntry> results = allResults
+        .where((RouteEntry route) => routeMatchesCategory(route, _category))
+        .toList();
     final double leftColumnWidth = results.fold<double>(
       routeCompactColumnWidth,
       (double width, RouteEntry route) =>
@@ -75,10 +80,39 @@ class _SearchPageState extends State<SearchPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: _buildNumberBar(context, settings),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 0, 8),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final RouteCategory category in RouteCategory.values)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(category.label(settings.language)),
+                      selected: _category == category,
+                      onSelected: (bool selected) {
+                        if (!selected) return;
+                        setState(() => _category = category);
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
         Expanded(
           child: results.isEmpty
               ? Center(
-                  child: Text(settings.text('沒有符合的路線', 'No matching routes')),
+                  child: Text(
+                    allResults.isEmpty
+                        ? settings.text('沒有符合的路線', 'No matching routes')
+                        : settings.text(
+                            '此類別沒有符合的路線',
+                            'No routes in this category',
+                          ),
+                  ),
                 )
               : ListView.separated(
                   padding: const EdgeInsets.only(bottom: 8),
