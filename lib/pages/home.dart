@@ -19,7 +19,17 @@ class _HomeShellState extends State<HomeShell> {
   int get _index => widget.navigationShell.currentIndex;
 
   void _selectPage(int index) {
+    final bool enteringSearch = index == 1 && _index != 1;
     widget.navigationShell.goBranch(index, initialLocation: index == _index);
+    if (index == 1) {
+      if (enteringSearch && !searchKeypadVisible.value) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) searchKeypadVisible.value = true;
+        });
+      } else if (!enteringSearch) {
+        searchKeypadVisible.value = true;
+      }
+    }
   }
 
   @override
@@ -77,13 +87,6 @@ class _HomeShellState extends State<HomeShell> {
                           label: settings.text('主頁', 'Home'),
                           selected: _index == 0,
                           onTap: () => _selectPage(0),
-                        ),
-                        _ToolbarDestination(
-                          icon: Icons.search,
-                          selectedIcon: Icons.search,
-                          label: settings.text('搜尋', 'Search'),
-                          selected: _index == 1,
-                          onTap: () => _selectPage(1),
                         ),
                         _ToolbarDestination(
                           icon: Icons.campaign_outlined,
