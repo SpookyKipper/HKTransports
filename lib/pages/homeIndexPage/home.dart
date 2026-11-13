@@ -6,6 +6,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/route_display_name.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/smooth_wavy_progress.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
 import 'package:hktransports/bus/ui/nlb_route_special_tag.dart';
 import 'package:hktransports/bus/ui/route_name_subtitle.dart';
@@ -110,12 +111,7 @@ class _HomeContentState extends State<HomeContent>
                 const SizedBox(height: 16),
                 SizedBox(
                   width: 220,
-                  child: M3EProgressIndicator.linearWavy(
-                    value: progress,
-                    linearSize: M3EProgressIndicatorSize.m,
-                    strokeWidth: 4,
-                    trackStrokeWidth: 4,
-                  ),
+                  child: SmoothWavyProgressIndicator(value: progress),
                 ),
                 const SizedBox(height: 8),
                 Text('${(progress * 100).round()}%'),

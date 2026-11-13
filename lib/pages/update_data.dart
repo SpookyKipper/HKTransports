@@ -4,6 +4,7 @@ import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/smooth_wavy_progress.dart';
 import 'package:intl/intl.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -327,29 +328,10 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     final double? value = route
         ? repository.progress
         : (_bbiTotal == 0 ? 0 : _bbiCompleted / _bbiTotal);
-    final Widget progressBar = value == null
-        ? const M3EProgressIndicator.linearWavy(
-            value: null,
-            linearSize: M3EProgressIndicatorSize.m,
-            strokeWidth: 4,
-            trackStrokeWidth: 4,
-          )
-        : TweenAnimationBuilder<double>(
-            tween: Tween<double>(
-              begin: 0,
-              end: value.clamp(0.0, 1.0).toDouble(),
-            ),
-            duration: const Duration(milliseconds: 450),
-            curve: Curves.easeOutCubic,
-            builder: (context, animated, child) {
-              return M3EProgressIndicator.linearWavy(
-                value: animated,
-                linearSize: M3EProgressIndicatorSize.m,
-                strokeWidth: 4,
-                trackStrokeWidth: 4,
-              );
-            },
-          );
+    final Widget progressBar = SmoothWavyProgressIndicator(
+      value: value,
+      duration: const Duration(milliseconds: 450),
+    );
     return Column(
       children: [
         const SizedBox(height: 12),
@@ -567,12 +549,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                       ),
                     if (_refreshingCitybus) ...[
                       const SizedBox(height: 12),
-                      M3EProgressIndicator.linearWavy(
-                        value: _citybusProgress,
-                        linearSize: M3EProgressIndicatorSize.m,
-                        strokeWidth: 4,
-                        trackStrokeWidth: 4,
-                      ),
+                      SmoothWavyProgressIndicator(value: _citybusProgress),
                       const SizedBox(height: 6),
                       Text(
                         _citybusProgress == null
