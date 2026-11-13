@@ -28,22 +28,6 @@ class _SearchPageState extends State<SearchPage> {
   String _query = '';
   RouteCategory _category = RouteCategory.all;
 
-  @override
-  void initState() {
-    super.initState();
-    searchKeypadVisible.addListener(_onKeypadVisibilityChanged);
-  }
-
-  @override
-  void dispose() {
-    searchKeypadVisible.removeListener(_onKeypadVisibilityChanged);
-    super.dispose();
-  }
-
-  void _onKeypadVisibilityChanged() {
-    if (mounted) setState(() {});
-  }
-
   void _appendNumber(String value) {
     setState(() => _query += value);
   }
@@ -92,216 +76,281 @@ class _SearchPageState extends State<SearchPage> {
     );
     final Set<String> possibleChars = repository.possibleRouteChars(_query);
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: _buildNumberBar(context, settings),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 0, 8),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
+    return ValueListenableBuilder<bool>(
+      valueListenable: searchKeypadVisible,
+      builder: (BuildContext context, bool keypadVisible, _) {
+        return Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            Column(
               children: [
-                for (final RouteCategory category in RouteCategory.values)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(category.label(settings.language)),
-                      selected: _category == category,
-                      onSelected: (bool selected) {
-                        if (!selected) return;
-                        setState(() => _category = category);
-                      },
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: _buildNumberBar(context, settings),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 0, 8),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (final RouteCategory category
+                            in RouteCategory.values)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(category.label(settings.language)),
+                              selected: _category == category,
+                              onSelected: (bool selected) {
+                                if (!selected) return;
+                                setState(() => _category = category);
+                              },
+                            ),
+                          ),
+                      ],
                     ),
                   ),
+                ),
+                Expanded(
+                  child: results.isEmpty
+                      ? Padding(
+                          padding: EdgeInsets.only(
+                            bottom: keypadVisible ? 360 : 0,
+                          ),
+                          child: Center(
+                            child: Text(
+                              allResults.isEmpty
+                                  ? settings.text(
+                                      '沒有符合的路線',
+                                      'No matching routes',
+                                    )
+                                  : settings.text(
+                                      '此類別沒有符合的路線',
+                                      'No routes in this category',
+                                    ),
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: EdgeInsets.only(
+                            bottom: keypadVisible ? 368 : 120,
+                          ),
+                          itemCount: results.length,
+                          separatorBuilder: (context, index) =>
+                              const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final RouteEntry route = results[index];
+                            return InkWell(
+                              onTap: () {
+                                repository.addRecent(route);
+                                context.push('/route/${route.slug}');
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: leftColumnWidth,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              routeDisplayName(
+                                                route,
+                                                settings.language,
+                                              ),
+                                              maxLines: 1,
+                                              softWrap: false,
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.titleLarge,
+                                            ),
+                                          ),
+                                          Text(
+                                            route.companiesLabel(
+                                              settings.language,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                  height: 1.1,
+                                                ),
+                                          ),
+                                          if (route.isSpecial)
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 2,
+                                              ),
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                alignment: Alignment.centerLeft,
+                                                child: RouteSpecialTag(
+                                                  label: settings.text(
+                                                    '特別班',
+                                                    'Special',
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          else
+                                            NlbRouteSpecialTag(
+                                              route: route,
+                                              language: settings.language,
+                                              enabled: routeNameEnabled(
+                                                route,
+                                                settings,
+                                              ),
+                                              padding: const EdgeInsets.only(
+                                                top: 2,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+                                          ),
+                                          RouteNameSubtitle(
+                                            key: ValueKey<String>(
+                                              '${route.key}|${settings.language}|'
+                                              '${routeNameEnabled(route, settings)}',
+                                            ),
+                                            route: route,
+                                            text: route.orig.get(
+                                              settings.language,
+                                            ),
+                                            language: settings.language,
+                                            enabled: routeNameEnabled(
+                                              route,
+                                              settings,
+                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                          ),
+                                          CitybusRouteDescription(
+                                            route: route,
+                                            language: settings.language,
+                                            enabled: settings
+                                                .isProprietaryEnabled(
+                                                  ProprietaryEndpoint
+                                                      .citybusDatabase,
+                                                ),
+                                            fallback: '',
+                                            builder:
+                                                (
+                                                  BuildContext context,
+                                                  String label,
+                                                ) {
+                                                  if (label.isEmpty) {
+                                                    return const SizedBox.shrink();
+                                                  }
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          top: 2,
+                                                        ),
+                                                    child: Text(
+                                                      label,
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall
+                                                          ?.copyWith(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .primary,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                    ),
+                                                  );
+                                                },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
               ],
             ),
-          ),
-        ),
-        Expanded(
-          child: results.isEmpty
-              ? Center(
-                  child: Text(
-                    allResults.isEmpty
-                        ? settings.text('沒有符合的路線', 'No matching routes')
-                        : settings.text(
-                            '此類別沒有符合的路線',
-                            'No routes in this category',
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: IgnorePointer(
+                ignoring: !keypadVisible,
+                child: ExcludeFocus(
+                  excluding: !keypadVisible,
+                  child: ExcludeSemantics(
+                    excluding: !keypadVisible,
+                    child: AnimatedSlide(
+                      offset: keypadVisible ? Offset.zero : const Offset(0, 1),
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOutCubic,
+                      child: RepaintBoundary(
+                        child: Container(
+                          width: double.infinity,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerLow,
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
+                          child: RouteNumberPad(
+                            possibleChars: possibleChars,
+                            hasQuery: _query.isNotEmpty,
+                            onCharacter: _appendNumber,
+                            onBackspace: _backspaceNumber,
+                            onClear: _clearNumber,
+                            clearTooltip: settings.text('清除', 'Clear'),
+                            backspaceTooltip: settings.text('刪除', 'Backspace'),
                           ),
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 120),
-                  itemCount: results.length,
-                  separatorBuilder: (context, index) =>
-                      const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final RouteEntry route = results[index];
-                    return InkWell(
-                      onTap: () {
-                        repository.addRecent(route);
-                        context.push('/route/${route.slug}');
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: leftColumnWidth,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      routeDisplayName(
-                                        route,
-                                        settings.language,
-                                      ),
-                                      maxLines: 1,
-                                      softWrap: false,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleLarge,
-                                    ),
-                                  ),
-                                  Text(
-                                    route.companiesLabel(settings.language),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                          height: 1.1,
-                                        ),
-                                  ),
-                                  if (route.isSpecial)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        alignment: Alignment.centerLeft,
-                                        child: RouteSpecialTag(
-                                          label: settings.text(
-                                            '特別班',
-                                            'Special',
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  else
-                                    NlbRouteSpecialTag(
-                                      route: route,
-                                      language: settings.language,
-                                      enabled: routeNameEnabled(
-                                        route,
-                                        settings,
-                                      ),
-                                      padding: const EdgeInsets.only(top: 2),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
-                                  ),
-                                  RouteNameSubtitle(
-                                    key: ValueKey<String>(
-                                      '${route.key}|${settings.language}|'
-                                      '${routeNameEnabled(route, settings)}',
-                                    ),
-                                    route: route,
-                                    text: route.orig.get(settings.language),
-                                    language: settings.language,
-                                    enabled: routeNameEnabled(route, settings),
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                        ),
-                                  ),
-                                  CitybusRouteDescription(
-                                    route: route,
-                                    language: settings.language,
-                                    enabled: settings.isProprietaryEnabled(
-                                      ProprietaryEndpoint.citybusDatabase,
-                                    ),
-                                    fallback: '',
-                                    builder:
-                                        (BuildContext context, String label) {
-                                          if (label.isEmpty) {
-                                            return const SizedBox.shrink();
-                                          }
-                                          return Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 2,
-                                            ),
-                                            child: Text(
-                                              label,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: Theme.of(
-                                                      context,
-                                                    ).colorScheme.primary,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                            ),
-                                          );
-                                        },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
                         ),
                       ),
-                    );
-                  },
-                ),
-        ),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 280),
-          curve: Curves.easeInOutCubicEmphasized,
-          alignment: Alignment.bottomCenter,
-          child: searchKeypadVisible.value
-              ? Container(
-                  width: double.infinity,
-                  color: Theme.of(context).colorScheme.surfaceContainerLow,
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
-                  child: RouteNumberPad(
-                    possibleChars: possibleChars,
-                    hasQuery: _query.isNotEmpty,
-                    onCharacter: _appendNumber,
-                    onBackspace: _backspaceNumber,
-                    onClear: _clearNumber,
-                    clearTooltip: settings.text('清除', 'Clear'),
-                    backspaceTooltip: settings.text('刪除', 'Backspace'),
+                    ),
                   ),
-                )
-              : const SizedBox(width: double.infinity, height: 0),
-        ),
-      ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
