@@ -16,6 +16,7 @@ class NlbEtaClient implements EtaClient {
     required BusCompany company,
     required int seq,
     required String language,
+    bool includeWheelchair = true,
   }) async {
     final String? stopId = route.stopIdAt(company, seq);
     final String? routeId = route.nlbId;
@@ -59,6 +60,8 @@ class NlbEtaClient implements EtaClient {
           value['departed']?.toString() != '1' ||
           value['noGPS']?.toString() == '1';
       final String variant = (value['routeVariantName'] ?? '').toString();
+      final Object? wheelchairValue =
+          value['wheelChair'] ?? value['wheelchair'];
       result.add(
         BusEta(
           company: BusCompany.nlb,
@@ -69,9 +72,21 @@ class NlbEtaClient implements EtaClient {
           destEn: language == 'en' ? variant : '',
           etaSeq: result.length + 1,
           scheduled: scheduled,
+          wheelchair: includeWheelchair && _isWheelchair(wheelchairValue),
+          wheelchairKnown:
+              includeWheelchair &&
+              (value.containsKey('wheelChair') ||
+                  value.containsKey('wheelchair')),
         ),
       );
     }
     return result;
   }
+}
+
+bool _isWheelchair(Object? value) {
+  if (value == true) return true;
+  if (value is num) return value == 1;
+  final String text = value?.toString().trim().toLowerCase() ?? '';
+  return text == '1' || text == 'true';
 }
