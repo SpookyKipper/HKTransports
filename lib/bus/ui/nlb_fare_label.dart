@@ -127,7 +127,7 @@ class _NlbFareLabelState extends State<NlbFareLabel> {
         ),
       );
     }
-    if (holiday != null) {
+    if (holiday != null && !isZeroNlbFare(holiday)) {
       children.add(
         Text(
           '${settings.text('假日', 'Holiday')}: \$$holiday',
@@ -137,4 +137,12 @@ class _NlbFareLabelState extends State<NlbFareLabel> {
     }
     return Wrap(spacing: 8, runSpacing: 4, children: children);
   }
+}
+
+bool isZeroNlbFare(String? fare) {
+  if (fare == null) return false;
+  final String value = fare.replaceAll(RegExp(r'[^0-9.]'), '');
+  if (value.isEmpty) return false;
+  final double? parsed = double.tryParse(value);
+  return parsed != null && parsed == 0;
 }
