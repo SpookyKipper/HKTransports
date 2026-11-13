@@ -6,6 +6,7 @@ import 'package:hktransports/bus/state/app_settings.dart';
 AppConfig _config({
   int latest = 3,
   String name = '0.0.1',
+  bool ota = true,
   int critical = 1,
   Map<String, int> proprietaryApi = const <String, int>{},
 }) {
@@ -14,6 +15,7 @@ AppConfig _config({
     'os': 'android',
     'latestVersionCode': latest,
     'latestVersionName': name,
+    'doOtaUpdate': ota,
     'lastCriticalVersionCode': critical,
     'proprietaryApi': proprietaryApi,
   });
@@ -26,6 +28,7 @@ void main() {
       'os': 'android',
       'latestVersionCode': '3',
       'latestVersionName': '0.0.1',
+      'doOtaUpdate': false,
       'lastCriticalVersionCode': 2,
       'proprietaryApi': <String, Object>{
         'ctb-eta': -1,
@@ -36,6 +39,7 @@ void main() {
 
     expect(config.latestVersionCode, 3);
     expect(config.latestVersionName, '0.0.1');
+    expect(config.doOtaUpdate, isFalse);
     expect(config.lastCriticalVersionCode, 2);
     expect(config.proprietaryApi['ctb-eta'], -1);
     expect(config.proprietaryApi['kmb-interchange'], 4);
@@ -60,6 +64,28 @@ void main() {
       config.availabilityFor(ProprietaryEndpoint.noticeFeed),
       ProprietaryAvailability.supported,
     );
+  });
+
+  test('defaults doOtaUpdate to true when the config omits it', () {
+    final AppConfig config = AppConfig.fromJson(<String, dynamic>{
+      'app': 'com.spookysrv.hktransports',
+      'os': 'android',
+      'latestVersionCode': 3,
+      'latestVersionName': '0.0.1',
+      'lastCriticalVersionCode': 1,
+    });
+
+    expect(config.doOtaUpdate, isTrue);
+  });
+
+  test('keeps updates available when in-app OTA is disabled', () {
+    final AppConfigController config = AppConfigController(
+      initialConfig: _config(ota: false),
+      initialVersionCode: 1,
+    );
+
+    expect(config.hasUpdate, isTrue);
+    expect(config.config!.doOtaUpdate, isFalse);
   });
 
   test('compares version codes only, never version names', () {
@@ -138,6 +164,13 @@ void main() {
     expect(ProprietaryEndpoint.citybusDatabase.configKey, 'ctb-routedata');
     expect(ProprietaryEndpoint.citybusEtaStatus.configKey, 'ctb-eta');
     expect(ProprietaryEndpoint.nlbProprietaryData.configKey, 'nlb-routedata');
+  });
+
+  test('points non-OTA update prompts at the app repository page', () {
+    expect(
+      appRepositoryUrl,
+      'https://repo.spookysrv.com/apps/com.spookysrv.hktransports',
+    );
   });
 
   test('builds the GitHub APK download URL from the version name', () {

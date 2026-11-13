@@ -8,10 +8,21 @@ import 'package:http/http.dart' as http;
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const MethodChannel _otaChannel = MethodChannel(
   'com.spookysrv.hktransports/ota',
 );
+
+const String appRepositoryUrl =
+    'https://repo.spookysrv.com/apps/com.spookysrv.hktransports';
+
+Future<bool> openAppRepositoryPage() {
+  return launchUrl(
+    Uri.parse(appRepositoryUrl),
+    mode: LaunchMode.externalApplication,
+  );
+}
 
 String appUpdateDownloadUrl(String versionName) {
   return 'https://github.com/SpookyKipper/HKTransports/releases/latest/download/'
@@ -111,12 +122,34 @@ class AppUpdateCancelled implements Exception {
   const AppUpdateCancelled();
 }
 
-Future<void> showAppUpdateDialog(
+Future<void> startAppUpdate(
   BuildContext context,
   AppConfigController controller,
 ) async {
   final AppConfig? config = controller.config;
   if (config == null || !controller.hasUpdate) return;
+  if (!config.doOtaUpdate) {
+    bool opened = false;
+    try {
+      opened = await openAppRepositoryPage();
+    } catch (_) {
+      opened = false;
+    }
+    if (!opened && context.mounted) {
+      final AppSettings settings = context.read<AppSettings>();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            settings.text(
+              '無法開啟瀏覽器，請前往 $appRepositoryUrl。',
+              'Could not open the browser. Visit $appRepositoryUrl.',
+            ),
+          ),
+        ),
+      );
+    }
+    return;
+  }
   await showDialog<void>(
     context: context,
     barrierDismissible: false,

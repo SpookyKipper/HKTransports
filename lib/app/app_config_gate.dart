@@ -63,7 +63,7 @@ class CriticalUpdateScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 28),
                 FilledButton.icon(
-                  onPressed: () => showAppUpdateDialog(context, config),
+                  onPressed: () => startAppUpdate(context, config),
                   icon: const Icon(Icons.open_in_new_rounded),
                   label: Text(settings.text('更新', 'Update')),
                 ),
