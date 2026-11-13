@@ -21,7 +21,7 @@ class AppUpdateBanner extends StatelessWidget {
       child: ListTile(
         iconColor: colors.onPrimaryContainer,
         textColor: colors.onPrimaryContainer,
-        onTap: () => showAppUpdateDialog(context, config),
+        onTap: () => startAppUpdate(context, config),
         leading: const Icon(Icons.system_update_alt_rounded),
         title: Text(settings.text('有新版本', 'Update available')),
         subtitle: Text(

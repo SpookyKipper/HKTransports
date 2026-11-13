@@ -21,6 +21,7 @@ class AppConfig {
     required this.os,
     required this.latestVersionCode,
     required this.latestVersionName,
+    required this.doOtaUpdate,
     required this.lastCriticalVersionCode,
     required this.proprietaryApi,
   });
@@ -41,6 +42,7 @@ class AppConfig {
       os: json['os']?.toString().trim().toLowerCase() ?? '',
       latestVersionCode: _asInt(json['latestVersionCode']) ?? 0,
       latestVersionName: json['latestVersionName']?.toString().trim() ?? '',
+      doOtaUpdate: _asBool(json['doOtaUpdate'], defaultValue: true),
       lastCriticalVersionCode: _asInt(json['lastCriticalVersionCode']) ?? 0,
       proprietaryApi: Map<String, int>.unmodifiable(proprietaryApi),
     );
@@ -50,6 +52,7 @@ class AppConfig {
   final String os;
   final int latestVersionCode;
   final String latestVersionName;
+  final bool doOtaUpdate;
   final int lastCriticalVersionCode;
   final Map<String, int> proprietaryApi;
 
@@ -175,6 +178,21 @@ class AppConfigController {
       return null;
     }
   }
+}
+
+bool _asBool(Object? value, {required bool defaultValue}) {
+  if (value is bool) return value;
+  if (value is String) {
+    switch (value.trim().toLowerCase()) {
+      case 'true':
+      case '1':
+        return true;
+      case 'false':
+      case '0':
+        return false;
+    }
+  }
+  return defaultValue;
 }
 
 int? _asInt(Object? value) {

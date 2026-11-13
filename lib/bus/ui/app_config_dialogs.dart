@@ -99,10 +99,7 @@ Future<void> _showPrimaryDialog(
             FilledButton.icon(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                showAppUpdateDialog(
-                  context,
-                  context.read<AppConfigController>(),
-                );
+                startAppUpdate(context, context.read<AppConfigController>());
               },
               icon: const Icon(Icons.system_update_alt_rounded),
               label: Text(settings.text('更新', 'Update')),
