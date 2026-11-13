@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/model/route_display_name.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
@@ -47,7 +48,7 @@ class RouteGroupSheet extends StatelessWidget {
         children: [
           ListTile(
             title: Text(
-              '${route.route} ${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
+              '${routeDisplayName(route, settings.language)} ${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
             ),
             subtitle: Text(
               stopName.isEmpty
