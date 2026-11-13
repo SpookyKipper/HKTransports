@@ -104,13 +104,6 @@ class MainActivity : FlutterActivity() {
             PackageInstaller.SessionParams.MODE_FULL_INSTALL,
         )
         params.setAppPackageName(packageName)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // This app is updating itself. On Android 12+ the system can skip
-            // the installer confirmation when this normal permission is held.
-            params.setRequireUserAction(
-                PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED,
-            )
-        }
         val sessionId = installer.createSession(params)
         try {
             installer.openSession(sessionId).use { session ->
