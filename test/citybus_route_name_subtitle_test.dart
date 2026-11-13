@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
+import 'package:hktransports/bus/ui/route_name_subtitle.dart';
 
 void main() {
   test('removes the peak notice and keeps the following route description', () {

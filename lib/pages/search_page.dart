@@ -4,7 +4,7 @@ import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/citybus_route_description.dart';
-import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
+import 'package:hktransports/bus/ui/route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/route_special_tag.dart';
 import 'package:hktransports/bus/ui/route_number_pad.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -141,17 +141,15 @@ class _SearchPageState extends State<SearchPage> {
                                   Text(
                                     '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
                                   ),
-                                  CitybusRouteNameSubtitle(
+                                  RouteNameSubtitle(
                                     key: ValueKey<String>(
                                       '${route.key}|${settings.language}|'
-                                      '${settings.isProprietaryEnabled(ProprietaryEndpoint.citybusDatabase)}',
+                                      '${routeNameEnabled(route, settings)}',
                                     ),
                                     route: route,
                                     text: route.orig.get(settings.language),
                                     language: settings.language,
-                                    enabled: settings.isProprietaryEnabled(
-                                      ProprietaryEndpoint.citybusDatabase,
-                                    ),
+                                    enabled: routeNameEnabled(route, settings),
                                     style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(
                                           color: Theme.of(

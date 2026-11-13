@@ -4,6 +4,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/nlb/nlb_http.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'package:hktransports/dataStore/objectbox.dart';
 import 'package:http/http.dart' as http;
 
 class NlbRouteStopData {
@@ -47,6 +48,8 @@ class NlbTimetableService {
   static final NlbTimetableService instance = NlbTimetableService();
 
   static const Duration _cacheTtl = Duration(hours: 1);
+  static const Duration _routeNameTtl = Duration(days: 30);
+  static const String _routeNamePrefix = 'nlb.routeName.';
   static const String _selector =
       'section.space-y-4:nth-child(2) > div:nth-child(2) '
       '> div:nth-child(1) > div:nth-child(1)';
@@ -122,6 +125,29 @@ class NlbTimetableService {
     }
   }
 
+  Future<String?> fetchRouteName(
+    RouteEntry route,
+    String language, {
+    bool force = false,
+  }) async {
+    final String locale = language == 'en' ? 'en' : 'tc';
+    final String cacheKey = '$_routeNamePrefix${route.nlbRouteId}.$locale';
+    if (!force) {
+      final String? cached = _readRouteNameCache(cacheKey);
+      if (cached != null) return cached;
+    }
+    try {
+      final String? html = await _getPageHtml(route, language);
+      if (html == null) return null;
+      final String? name = parseNlbRouteName(html);
+      if (name == null) return null;
+      _writeRouteNameCache(cacheKey, name);
+      return name;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<NlbRoutePageData?> fetchRouteData(
     RouteEntry route,
     String language, {
@@ -168,6 +194,37 @@ class NlbTimetableService {
       return data;
     } catch (_) {
       return null;
+    }
+  }
+
+  String? _readRouteNameCache(String key) {
+    try {
+      final String? raw = sp.getString(key);
+      if (raw == null || raw.isEmpty) return null;
+      final dynamic decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      final String name = (decoded['name'] ?? '').toString().trim();
+      final int fetchedAt = (decoded['fetchedAt'] as num?)?.toInt() ?? 0;
+      if (name.isEmpty || fetchedAt <= 0) return null;
+      final DateTime fetched = DateTime.fromMillisecondsSinceEpoch(fetchedAt);
+      if (DateTime.now().difference(fetched) >= _routeNameTtl) return null;
+      return name;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _writeRouteNameCache(String key, String name) {
+    try {
+      sp.setString(
+        key,
+        jsonEncode(<String, Object>{
+          'name': name,
+          'fetchedAt': DateTime.now().millisecondsSinceEpoch,
+        }),
+      );
+    } catch (_) {
+      // The route name is still usable without the persistent cache.
     }
   }
 
@@ -299,6 +356,17 @@ void _addTimetableLegend(Element content, String language) {
     note.remove();
   }
   content.nodes.insert(0, legend);
+}
+
+String? parseNlbRouteName(String html) {
+  final Document document = html_parser.parse(html);
+  final List<String> names = <String>[];
+  for (final Element span in document.querySelectorAll('.mt-3 > span')) {
+    final String name = _cleanText(span.text);
+    if (name.isEmpty || names.contains(name)) continue;
+    names.add(name);
+  }
+  return names.isEmpty ? null : names.join(' · ');
 }
 
 NlbRoutePageData? parseNlbRouteData(String html) {
