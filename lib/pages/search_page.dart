@@ -15,6 +15,8 @@ import 'package:hktransports/bus/ui/route_number_pad.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
+final ValueNotifier<bool> searchKeypadVisible = ValueNotifier<bool>(true);
+
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -25,6 +27,22 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   String _query = '';
   RouteCategory _category = RouteCategory.all;
+
+  @override
+  void initState() {
+    super.initState();
+    searchKeypadVisible.addListener(_onKeypadVisibilityChanged);
+  }
+
+  @override
+  void dispose() {
+    searchKeypadVisible.removeListener(_onKeypadVisibilityChanged);
+    super.dispose();
+  }
+
+  void _onKeypadVisibilityChanged() {
+    if (mounted) setState(() {});
+  }
 
   void _appendNumber(String value) {
     setState(() => _query += value);
@@ -115,7 +133,9 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: EdgeInsets.only(
+                    bottom: searchKeypadVisible.value ? 8 : 120,
+                  ),
                   itemCount: results.length,
                   separatorBuilder: (context, index) =>
                       const Divider(height: 1),
@@ -262,20 +282,21 @@ class _SearchPageState extends State<SearchPage> {
                   },
                 ),
         ),
-        Container(
-          width: double.infinity,
-          color: Theme.of(context).colorScheme.surfaceContainerLow,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
-          child: RouteNumberPad(
-            possibleChars: possibleChars,
-            hasQuery: _query.isNotEmpty,
-            onCharacter: _appendNumber,
-            onBackspace: _backspaceNumber,
-            onClear: _clearNumber,
-            clearTooltip: settings.text('清除', 'Clear'),
-            backspaceTooltip: settings.text('刪除', 'Backspace'),
+        if (searchKeypadVisible.value)
+          Container(
+            width: double.infinity,
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
+            child: RouteNumberPad(
+              possibleChars: possibleChars,
+              hasQuery: _query.isNotEmpty,
+              onCharacter: _appendNumber,
+              onBackspace: _backspaceNumber,
+              onClear: _clearNumber,
+              clearTooltip: settings.text('清除', 'Clear'),
+              backspaceTooltip: settings.text('刪除', 'Backspace'),
+            ),
           ),
-        ),
       ],
     );
   }
