@@ -5,130 +5,70 @@
 <h1 align="center">HKTransports</h1>
 
 <p align="center">
-  A clean, fast and flexible Hong Kong public transport app for real-time bus and minibus arrivals.
+  一App看盡全港交通工具預計到站時間、時間表、路線、站點、地圖、通告及轉乘資訊，支援中英文介面。
 </p>
 
-HKTransports brings routes, stops, arrivals, nearby services, maps, timetables, notices and interchange information together in one place. It is built for everyday use in Hong Kong, with an interface available in Chinese and English.
+# 功能
 
-## Features
+- 🌟️ 基於最新 Material 3 Expressive 設計語言以及使用動態顏色+光暗雙模式，提供流暢漂亮UI界面。
+- 🌟️ 可接駁各營運商專有API，提供開放數據以外的資訊
+- ✅ 置頂路線車站至螢幕最上方，一次看多條路線ETA
+- ✅ 收藏路線至各個群組，方便看常用路線
+- ✅ 中英雙語言
+- ✅ 向量地圖（Vector Map）提供高清地圖顯示
+- ✅ 可啓用定位服務，更快尋找車站及附近路線
+- ✅ 交通快訊
 
-### Real-time arrivals
+| 功能 | 九巴/龍運 | 城巴 | 嶼巴 | 專線小巴 | 港鐵巴士 | 港鐵/輕鐵 | 渡輪
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| ETA: 預計到站時間 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 
+| ETA: 未開出/預定班次 | ✅ | ✅* | ✅ | ✅ | ✅ | ❌️ | ✅ |
+| ETA: 班次受阻 | ✅ | ✅* | ✅ | ✅ | ✅ | ❌️ | 🟡 |
+| ETA: 班次距離車站 | ❌️ | ✅* | ❌️ | ❌️ | ❌️ | ❌️ | ❌️ | 
+| RT: 路線收費 | ✅ | ✅ | ✅ | 🟡️ | 🟡 | ❌️ | ✅ |
+| RT: 雙向分段收費^ | ✅* | ✅* | ✅* | ✅ | --- | ❌️ | ❌️ | 
+| RT: 樂悠咭車費 | ✅ | ✅ | ❌️ | ✅ | ✅ | ❌️ | ✅ | 
+| RT: 地圖顯示 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 
+| RT: 預計車程時間 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 
+| RT: 路線時間表 | ✅ | ✅ | 🟡️/✅* | ✅ | 🟡️ | ❌️ | ✅ | 
+| RT: 路線通告 | ✅* | ✅* | ✅* | ❌️ | ❌️ | ❌️ | ❌️ |
+| RT: 路線名稱 | ❌️ | ✅* | ✅* | ❌️ | ❌️ | ❌️ | ❌️ |
+| RT: 路線備註 | --- | ✅* | ✅* | --- | --- | --- | --- |
+| RT: 特別班/路線分支 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | --- |
+| RT: 特別班描述 | ❌️ | ✅* | ❌️ | ❌️ | --- | --- | --- |
+| RT: 轉乘優惠 | ✅* | ✅* | ❌️ | ❌️ | ❌️ | ❌️ | ❌️ |
+| STN: 車站通告 | --- | ✅* | --- | --- | --- | --- | --- |
+| STN: 車站拓展名稱 | ❌️ | ✅* | ✅* | ❌️ | ❌️ | ❌️ | --- |
+| STN: 同站路線 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌️ |
+| STN: 月台/編號 | ✅ | ❌️ | ❌️ | ❌️ | ❌️ | ✅ | ❌️ |
+| MISC: 輪椅位 | --- | --- | ✅* | --- | --- | --- | --- |
 
-- Live ETA information for KMB, Citybus, NLB, green minibus and MTR feeder services.
-- See the next arrivals for any route and stop.
-- Search routes by number and browse all directions and service variants.
-- See route timetables, service-day information and estimated journey times.
-- Follow live traffic news from the Transport Department.
+\* 號功能代表需要啓用相應預設關閉的專有API選項<br>
+專線小巴: 主要頁面不提供分段收費資訊（看下面雙向查詢方法）<br>
+港鐵巴士: 部分路線可顯示車費及時間表<br>
+嶼巴: 部分路線開放數據有提供時間表，開啓專有API以得全覆蓋。<br>
+\^ 雙向分段收費:<br>
+&nbsp;&nbsp;\- 九巴/龍運: 路線屬性 -> 通告 -> 八達通及電子支付分段收費<br>
+&nbsp;&nbsp;\- 城巴: 路線屬性 -> 備註: 「短途分段收費」<br>
+&nbsp;&nbsp;\- 專線小巴: 路線屬性 -> 時間表 -> 專線小巴: 「車資表」<br>
+&nbsp;&nbsp;\- 嶼巴: 路線屬性 -> 通告 -> 車資表（只適用於部分路線）
 
-### Favourites and home screen
-
-- Save routes and stops for quick access.
-- Organise routes into custom favourite groups.
-- Reorder custom groups and the default Favourites group.
-- Pin frequently used stops for at-a-glance arrival information.
-- The home screen remembers your last-used tab.
-
-### Nearby routes
-
-- Find routes with stops within a selected radius of your current location.
-- Choose 100 m, 200 m, 400 m or a custom radius.
-- Results are ordered by distance and show the nearest stop for each route.
-- Opening a nearby route automatically focuses the relevant stop.
-- Location is optional and disabled by default.
-
-### Route details and maps
-
-- View the full route and all stops on an interactive map.
-- Automatically focus the nearest station when it is within 2 km; otherwise, the whole route is shown.
-- Use the locate button to show your current position, accuracy circle and travel direction.
-- Your map position and direction update as you move or turn.
-- Switch between route directions with a smooth in-place crossfade.
-- See official operator links, route remarks and operator notices in the same place.
-
-### Optional direct operator data
-
-HKTransports can optionally connect directly to selected operator data sources. These features are **off by default** and can be enabled one source at a time in Settings.
-
-When enabled, the app can provide:
-
-- **Direct interchange discount information** from KMB and Citybus, with first-leg and second-leg views and route search.
-- **Operator passenger notices**, including KMB route news and Citybus special, route and stop notices.
-- **Citybus route names**, such as line names shown in search results, the home screen and route details.
-- **Citybus remarks**, including fare remarks and other route notes, with Bus-Bus Interchange sections removed.
-- **Correct operator branding**, showing Cityflyer for Citybus airport routes and LWB for Long Win routes while keeping the original operator data underneath.
-
-All optional operator requests are made directly from your device. No proxy server is used.
-
-> These sources are not fully licensed and are not affiliated with or endorsed by the operators. Enabling them may be subject to the operators' terms of use. Use them at your own risk.
-
-### Interface
-
-- Material 3 Expressive interface with responsive, tactile controls.
-- Chinese and English interface.
-- Light, dark and system themes, including dynamic colour options.
-- Adjustable text size and page transitions.
-- Clean layouts designed for quick scanning at a bus stop.
-
-## What makes HKTransports different?
-
-Many Hong Kong transport apps stop at arrival times. HKTransports goes further by bringing the useful operator information into the app while keeping it optional and transparent:
-
-- **Interchange discounts are readable inside the app**, not just hidden behind an operator website or a single external link.
-- **Passenger notices are integrated by route and stop**, so service changes and special arrangements are easier to find.
-- **Citybus route names and fare/route remarks** appear where they are useful instead of requiring a separate lookup.
-- **Operator branding is presented correctly**, including Cityflyer and LWB, without changing the underlying operator data.
-- **Optional proprietary sources are controlled individually**, so you can choose exactly how much direct operator data you want to use.
-- **Nearby routes and the route map are designed around the stop you actually need**, with distance-aware results, nearest-station focus and live location direction.
-- **No proxy is used for optional operator sources** — requests go directly from your device.
-
-## Installation
-
-### Method 1: F-Droid (Recommended)
-
-You may get this app from the F-Droid repository:
-
+## 安裝使用
+### 一、F-Droid （建議）
 **https://repo.spookysrv.com/fdroid/repo/**
 
-Add the repository to your F-Droid client, then install HKTransports from there. Updates are delivered automatically through F-Droid.
+在你的 F-Droid 客户端添加此儲存庫，下載HKTransports應用程式。更新將透過 F-Droid 自動推送。<br>
+建議使用最新版官方 F-Droid 2.0 客户端。
+下載 F-Droid: https://f-droid.org/zh_Hant/
 
-> **Note:** This is not the official F-Droid repository. Anti-Features may not be fully accurate according to the official F-Droid definitions.
-
-### Method 2: APK sideload
-
-Download the latest APK from the Releases page:
+### 二、APK 旁載
+從 Releases 頁面下載最新 APK：
 
 **https://github.com/SpookyKipper/HKTransports/releases**
 
-HKTransports does not check for updates itself. To stay up to date, check the Releases page periodically, or add the Releases page to an update tracker such as [Obtainium](https://github.com/ImranR98/Obtainium) so you are notified when a new APK is available.
+有新更新將在App內通知，請手動更新。<br>
+你亦可使用類似 Obtainium 等更新追蹤器，以自動下載更新新版本。
 
-## Data and privacy
-
-- Route and stop information is downloaded to your device and can be browsed without a live connection.
-- Live arrivals, optional operator notices, route names and remarks require an internet connection.
-- Location is off by default. When enabled, it is used for nearby routes and the route map.
-- Optional operator requests are sent directly from your device, without a proxy.
-
-## Credits
-
-HKTransports is inspired by [HK Bus ETA (hkbus.app)](https://hkbus.app), originally started by [Law Wai Chun (chunlaw)](https://github.com/chunlaw) and built with many [contributors](https://github.com/hkbus/hk-independent-bus-eta/graphs/contributors). The route data, arrival logic and user experience in this app draw heavily from that project.
-
-Source code for the original project: [github.com/hkbus/hk-independent-bus-eta](https://github.com/hkbus/hk-independent-bus-eta).
-
-### Data sources
-
-- [DATA.GOV.HK](https://data.gov.hk)
-- [HK Bus Crawling](https://github.com/SpookyKipper/hk-bus-crawling/)
-- [Transport Route Waypoints](https://github.com/SpookyKipper/hk-transports-route-waypoints)
-- [Common Spatial Data Infrastructure](https://portal.csdi.gov.hk)
-- KMB, Citybus, NLB, Green Minibus, MTR and the ferry operators
-- [HK Bus ETA notices](https://notice.hkbus.app)
-- [Transport Department traffic news](https://www.td.gov.hk/tc/special_news/trafficnews.xml)
-
-### Map data
-
-- [Lands Department](https://api.portal.hkmapservice.gov.hk/disclaimer)
-- [CSDI](https://portal.csdi.gov.hk)
-
-## License
-
-The original HK Bus ETA project and the `hk-bus-eta` package are licensed under GPL-3.0-only. This project follows the same license. See [LICENSE](LICENSE).
+## 授權
+本應用程式以 GPL-3.0 授權，詳情見 [LICENSE](LICENSE)。<br>
+依賴套件、數據來源授權在App內設定 -> 鳴謝 -> 開源授權 顯示
