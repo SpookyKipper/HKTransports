@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/pages/search_page.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
@@ -53,43 +54,62 @@ class _HomeShellState extends State<HomeShell> {
             heightFactor: 1,
             child: SizedBox(
               height: 64,
-              child: M3EToolbar(
-                expanded: true,
-                size: M3EToolbarSize.medium,
-                elevation: 0,
-                screenOffset: 0,
-                safeArea: false,
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                actions: [
-                  M3EToolbarWidget(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _ToolbarDestination(
-                          icon: Icons.home_outlined,
-                          selectedIcon: Icons.home,
-                          label: settings.text('主頁', 'Home'),
-                          selected: _index == 0,
-                          onTap: () => _selectPage(0),
-                        ),
-                        _ToolbarDestination(
-                          icon: Icons.search,
-                          selectedIcon: Icons.search,
-                          label: settings.text('搜尋', 'Search'),
-                          selected: _index == 1,
-                          onTap: () => _selectPage(1),
-                        ),
-                        _ToolbarDestination(
-                          icon: Icons.campaign_outlined,
-                          selectedIcon: Icons.campaign,
-                          label: settings.text('快訊', 'News'),
-                          selected: _index == 2,
-                          onTap: () => _selectPage(2),
-                        ),
-                      ],
+              child: ValueListenableBuilder<bool>(
+                valueListenable: searchKeypadVisible,
+                builder: (BuildContext context, bool keypadVisible, _) {
+                  return M3EToolbar(
+                    expanded: true,
+                    size: M3EToolbarSize.medium,
+                    elevation: 0,
+                    screenOffset: 0,
+                    safeArea: false,
+                    fabExpandsToolbar: false,
+                    fabIcon: _index == 1
+                        ? Icon(
+                            keypadVisible
+                                ? Icons.keyboard_hide_outlined
+                                : Icons.keyboard_outlined,
+                          )
+                        : null,
+                    onFabPressed: _index == 1
+                        ? () => searchKeypadVisible.value = !keypadVisible
+                        : null,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
                     ),
-                  ),
-                ],
+                    actions: [
+                      M3EToolbarWidget(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _ToolbarDestination(
+                              icon: Icons.home_outlined,
+                              selectedIcon: Icons.home,
+                              label: settings.text('主頁', 'Home'),
+                              selected: _index == 0,
+                              onTap: () => _selectPage(0),
+                            ),
+                            _ToolbarDestination(
+                              icon: Icons.search,
+                              selectedIcon: Icons.search,
+                              label: settings.text('搜尋', 'Search'),
+                              selected: _index == 1,
+                              onTap: () => _selectPage(1),
+                            ),
+                            _ToolbarDestination(
+                              icon: Icons.campaign_outlined,
+                              selectedIcon: Icons.campaign,
+                              label: settings.text('快訊', 'News'),
+                              selected: _index == 2,
+                              onTap: () => _selectPage(2),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
