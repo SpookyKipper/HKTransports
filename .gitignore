@@ -48,3 +48,6 @@ app.*.map.json
 # Route DB
 hkbusapi/
 hktransports/
+
+# Draft
+README\ copy.md
