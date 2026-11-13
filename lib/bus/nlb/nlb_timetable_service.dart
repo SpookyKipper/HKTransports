@@ -30,6 +30,13 @@ class NlbRoutePageData {
   final String? fareNote;
 }
 
+class NlbRouteInfo {
+  const NlbRouteInfo({this.name, this.special = false});
+
+  final String? name;
+  final bool special;
+}
+
 class NlbRouteNotice {
   const NlbRouteNotice({
     required this.title,
@@ -49,7 +56,7 @@ class NlbTimetableService {
 
   static const Duration _cacheTtl = Duration(hours: 1);
   static const Duration _routeNameTtl = Duration(days: 30);
-  static const String _routeNamePrefix = 'nlb.routeName.';
+  static const String _routeNamePrefix = 'nlb.routeName.v2.';
   static const String _selector =
       'section.space-y-4:nth-child(2) > div:nth-child(2) '
       '> div:nth-child(1) > div:nth-child(1)';
@@ -64,6 +71,8 @@ class NlbTimetableService {
   final Map<String, _CachedNotices> _noticeCache = <String, _CachedNotices>{};
   final Map<String, _CachedPageHtml> _pageCache = <String, _CachedPageHtml>{};
   final Map<String, Future<String?>> _pageLoading = <String, Future<String?>>{};
+  final Map<String, Future<NlbRouteInfo?>> _routeInfoLoading =
+      <String, Future<NlbRouteInfo?>>{};
 
   Future<void> prefetchPage(RouteEntry route, String language) async {
     await _getPageHtml(route, language);
@@ -130,19 +139,52 @@ class NlbTimetableService {
     String language, {
     bool force = false,
   }) async {
+    final NlbRouteInfo? info = await fetchRouteInfo(
+      route,
+      language,
+      force: force,
+    );
+    return info?.name;
+  }
+
+  Future<NlbRouteInfo?> fetchRouteInfo(
+    RouteEntry route,
+    String language, {
+    bool force = false,
+  }) {
     final String locale = language == 'en' ? 'en' : 'tc';
     final String cacheKey = '$_routeNamePrefix${route.nlbRouteId}.$locale';
     if (!force) {
-      final String? cached = _readRouteNameCache(cacheKey);
-      if (cached != null) return cached;
+      final NlbRouteInfo? cached = _readRouteNameCache(cacheKey);
+      if (cached != null) return Future<NlbRouteInfo?>.value(cached);
+      final Future<NlbRouteInfo?>? running = _routeInfoLoading[cacheKey];
+      if (running != null) return running;
     }
+    final Future<NlbRouteInfo?> future = _loadRouteInfo(
+      route,
+      language,
+      cacheKey,
+    );
+    _routeInfoLoading[cacheKey] = future;
+    return future.whenComplete(() {
+      if (identical(_routeInfoLoading[cacheKey], future)) {
+        _routeInfoLoading.remove(cacheKey);
+      }
+    });
+  }
+
+  Future<NlbRouteInfo?> _loadRouteInfo(
+    RouteEntry route,
+    String language,
+    String cacheKey,
+  ) async {
     try {
       final String? html = await _getPageHtml(route, language);
       if (html == null) return null;
-      final String? name = parseNlbRouteName(html);
-      if (name == null) return null;
-      _writeRouteNameCache(cacheKey, name);
-      return name;
+      final NlbRouteInfo? info = parseNlbRouteInfo(html);
+      if (info == null) return null;
+      _writeRouteNameCache(cacheKey, info);
+      return info;
     } catch (_) {
       return null;
     }
@@ -197,29 +239,31 @@ class NlbTimetableService {
     }
   }
 
-  String? _readRouteNameCache(String key) {
+  NlbRouteInfo? _readRouteNameCache(String key) {
     try {
       final String? raw = sp.getString(key);
       if (raw == null || raw.isEmpty) return null;
       final dynamic decoded = jsonDecode(raw);
       if (decoded is! Map) return null;
       final String name = (decoded['name'] ?? '').toString().trim();
+      final bool special = decoded['special'] == true;
       final int fetchedAt = (decoded['fetchedAt'] as num?)?.toInt() ?? 0;
-      if (name.isEmpty || fetchedAt <= 0) return null;
+      if ((name.isEmpty && !special) || fetchedAt <= 0) return null;
       final DateTime fetched = DateTime.fromMillisecondsSinceEpoch(fetchedAt);
       if (DateTime.now().difference(fetched) >= _routeNameTtl) return null;
-      return name;
+      return NlbRouteInfo(name: name.isEmpty ? null : name, special: special);
     } catch (_) {
       return null;
     }
   }
 
-  void _writeRouteNameCache(String key, String name) {
+  void _writeRouteNameCache(String key, NlbRouteInfo info) {
     try {
       sp.setString(
         key,
         jsonEncode(<String, Object>{
-          'name': name,
+          'name': info.name ?? '',
+          'special': info.special,
           'fetchedAt': DateTime.now().millisecondsSinceEpoch,
         }),
       );
@@ -359,14 +403,35 @@ void _addTimetableLegend(Element content, String language) {
 }
 
 String? parseNlbRouteName(String html) {
+  return parseNlbRouteInfo(html)?.name;
+}
+
+NlbRouteInfo? parseNlbRouteInfo(String html) {
   final Document document = html_parser.parse(html);
   final List<String> names = <String>[];
+  bool special = false;
   for (final Element span in document.querySelectorAll('.mt-3 > span')) {
     final String name = _cleanText(span.text);
-    if (name.isEmpty || names.contains(name)) continue;
-    names.add(name);
+    if (name.isEmpty) continue;
+    if (_isNlbSpecialDeparture(name)) {
+      special = true;
+      continue;
+    }
+    if (!names.contains(name)) names.add(name);
   }
-  return names.isEmpty ? null : names.join(' · ');
+  if (names.isEmpty && !special) return null;
+  return NlbRouteInfo(
+    name: names.isEmpty ? null : names.join(' · '),
+    special: special,
+  );
+}
+
+bool _isNlbSpecialDeparture(String value) {
+  final String text = value.trim();
+  final String lower = text.toLowerCase();
+  return text == '特別班次' ||
+      lower == 'special departure' ||
+      lower == 'special departures';
 }
 
 NlbRoutePageData? parseNlbRouteData(String html) {
