@@ -1,9 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/bus/cache/citybus_route_name_service.dart';
+import 'package:hktransports/bus/cache/nlb_route_name_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
+import 'package:hktransports/bus/state/app_settings.dart';
 
-class CitybusRouteNameSubtitle extends StatefulWidget {
-  const CitybusRouteNameSubtitle({
+bool routeNameEnabled(RouteEntry route, AppSettings settings) {
+  if (route.companies.contains(BusCompany.ctb)) {
+    return settings.isProprietaryEnabled(ProprietaryEndpoint.citybusDatabase);
+  }
+  if (route.companies.contains(BusCompany.nlb)) {
+    return settings.isProprietaryEnabled(
+      ProprietaryEndpoint.nlbProprietaryData,
+    );
+  }
+  return false;
+}
+
+class RouteNameSubtitle extends StatefulWidget {
+  const RouteNameSubtitle({
     super.key,
     required this.route,
     required this.language,
@@ -25,12 +39,13 @@ class CitybusRouteNameSubtitle extends StatefulWidget {
   final bool compactAppBar;
 
   @override
-  State<CitybusRouteNameSubtitle> createState() =>
-      _CitybusRouteNameSubtitleState();
+  State<RouteNameSubtitle> createState() => _RouteNameSubtitleState();
 }
 
-class _CitybusRouteNameSubtitleState extends State<CitybusRouteNameSubtitle> {
-  static const CitybusRouteNameService _service = CitybusRouteNameService();
+class _RouteNameSubtitleState extends State<RouteNameSubtitle> {
+  static const CitybusRouteNameService _citybusService =
+      CitybusRouteNameService();
+  static const NlbRouteNameService _nlbService = NlbRouteNameService();
   Future<String?>? _routeNameFuture;
 
   @override
@@ -40,9 +55,10 @@ class _CitybusRouteNameSubtitleState extends State<CitybusRouteNameSubtitle> {
   }
 
   @override
-  void didUpdateWidget(covariant CitybusRouteNameSubtitle oldWidget) {
+  void didUpdateWidget(covariant RouteNameSubtitle oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.route.route != widget.route.route ||
+    if (oldWidget.route.key != widget.route.key ||
+        oldWidget.route.nlbRouteId != widget.route.nlbRouteId ||
         oldWidget.language != widget.language ||
         oldWidget.enabled != widget.enabled) {
       _load();
@@ -50,11 +66,20 @@ class _CitybusRouteNameSubtitleState extends State<CitybusRouteNameSubtitle> {
   }
 
   void _load() {
-    if (!widget.enabled || !widget.route.companies.contains(BusCompany.ctb)) {
+    if (!widget.enabled) {
       _routeNameFuture = null;
       return;
     }
-    _routeNameFuture = _service.routeName(widget.route, widget.language);
+    if (widget.route.companies.contains(BusCompany.ctb)) {
+      _routeNameFuture = _citybusService.routeName(
+        widget.route,
+        widget.language,
+      );
+    } else if (widget.route.companies.contains(BusCompany.nlb)) {
+      _routeNameFuture = _nlbService.routeName(widget.route, widget.language);
+    } else {
+      _routeNameFuture = null;
+    }
   }
 
   @override

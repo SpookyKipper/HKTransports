@@ -111,6 +111,25 @@ void main() {
     expect(html!.indexOf('備註'), lessThan(html.indexOf('Monday to Saturday')));
   });
 
+  test('parses all NLB route name spans', () {
+    final String? name = parseNlbRouteName('''
+      <div class="mt-3">
+        <p>全程行車時間約為 34 分鐘</p>
+        <span>上午繁忙時間服務, 上課日服務</span>
+        <span>循環線</span>
+      </div>
+    ''');
+
+    expect(name, '上午繁忙時間服務, 上課日服務 · 循環線');
+  });
+
+  test('returns no NLB route name without name spans', () {
+    expect(
+      parseNlbRouteName('<div class="mt-3"><p>Journey time</p></div>'),
+      isNull,
+    );
+  });
+
   test('parses all NLB route notice cards', () {
     final List<NlbRouteNotice> notices = parseNlbRouteNotices('''
       <div class="space-y-3">

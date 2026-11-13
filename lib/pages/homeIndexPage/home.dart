@@ -6,7 +6,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
-import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
+import 'package:hktransports/bus/ui/route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/app_update_banner.dart';
 import 'package:hktransports/bus/ui/notice_banner.dart';
 import 'package:hktransports/bus/ui/route_eta_view.dart';
@@ -420,9 +420,6 @@ class _FavoriteRouteTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
-    final bool citybusEnabled = settings.isProprietaryEnabled(
-      ProprietaryEndpoint.citybusDatabase,
-    );
     final List<String> stopIds = route.primaryStops;
     final StopEntry? stop = seq >= 0 && seq < stopIds.length
         ? repository.stopById(stopIds[seq])
@@ -483,10 +480,10 @@ class _FavoriteRouteTile extends StatelessWidget {
                   Text(
                     '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
                   ),
-                  CitybusRouteNameSubtitle(
+                  RouteNameSubtitle(
                     route: route,
                     language: settings.language,
-                    enabled: citybusEnabled,
+                    enabled: routeNameEnabled(route, settings),
                     text:
                         stop?.displayName(settings.language) ??
                         route.orig.get(settings.language),

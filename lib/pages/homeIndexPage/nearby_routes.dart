@@ -8,7 +8,7 @@ import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/data/nearby_routes.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
-import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
+import 'package:hktransports/bus/ui/route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/route_eta_view.dart';
 import 'package:hktransports/bus/ui/route_special_tag.dart';
 import 'package:hktransports/location/location_controller.dart';
@@ -459,9 +459,6 @@ class _NearbyRouteTile extends StatelessWidget {
     final RouteEntry route = result.route;
     final StopEntry stop = result.stop;
     final int seq = result.routeSeq;
-    final bool citybusEnabled = settings.isProprietaryEnabled(
-      ProprietaryEndpoint.citybusDatabase,
-    );
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -514,10 +511,10 @@ class _NearbyRouteTile extends StatelessWidget {
                   Text(
                     '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
                   ),
-                  CitybusRouteNameSubtitle(
+                  RouteNameSubtitle(
                     route: route,
                     language: settings.language,
-                    enabled: citybusEnabled,
+                    enabled: routeNameEnabled(route, settings),
                     text:
                         '${stop.displayName(settings.language)} · '
                         '${_distanceLabel(result.distanceMeters)}',

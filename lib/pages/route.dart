@@ -18,7 +18,7 @@ import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/state/pinned_stops.dart';
 import 'package:hktransports/bus/ui/citybus_fare_label.dart';
 import 'package:hktransports/bus/ui/citybus_route_description.dart';
-import 'package:hktransports/bus/ui/citybus_route_name_subtitle.dart';
+import 'package:hktransports/bus/ui/route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
 import 'package:hktransports/bus/ui/eta_text.dart';
 import 'package:hktransports/bus/ui/fade_in.dart';
@@ -401,12 +401,10 @@ class _RoutePageState extends State<_RoutePage> {
               ? _RouteSpecialTag(label: settings.text('特別班', 'Special'))
               : null,
         ),
-        subtitleWidget: CitybusRouteNameSubtitle(
+        subtitleWidget: RouteNameSubtitle(
           route: route,
           language: settings.language,
-          enabled: settings.isProprietaryEnabled(
-            ProprietaryEndpoint.citybusDatabase,
-          ),
+          enabled: routeNameEnabled(route, settings),
           compactAppBar: true,
           text:
               '${settings.text('往', 'to')} ${route.dest.get(settings.language)}',
