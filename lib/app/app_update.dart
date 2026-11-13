@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hktransports/app/app_config.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/smooth_wavy_progress.dart';
 import 'package:http/http.dart' as http;
-import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -259,12 +259,7 @@ class _AppUpdateDialogState extends State<_AppUpdateDialog> {
           else ...[
             SizedBox(
               width: 240,
-              child: M3EProgressIndicator.linearWavy(
-                value: _progress,
-                linearSize: M3EProgressIndicatorSize.m,
-                strokeWidth: 4,
-                trackStrokeWidth: 4,
-              ),
+              child: SmoothWavyProgressIndicator(value: _progress),
             ),
             const SizedBox(height: 12),
             Text(

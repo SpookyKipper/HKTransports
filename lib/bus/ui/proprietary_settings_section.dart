@@ -3,8 +3,8 @@ import 'package:hktransports/app/app_config.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/smooth_wavy_progress.dart';
 import 'package:hktransports/bus/ui/app_config_dialogs.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 class ProprietarySettingsSection extends StatelessWidget {
@@ -249,18 +249,9 @@ class _KmbInterchangeDownloadDialogState
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: value),
+          SmoothWavyProgressIndicator(
+            value: value,
             duration: const Duration(milliseconds: 650),
-            curve: Curves.easeOutCubic,
-            builder: (BuildContext context, double animated, Widget? child) {
-              return M3EProgressIndicator.linearWavy(
-                value: animated,
-                linearSize: M3EProgressIndicatorSize.m,
-                strokeWidth: 4,
-                trackStrokeWidth: 4,
-              );
-            },
           ),
           const SizedBox(height: 12),
           Text(
@@ -317,12 +308,7 @@ class _CitybusDownloadDialogState extends State<_CitybusDownloadDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          M3EProgressIndicator.linearWavy(
-            value: _progress,
-            linearSize: M3EProgressIndicatorSize.m,
-            strokeWidth: 4,
-            trackStrokeWidth: 4,
-          ),
+          SmoothWavyProgressIndicator(value: _progress),
           const SizedBox(height: 12),
           Text(
             _progress == null
