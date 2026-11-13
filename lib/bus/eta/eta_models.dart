@@ -15,7 +15,6 @@ class BusEta {
     this.statusEn,
     this.distanceKm,
     this.wheelchair = false,
-    this.wheelchairKnown = false,
   });
 
   final BusCompany company;
@@ -37,9 +36,6 @@ class BusEta {
 
   /// Whether the vehicle is wheelchair accessible.
   final bool wheelchair;
-
-  /// Whether [wheelchair] came from a known source instead of a default.
-  final bool wheelchairKnown;
 
   String remark(String language) => language == 'en' ? remarkEn : remarkZh;
 
@@ -65,7 +61,6 @@ class BusEta {
     double? distanceKm,
     int? etaSeq,
     bool? wheelchair,
-    bool? wheelchairKnown,
   }) {
     return BusEta(
       company: company,
@@ -81,7 +76,6 @@ class BusEta {
       statusEn: statusEn ?? this.statusEn,
       distanceKm: distanceKm ?? this.distanceKm,
       wheelchair: wheelchair ?? this.wheelchair,
-      wheelchairKnown: wheelchairKnown ?? this.wheelchairKnown,
     );
   }
 

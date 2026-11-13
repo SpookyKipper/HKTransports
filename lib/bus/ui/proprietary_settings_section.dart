@@ -193,8 +193,6 @@ class _EndpointTile extends StatelessWidget {
         return Icons.receipt_long_outlined;
       case ProprietaryEndpoint.nlbRouteNotices:
         return Icons.campaign_outlined;
-      case ProprietaryEndpoint.nlbEtaData:
-        return Icons.accessible_outlined;
     }
   }
 }
