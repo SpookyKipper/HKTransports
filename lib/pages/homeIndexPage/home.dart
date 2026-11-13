@@ -6,6 +6,7 @@ import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/favorite_group.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/favorite_group_dialogs.dart';
+import 'package:hktransports/bus/ui/nlb_route_special_tag.dart';
 import 'package:hktransports/bus/ui/route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/app_update_banner.dart';
 import 'package:hktransports/bus/ui/notice_banner.dart';
@@ -468,6 +469,13 @@ class _FavoriteRouteTile extends StatelessWidget {
                           label: settings.text('特別班', 'Special'),
                         ),
                       ),
+                    )
+                  else
+                    NlbRouteSpecialTag(
+                      route: route,
+                      language: settings.language,
+                      enabled: routeNameEnabled(route, settings),
+                      padding: const EdgeInsets.only(top: 2),
                     ),
                 ],
               ),

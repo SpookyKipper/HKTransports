@@ -8,6 +8,7 @@ import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/data/nearby_routes.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/nlb_route_special_tag.dart';
 import 'package:hktransports/bus/ui/route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/route_eta_view.dart';
 import 'package:hktransports/bus/ui/route_special_tag.dart';
@@ -499,6 +500,13 @@ class _NearbyRouteTile extends StatelessWidget {
                           label: settings.text('特別班', 'Special'),
                         ),
                       ),
+                    )
+                  else
+                    NlbRouteSpecialTag(
+                      route: route,
+                      language: settings.language,
+                      enabled: routeNameEnabled(route, settings),
+                      padding: const EdgeInsets.only(top: 2),
                     ),
                 ],
               ),

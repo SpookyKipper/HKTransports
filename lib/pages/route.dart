@@ -23,6 +23,7 @@ import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
 import 'package:hktransports/bus/ui/eta_text.dart';
 import 'package:hktransports/bus/ui/fade_in.dart';
 import 'package:hktransports/bus/ui/nlb_fare_label.dart';
+import 'package:hktransports/bus/ui/nlb_route_special_tag.dart';
 import 'package:hktransports/bus/ui/nlb_stop_landmark.dart';
 import 'package:hktransports/bus/ui/proprietary_notices.dart';
 import 'package:hktransports/bus/ui/route_map.dart';
@@ -399,6 +400,12 @@ class _RoutePageState extends State<_RoutePage> {
           company: route.companiesLabel(settings.language),
           special: route.isSpecial
               ? _RouteSpecialTag(label: settings.text('特別班', 'Special'))
+              : route.companies.contains(BusCompany.nlb)
+              ? NlbRouteSpecialTag(
+                  route: route,
+                  language: settings.language,
+                  enabled: routeNameEnabled(route, settings),
+                )
               : null,
         ),
         subtitleWidget: RouteNameSubtitle(

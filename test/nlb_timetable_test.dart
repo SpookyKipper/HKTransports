@@ -123,6 +123,29 @@ void main() {
     expect(name, '上午繁忙時間服務, 上課日服務 · 循環線');
   });
 
+  test('strips special departure from NLB route info', () {
+    final NlbRouteInfo? info = parseNlbRouteInfo('''
+      <div class="mt-3">
+        <span>特別班次</span>
+        <span>循環線</span>
+      </div>
+    ''');
+
+    expect(info?.special, isTrue);
+    expect(info?.name, '循環線');
+  });
+
+  test('recognizes English special departures', () {
+    final NlbRouteInfo? info = parseNlbRouteInfo('''
+      <div class="mt-3">
+        <span>Special departures</span>
+      </div>
+    ''');
+
+    expect(info?.special, isTrue);
+    expect(info?.name, isNull);
+  });
+
   test('returns no NLB route name without name spans', () {
     expect(
       parseNlbRouteName('<div class="mt-3"><p>Journey time</p></div>'),
