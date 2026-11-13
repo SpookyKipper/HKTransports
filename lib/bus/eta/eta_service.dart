@@ -13,9 +13,7 @@ import 'package:hktransports/bus/eta/clients/lightrail_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/lrtfeeder_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/mtr_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/nlb_eta_client.dart';
-import 'package:hktransports/bus/eta/clients/nlb_eta_data_client.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
-import 'package:hktransports/bus/eta/nlb_eta_match.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 
@@ -35,7 +33,6 @@ class EtaService {
   final KmbEtaClient _kmb = KmbEtaClient();
   final CtbEtaClient _ctb = CtbEtaClient();
   final NlbEtaClient _nlb = NlbEtaClient();
-  final NlbEtaDataClient _nlbData = NlbEtaDataClient();
   final GmbEtaClient _gmb = GmbEtaClient();
   final LrtFeederEtaClient _lrtFeeder = LrtFeederEtaClient();
   final MtrEtaClient _mtr = MtrEtaClient();
@@ -49,9 +46,6 @@ class EtaService {
   final Map<String, _CachedCitybusStatus> _statusCache =
       <String, _CachedCitybusStatus>{};
   final Set<String> _statusLoading = <String>{};
-  final Map<String, _CachedNlbArrivals> _nlbCache =
-      <String, _CachedNlbArrivals>{};
-  final Set<String> _nlbLoading = <String>{};
 
   String get language => _language;
 
@@ -191,71 +185,20 @@ class EtaService {
     List<BusEta> etas,
   ) {
     final String key = _statusKey(route, seq);
-    List<BusEta> result = applyCitybusStatusesByTime(
-      etas,
-      _cachedStatuses(key),
-    );
-    if (_settings?.isProprietaryEnabled(ProprietaryEndpoint.nlbEtaData) ==
-        true) {
-      result = applyNlbWheelchairData(result, _cachedNlb(key));
-    }
-    return result;
+    return applyCitybusStatusesByTime(etas, _cachedStatuses(key));
   }
 
   Future<List<BusEta>> _fetchNlb(
     RouteEntry route,
     BusCompany company,
     int seq,
-  ) async {
-    final bool enabled =
-        _settings?.isProprietaryEnabled(ProprietaryEndpoint.nlbEtaData) ??
-        false;
-    final List<BusEta> base = await _nlb.fetch(
+  ) {
+    return _nlb.fetch(
       route: route,
       company: company,
       seq: seq,
       language: _language,
-      includeWheelchair: enabled,
     );
-    if (!enabled || base.isEmpty) return base;
-    final String key = _statusKey(route, seq);
-    final List<BusEta> result = applyNlbWheelchairData(base, _cachedNlb(key));
-    unawaited(_refreshNlbData(route, seq, key));
-    return result;
-  }
-
-  List<NlbEtaArrival>? _cachedNlb(String key) {
-    final _CachedNlbArrivals? cached = _nlbCache[key];
-    if (cached == null) return null;
-    if (DateTime.now().difference(cached.fetchedAt) > _statusCacheTtl) {
-      _nlbCache.remove(key);
-      return null;
-    }
-    return cached.arrivals;
-  }
-
-  Future<void> _refreshNlbData(RouteEntry route, int seq, String key) async {
-    if (_nlbLoading.contains(key) || _statusUpdates.isClosed) return;
-    _nlbLoading.add(key);
-    try {
-      final List<NlbEtaArrival> arrivals = await _nlbData.fetch(
-        route: route.nlbRouteId,
-        stationIndex: seq + 1,
-        language: _language,
-      );
-      if (arrivals.isEmpty) return;
-      _nlbCache[key] = _CachedNlbArrivals(
-        arrivals: arrivals,
-        fetchedAt: DateTime.now(),
-      );
-      if (!_statusUpdates.isClosed) {
-        _statusUpdates.add(EtaStatusUpdate(routeKey: route.key, seq: seq));
-      }
-    } catch (error) {
-      debugPrint('NLB ETA data failed: $error');
-    } finally {
-      _nlbLoading.remove(key);
-    }
   }
 
   List<CitybusEtaStatus>? _cachedStatuses(String key) {
@@ -345,12 +288,5 @@ class _CachedCitybusStatus {
   const _CachedCitybusStatus({required this.statuses, required this.fetchedAt});
 
   final List<CitybusEtaStatus> statuses;
-  final DateTime fetchedAt;
-}
-
-class _CachedNlbArrivals {
-  const _CachedNlbArrivals({required this.arrivals, required this.fetchedAt});
-
-  final List<NlbEtaArrival> arrivals;
   final DateTime fetchedAt;
 }

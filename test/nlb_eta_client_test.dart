@@ -71,31 +71,11 @@ void main() {
       company: BusCompany.nlb,
       seq: 0,
       language: 'zh',
-      includeWheelchair: true,
     );
 
     expect(etas, hasLength(3));
     expect(etas[0].wheelchair, isTrue);
-    expect(etas[0].wheelchairKnown, isTrue);
     expect(etas[1].wheelchair, isFalse);
-    expect(etas[1].wheelchairKnown, isTrue);
     expect(etas[2].wheelchair, isFalse);
-    expect(etas[2].wheelchairKnown, isFalse);
-  });
-
-  test('can suppress open-data NLB wheelchair flags', () async {
-    final List<BusEta> etas = await _client().fetch(
-      route: _route(),
-      company: BusCompany.nlb,
-      seq: 0,
-      language: 'zh',
-      includeWheelchair: false,
-    );
-
-    expect(etas, hasLength(3));
-    for (final BusEta eta in etas) {
-      expect(eta.wheelchair, isFalse);
-      expect(eta.wheelchairKnown, isFalse);
-    }
   });
 }

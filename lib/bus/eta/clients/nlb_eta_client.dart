@@ -16,7 +16,6 @@ class NlbEtaClient implements EtaClient {
     required BusCompany company,
     required int seq,
     required String language,
-    bool includeWheelchair = true,
   }) async {
     final String? stopId = route.stopIdAt(company, seq);
     final String? routeId = route.nlbId;
@@ -72,11 +71,7 @@ class NlbEtaClient implements EtaClient {
           destEn: language == 'en' ? variant : '',
           etaSeq: result.length + 1,
           scheduled: scheduled,
-          wheelchair: includeWheelchair && _isWheelchair(wheelchairValue),
-          wheelchairKnown:
-              includeWheelchair &&
-              (value.containsKey('wheelChair') ||
-                  value.containsKey('wheelchair')),
+          wheelchair: _isWheelchair(wheelchairValue),
         ),
       );
     }
