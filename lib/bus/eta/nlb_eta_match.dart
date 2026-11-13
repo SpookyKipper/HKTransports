@@ -14,7 +14,9 @@ List<BusEta> applyNlbWheelchairData(
   for (int index = 0; index < etas.length; index++) {
     final BusEta eta = etas[index];
     final DateTime? time = eta.eta;
-    if (eta.company != BusCompany.nlb || time == null) continue;
+    if (eta.company != BusCompany.nlb || time == null || eta.wheelchairKnown) {
+      continue;
+    }
     etaMinutes[index] = (time.toUtc().difference(reference).inSeconds / 60)
         .round();
   }

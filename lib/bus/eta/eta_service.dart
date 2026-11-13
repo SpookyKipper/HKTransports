@@ -195,7 +195,10 @@ class EtaService {
       etas,
       _cachedStatuses(key),
     );
-    result = applyNlbWheelchairData(result, _cachedNlb(key));
+    if (_settings?.isProprietaryEnabled(ProprietaryEndpoint.nlbEtaData) ==
+        true) {
+      result = applyNlbWheelchairData(result, _cachedNlb(key));
+    }
     return result;
   }
 
@@ -204,18 +207,17 @@ class EtaService {
     BusCompany company,
     int seq,
   ) async {
+    final bool enabled =
+        _settings?.isProprietaryEnabled(ProprietaryEndpoint.nlbEtaData) ??
+        false;
     final List<BusEta> base = await _nlb.fetch(
       route: route,
       company: company,
       seq: seq,
       language: _language,
+      includeWheelchair: enabled,
     );
-    final AppSettings? settings = _settings;
-    if (base.isEmpty ||
-        settings == null ||
-        !settings.isProprietaryEnabled(ProprietaryEndpoint.nlbEtaData)) {
-      return base;
-    }
+    if (!enabled || base.isEmpty) return base;
     final String key = _statusKey(route, seq);
     final List<BusEta> result = applyNlbWheelchairData(base, _cachedNlb(key));
     unawaited(_refreshNlbData(route, seq, key));

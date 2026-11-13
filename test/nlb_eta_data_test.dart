@@ -61,6 +61,29 @@ void main() {
     expect(result[1].wheelchair, isFalse);
   });
 
+  test('does not override a known open-data wheelchair status', () {
+    final DateTime now = DateTime.utc(2026, 11, 12, 8);
+    final BusEta eta = BusEta(
+      company: BusCompany.nlb,
+      eta: now.add(const Duration(minutes: 5)),
+      remarkZh: '',
+      remarkEn: '',
+      destZh: '',
+      destEn: '',
+      etaSeq: 1,
+      wheelchair: false,
+      wheelchairKnown: true,
+    );
+
+    final List<BusEta> result = applyNlbWheelchairData(
+      <BusEta>[eta],
+      <NlbEtaArrival>[const NlbEtaArrival(minutes: 5, wheelchair: true)],
+      now: now,
+    );
+
+    expect(result.single.wheelchair, isFalse);
+  });
+
   test('does not attach a clearly different arrival', () {
     final DateTime now = DateTime.utc(2026, 11, 12, 8);
     final List<BusEta> result = applyNlbWheelchairData(
