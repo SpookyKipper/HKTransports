@@ -133,9 +133,7 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 )
               : ListView.separated(
-                  padding: EdgeInsets.only(
-                    bottom: searchKeypadVisible.value ? 8 : 120,
-                  ),
+                  padding: const EdgeInsets.only(bottom: 120),
                   itemCount: results.length,
                   separatorBuilder: (context, index) =>
                       const Divider(height: 1),
@@ -282,21 +280,27 @@ class _SearchPageState extends State<SearchPage> {
                   },
                 ),
         ),
-        if (searchKeypadVisible.value)
-          Container(
-            width: double.infinity,
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
-            child: RouteNumberPad(
-              possibleChars: possibleChars,
-              hasQuery: _query.isNotEmpty,
-              onCharacter: _appendNumber,
-              onBackspace: _backspaceNumber,
-              onClear: _clearNumber,
-              clearTooltip: settings.text('清除', 'Clear'),
-              backspaceTooltip: settings.text('刪除', 'Backspace'),
-            ),
-          ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeInOutCubicEmphasized,
+          alignment: Alignment.bottomCenter,
+          child: searchKeypadVisible.value
+              ? Container(
+                  width: double.infinity,
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
+                  child: RouteNumberPad(
+                    possibleChars: possibleChars,
+                    hasQuery: _query.isNotEmpty,
+                    onCharacter: _appendNumber,
+                    onBackspace: _backspaceNumber,
+                    onClear: _clearNumber,
+                    clearTooltip: settings.text('清除', 'Clear'),
+                    backspaceTooltip: settings.text('刪除', 'Backspace'),
+                  ),
+                )
+              : const SizedBox(width: double.infinity, height: 0),
+        ),
       ],
     );
   }
