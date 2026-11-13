@@ -83,7 +83,8 @@ void main() {
 
       expect(etas, hasLength(1));
       expect(etas.single.platform, '1');
-      expect(etas.single.remarkZh, '▭▭');
+      expect(etas.single.remarkZh, '2卡');
+      expect(etas.single.remarkEn, '2 cars');
       expect(etas.single.eta, isNotNull);
     },
   );

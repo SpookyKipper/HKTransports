@@ -84,19 +84,22 @@ class LightRailEtaClient implements EtaClient {
         final int waitMinutes = _waitMinutes(value['time_en']?.toString());
         final int trainLength =
             int.tryParse((value['train_length'] ?? '').toString()) ?? 0;
-        final String cars = List<String>.filled(trainLength, '▭').join();
-        final String routeRemarkZh = (value['routeRemarkChi2'] ?? '')
-            .toString()
-            .trim();
-        final String routeRemarkEn = (value['routeRemarkEng2'] ?? '')
-            .toString()
-            .trim();
-        final String remarkZh = routeRemarkZh.isEmpty
-            ? cars
-            : '$cars - $routeRemarkZh';
-        final String remarkEn = routeRemarkEn.isEmpty
-            ? cars
-            : '$cars - $routeRemarkEn';
+        final String routeRemarkZh = cleanLightRailRemark(
+          value['routeRemarkChi2']?.toString(),
+        );
+        final String routeRemarkEn = cleanLightRailRemark(
+          value['routeRemarkEng2']?.toString(),
+        );
+        final String remarkZh = formatLightRailRemark(
+          trainLength: trainLength,
+          routeRemark: routeRemarkZh,
+          english: false,
+        );
+        final String remarkEn = formatLightRailRemark(
+          trainLength: trainLength,
+          routeRemark: routeRemarkEn,
+          english: true,
+        );
         result.add(
           BusEta(
             company: BusCompany.lightRail,
@@ -128,4 +131,31 @@ class LightRailEtaClient implements EtaClient {
     final RegExpMatch? match = RegExp(r'\d+').firstMatch(value);
     return int.tryParse(match?.group(0) ?? '') ?? 0;
   }
+}
+
+String cleanLightRailRemark(String? value) {
+  if (value == null || value.isEmpty) return '';
+  return value
+      .replaceAll('\uFFFD', '')
+      .replaceAll(RegExp(r'[\u0000-\u001F\u007F]'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+}
+
+String formatLightRailRemark({
+  required int trainLength,
+  required String routeRemark,
+  required bool english,
+}) {
+  final String cars = trainLength <= 0
+      ? ''
+      : english
+      ? (trainLength == 1 ? '1 car' : '$trainLength cars')
+      : '$trainLength卡';
+  final String remark = cleanLightRailRemark(routeRemark);
+  final List<String> parts = <String>[
+    if (cars.isNotEmpty) cars,
+    if (remark.isNotEmpty) remark,
+  ];
+  return parts.join(' · ');
 }
