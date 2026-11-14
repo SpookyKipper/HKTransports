@@ -14,6 +14,8 @@ class CitybusEtaStatus {
     this.statusEn,
     this.distanceKm,
     this.timeMinutes,
+    this.timeText,
+    this.minutesText,
   });
 
   final String? statusZh;
@@ -22,6 +24,10 @@ class CitybusEtaStatus {
 
   /// Minutes after midnight reported by nwp3, for matching open-data ETAs.
   final int? timeMinutes;
+
+  /// Literal clock and minutes text from nwp3, for display.
+  final String? timeText;
+  final String? minutesText;
 }
 
 /// Reads Citybus' proprietary nwp3 ETA popup.
@@ -398,6 +404,8 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
         .toList(growable: false);
     String? destination;
     String? statusText;
+    String? minutesText;
+    String? timeText;
     int? timeMinutes;
     for (final Element cell in cells) {
       final String text = _cleanText(cell.text);
@@ -406,6 +414,7 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
         final int? parsedTime = _parseTimeMinutes(text);
         if (parsedTime != null) {
           timeMinutes = parsedTime;
+          timeText = text;
           continue;
         }
       }
@@ -416,10 +425,22 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
         destination = text;
         continue;
       }
-      if (destination != null) {
-        statusText = text;
-        break;
+      if (minutesText == null) {
+        final RegExpMatch? minutes = _minutesPattern.firstMatch(text);
+        if (minutes != null) {
+          minutesText = minutes.group(0);
+          final String remainder = text
+              .replaceRange(minutes.start, minutes.end, '')
+              .trim();
+          if (remainder.isNotEmpty) statusText ??= remainder;
+          continue;
+        }
+        if (RegExp(r'^\d+$').hasMatch(text)) {
+          minutesText = text;
+          continue;
+        }
       }
+      statusText ??= text;
     }
     if (statusText == null || statusText.isEmpty) continue;
     statusText = _stripOperatorPrefix(statusText);
@@ -446,6 +467,8 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
         statusEn: statusEn,
         distanceKm: distanceKm,
         timeMinutes: timeMinutes,
+        timeText: timeText,
+        minutesText: minutesText,
       ),
     );
     if (statuses.length >= 3) break;
@@ -456,6 +479,11 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
 String _cleanText(String value) {
   return value.replaceAll(RegExp(r'\s+'), ' ').trim();
 }
+
+final RegExp _minutesPattern = RegExp(
+  r'\d+\s*(?:分鐘|分|minutes|minute|mins|min)',
+  caseSensitive: false,
+);
 
 int? _parseTimeMinutes(String value) {
   final RegExpMatch? match = RegExp(

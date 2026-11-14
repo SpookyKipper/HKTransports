@@ -338,12 +338,15 @@ class _PinnedChip extends StatelessWidget {
       return remark.isEmpty ? '--' : remark;
     }
     final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
-    final String clock = DateFormat('HH:mm').format(hkTime);
+    final String clock =
+        proprietaryClockLabel(eta) ?? DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
     final String? departed = departedEtaLabel(eta, settings);
-    final String wait = minutes < 1
-        ? settings.text('即將到達', 'Arriving')
-        : '$minutes ${settings.text('分', 'min')}';
+    final String wait =
+        proprietaryMinutesLabel(eta, settings) ??
+        (minutes < 1
+            ? settings.text('即將到達', 'Arriving')
+            : '$minutes ${settings.text('分', 'min')}');
     return departed != null
         ? '$clock · $departed'
         : switch (settings.etaFormat) {

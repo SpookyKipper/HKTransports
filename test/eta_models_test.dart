@@ -87,6 +87,21 @@ void main() {
     );
   });
 
+  test(
+    'proprietary time and minutes are preserved and shown in the base key',
+    () {
+      final BusEta base = busEta(now);
+      final BusEta enriched = base.copyWith(
+        proprietaryTime: '22:10',
+        proprietaryMinutes: '3分鐘',
+      );
+
+      expect(enriched.proprietaryTime, '22:10');
+      expect(enriched.proprietaryMinutes, '3分鐘');
+      expect(etaDisplayKey(enriched), isNot(etaDisplayKey(base)));
+    },
+  );
+
   test('live status does not change the base ETA animation key', () {
     final BusEta base = busEta(now);
     final BusEta enriched = base.copyWith(

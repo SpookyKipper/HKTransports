@@ -14,6 +14,8 @@ class BusEta {
     this.statusZh,
     this.statusEn,
     this.distanceKm,
+    this.proprietaryTime,
+    this.proprietaryMinutes,
     this.wheelchair = false,
   });
 
@@ -33,6 +35,10 @@ class BusEta {
 
   /// Distance to the stop reported by a proprietary source.
   final double? distanceKm;
+
+  /// Literal time and minutes strings reported by a proprietary source.
+  final String? proprietaryTime;
+  final String? proprietaryMinutes;
 
   /// Whether the vehicle is wheelchair accessible.
   final bool wheelchair;
@@ -59,6 +65,8 @@ class BusEta {
     String? statusZh,
     String? statusEn,
     double? distanceKm,
+    String? proprietaryTime,
+    String? proprietaryMinutes,
     int? etaSeq,
     bool? wheelchair,
   }) {
@@ -75,6 +83,8 @@ class BusEta {
       statusZh: statusZh ?? this.statusZh,
       statusEn: statusEn ?? this.statusEn,
       distanceKm: distanceKm ?? this.distanceKm,
+      proprietaryTime: proprietaryTime ?? this.proprietaryTime,
+      proprietaryMinutes: proprietaryMinutes ?? this.proprietaryMinutes,
       wheelchair: wheelchair ?? this.wheelchair,
     );
   }
