@@ -86,6 +86,8 @@ class _RoutePageState extends State<_RoutePage> {
   final Map<int, GlobalKey> _stationKeys = {};
   Timer? _timer;
   int? _expandedIndex;
+  final ValueNotifier<int> _refreshCountdown = ValueNotifier<int>(0);
+  DateTime? _nextRefreshAt;
   UpstreamEtaNotice? _upstreamEtaNotice;
   int _upstreamEtaRequestId = 0;
   bool _upstreamEtaEnabled = false;
@@ -206,6 +208,7 @@ class _RoutePageState extends State<_RoutePage> {
   void dispose() {
     _settings.removeListener(_onSettingsChanged);
     _timer?.cancel();
+    _refreshCountdown.dispose();
     _statusSubscription?.cancel();
     _etaService.dispose();
     super.dispose();
@@ -245,10 +248,61 @@ class _RoutePageState extends State<_RoutePage> {
   void _startRefresh(int index) {
     _timer?.cancel();
     _fetch(index, scanUpstream: true);
-    final AppSettings settings = context.read<AppSettings>();
-    _timer = Timer.periodic(
-      Duration(seconds: settings.refreshSeconds),
-      (_) => _fetch(index, scanUpstream: true),
+    _nextRefreshAt = DateTime.now().add(
+      Duration(seconds: _settings.refreshSeconds),
+    );
+    _updateRefreshCountdown();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      final DateTime now = DateTime.now();
+      final DateTime? next = _nextRefreshAt;
+      if (next == null) return;
+      if (!next.isAfter(now)) {
+        _nextRefreshAt = now.add(Duration(seconds: _settings.refreshSeconds));
+        _fetch(index, scanUpstream: true);
+      }
+      _updateRefreshCountdown();
+    });
+  }
+
+  void _updateRefreshCountdown() {
+    if (!mounted) return;
+    final DateTime? next = _nextRefreshAt;
+    final int seconds = next == null
+        ? 0
+        : (next.difference(DateTime.now()).inMilliseconds / 1000).ceil().clamp(
+            0,
+            999,
+          );
+    if (_refreshCountdown.value != seconds) {
+      _refreshCountdown.value = seconds;
+    }
+  }
+
+  Widget _buildReloadButton(
+    BuildContext context,
+    AppSettings settings,
+    int index,
+  ) {
+    return ValueListenableBuilder<int>(
+      valueListenable: _refreshCountdown,
+      builder: (BuildContext context, int seconds, Widget? child) {
+        final bool loading = _loading.contains(index);
+        return M3EButton.icon(
+          onPressed: loading ? null : () => _startRefresh(index),
+          icon: loading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.refresh, size: 18),
+          label: Text(settings.text('$seconds 秒', '${seconds}s')),
+          style: M3EButtonStyle.text,
+          size: M3EButtonSize.xs,
+          tooltip: settings.text('立即重新整理', 'Reload now'),
+        );
+      },
     );
   }
 
@@ -374,6 +428,8 @@ class _RoutePageState extends State<_RoutePage> {
         _loading.remove(index);
       });
       _timer?.cancel();
+      _nextRefreshAt = null;
+      _refreshCountdown.value = 0;
     }
   }
 
@@ -615,56 +671,47 @@ class _RoutePageState extends State<_RoutePage> {
           ),
           _RouteUpdateNotice(route: route),
           Expanded(
-            child: M3ERefreshIndicator.contained(
-              onRefresh: () async {
-                final int? index = _expandedIndex;
-                if (index != null) {
-                  await _fetch(index, scanUpstream: true);
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(_stationInnerRadius),
-                  ),
-                  child: ListView.builder(
-                    scrollCacheExtent: ScrollCacheExtent.pixels(12000),
-                    padding: const EdgeInsets.only(bottom: 24),
-                    itemCount: stopIds.length,
-                    itemBuilder: (context, index) {
-                      final bool isExpanded = _expandedIndex == index;
-                      return KeyedSubtree(
-                        key: _stationKeys.putIfAbsent(index, () => GlobalKey()),
-                        child: _StationExpandable(
-                          isExpanded: isExpanded,
-                          isFirst: index == 0,
-                          isLast: index == stopIds.length - 1,
-                          gap: _stationGap,
-                          innerRadius: _stationInnerRadius,
-                          header: _buildStopHeader(
-                            context,
-                            repository,
-                            route,
-                            stopIds,
-                            index,
-                            holiday,
-                            isExpanded,
-                            () => _onExpansionChanged(index, !isExpanded),
-                          ),
-                          body: _buildStopBody(
-                            context,
-                            route,
-                            stopIds,
-                            index,
-                            pinned,
-                          ),
-                          onToggle: () =>
-                              _onExpansionChanged(index, !isExpanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(_stationInnerRadius),
+                ),
+                child: ListView.builder(
+                  scrollCacheExtent: ScrollCacheExtent.pixels(12000),
+                  padding: const EdgeInsets.only(bottom: 24),
+                  itemCount: stopIds.length,
+                  itemBuilder: (context, index) {
+                    final bool isExpanded = _expandedIndex == index;
+                    return KeyedSubtree(
+                      key: _stationKeys.putIfAbsent(index, () => GlobalKey()),
+                      child: _StationExpandable(
+                        isExpanded: isExpanded,
+                        isFirst: index == 0,
+                        isLast: index == stopIds.length - 1,
+                        gap: _stationGap,
+                        innerRadius: _stationInnerRadius,
+                        header: _buildStopHeader(
+                          context,
+                          repository,
+                          route,
+                          stopIds,
+                          index,
+                          holiday,
+                          isExpanded,
+                          () => _onExpansionChanged(index, !isExpanded),
                         ),
-                      );
-                    },
-                  ),
+                        body: _buildStopBody(
+                          context,
+                          route,
+                          stopIds,
+                          index,
+                          pinned,
+                        ),
+                        onToggle: () => _onExpansionChanged(index, !isExpanded),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -843,6 +890,11 @@ class _RoutePageState extends State<_RoutePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: _buildReloadButton(context, settings, index),
+        ),
+        const SizedBox(height: 4),
         if (showNotice) ...[
           _UpstreamEtaBanner(notice: notice, stopName: noticeStopName),
           const SizedBox(height: 8),
