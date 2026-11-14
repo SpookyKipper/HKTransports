@@ -315,7 +315,9 @@ class _RoutePageState extends State<_RoutePage> {
         scheduled: currentScheduled,
       );
       if (notice != null) {
-        setState(() => _upstreamEtaNotice = notice);
+        setState(
+          () => _upstreamEtaNotice = notice.stopIndex == index ? null : notice,
+        );
         return;
       }
     }
@@ -343,7 +345,9 @@ class _RoutePageState extends State<_RoutePage> {
           remainingStops: index + 1,
           scheduled: currentScheduled,
         );
-        setState(() => _upstreamEtaNotice = notice);
+        setState(
+          () => _upstreamEtaNotice = notice.stopIndex == index ? null : notice,
+        );
         return;
       }
     }
@@ -827,7 +831,8 @@ class _RoutePageState extends State<_RoutePage> {
     final bool showNotice =
         settings.upstreamEtaScan &&
         notice != null &&
-        notice.currentIndex == index;
+        notice.currentIndex == index &&
+        notice.stopIndex != index;
     final String noticeStopName = showNotice
         ? repository
                   .stopById(stopIds[notice.stopIndex])
@@ -1032,19 +1037,8 @@ class _UpstreamEtaBanner extends StatelessWidget {
     final DateTime hkTime = eta.toUtc().add(const Duration(hours: 8));
     final String clock = DateFormat('HH:mm').format(hkTime);
     final int minutes = eta.difference(DateTime.now().toUtc()).inMinutes;
-    final bool nextStopIsCurrent = notice.stopIndex == notice.currentIndex;
     final bool departure = notice.stopIndex == 0;
-    final String text = nextStopIsCurrent
-        ? minutes <= 0
-              ? settings.text(
-                  '下班車已到達本站',
-                  'The next bus has arrived at this stop',
-                )
-              : settings.text(
-                  '下班車的下一站就是本站（預計 $clock 到達）',
-                  "The next bus's next stop is this stop (arriving at $clock)",
-                )
-        : departure
+    final String text = departure
         ? notice.scheduled
               ? settings.text(
                   '下班車即將在 $clock 於 $stopName 開出（剩餘 ${notice.remainingStops} 個站）',
