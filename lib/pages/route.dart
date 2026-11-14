@@ -330,15 +330,14 @@ class _RoutePageState extends State<_RoutePage> {
         originEta = _firstEta(originEtas)?.eta;
       }
       if (originEta != null) {
-        setState(
-          () => _upstreamEtaNotice = UpstreamEtaNotice(
-            currentIndex: index,
-            stopIndex: 0,
-            eta: originEta!,
-            remainingStops: index + 1,
-            scheduled: currentScheduled,
-          ),
+        final UpstreamEtaNotice notice = UpstreamEtaNotice(
+          currentIndex: index,
+          stopIndex: 0,
+          eta: originEta,
+          remainingStops: index + 1,
+          scheduled: currentScheduled,
         );
+        setState(() => _upstreamEtaNotice = notice);
         return;
       }
     }
@@ -1027,8 +1026,19 @@ class _UpstreamEtaBanner extends StatelessWidget {
     final DateTime hkTime = eta.toUtc().add(const Duration(hours: 8));
     final String clock = DateFormat('HH:mm').format(hkTime);
     final int minutes = eta.difference(DateTime.now().toUtc()).inMinutes;
+    final bool nextStopIsCurrent = notice.stopIndex == notice.currentIndex;
     final bool departure = notice.stopIndex == 0;
-    final String text = departure
+    final String text = nextStopIsCurrent
+        ? minutes <= 0
+              ? settings.text(
+                  '下班車已到達本站',
+                  'The next bus has arrived at this stop',
+                )
+              : settings.text(
+                  '下班車的下一站就是本站（預計 $clock 到達）',
+                  "The next bus's next stop is this stop (arriving at $clock)",
+                )
+        : departure
         ? notice.scheduled
               ? settings.text(
                   '下班車即將在 $clock 於 $stopName 開出（剩餘 ${notice.remainingStops} 個站）',
