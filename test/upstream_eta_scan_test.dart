@@ -143,6 +143,19 @@ void main() {
     expect(notice, isNull);
   });
 
+  test('returns null when the current ETA has already passed', () {
+    final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+      currentIndex: 8,
+      currentArrived: true,
+      currentEta: now.subtract(const Duration(seconds: 1)),
+      upstream: <UpstreamEtaSample>[sample(7, 20)],
+      now: now,
+      scheduled: false,
+    );
+
+    expect(notice, isNull);
+  });
+
   test('detects a one-minute increase from N-1 to N', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
