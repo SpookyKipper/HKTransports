@@ -95,6 +95,24 @@ void main() {
     expect(statuses.single.statusZh, '未開出');
   });
 
+  test('parses distance with a colon', () {
+    final List<CitybusEtaStatus> statuses = parseCitybusEtaStatuses('''
+      <div id="nextbus_listitem">
+        <table><tr>
+          <td><table><tr><td>20:36</td></tr></table></td>
+          <td><table>
+            <tr><td>往: 機場</td></tr>
+            <tr><td>距離: 1.3公里</td></tr>
+          </table></td>
+        </tr></table>
+      </div>
+    ''');
+
+    expect(statuses, hasLength(1));
+    expect(statuses.single.distanceKm, 1.3);
+    expect(statuses.single.statusZh, isNull);
+  });
+
   test('keeps literal less-than-one-minute text', () {
     final List<CitybusEtaStatus> statuses = parseCitybusEtaStatuses('''
       <div id="nextbus_listitem">

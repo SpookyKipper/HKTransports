@@ -456,7 +456,7 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
     double? distanceKm;
     final String statusForDistance = normalizedStatus ?? '';
     final RegExpMatch? distance = RegExp(
-      r'距離\s*([0-9]+(?:\.[0-9]+)?)\s*公里',
+      r'距離\s*[:：]?\s*([0-9]+(?:\.[0-9]+)?)\s*公里',
     ).firstMatch(statusForDistance);
     if (distance != null) {
       distanceKm = double.tryParse(distance.group(1) ?? '');
