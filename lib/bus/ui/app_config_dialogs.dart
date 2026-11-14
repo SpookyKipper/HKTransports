@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hktransports/app/app_config.dart';
 import 'package:hktransports/app/app_update.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 Future<void> showDisabledProprietaryApisDialog(
@@ -125,38 +126,31 @@ Future<void> _showPrimaryDialog(
   bool showUpdateAction = false,
 }) async {
   final AppSettings settings = context.read<AppSettings>();
-  final ColorScheme colors = Theme.of(context).colorScheme;
-  await showDialog<void>(
-    context: context,
+  await M3EDialog.show<void>(
+    context,
     barrierDismissible: barrierDismissible,
-    builder: (BuildContext dialogContext) {
-      return AlertDialog(
-        backgroundColor: colors.primaryContainer,
-        icon: Icon(Icons.info_outline, color: colors.onPrimaryContainer),
-        title: Text(title, style: TextStyle(color: colors.onPrimaryContainer)),
-        content: DefaultTextStyle.merge(
-          style: TextStyle(color: colors.onPrimaryContainer),
-          child: content,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: colors.onPrimaryContainer,
+    dialog: Builder(
+      builder: (BuildContext dialogContext) {
+        return M3EDialog(
+          title: title,
+          icon: const Icon(Icons.info_outline),
+          content: content,
+          actions: <Widget>[
+            M3EButton.text(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(settings.text('確定', 'OK')),
             ),
-            child: Text(settings.text('確定', 'OK')),
-          ),
-          if (showUpdateAction)
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                startAppUpdate(context, context.read<AppConfigController>());
-              },
-              icon: const Icon(Icons.system_update_alt_rounded),
-              label: Text(settings.text('更新', 'Update')),
-            ),
-        ],
-      );
-    },
+            if (showUpdateAction)
+              M3EButton.filled(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  startAppUpdate(context, context.read<AppConfigController>());
+                },
+                child: Text(settings.text('更新', 'Update')),
+              ),
+          ],
+        );
+      },
+    ),
   );
 }
