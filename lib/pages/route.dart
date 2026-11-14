@@ -289,17 +289,26 @@ class _RoutePageState extends State<_RoutePage> {
     String? tooltip,
   }) {
     final Color color = Theme.of(context).colorScheme.onSurfaceVariant;
-    return M3EButton.text(
-      onPressed: onPressed,
-      tooltip: tooltip,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(width: 24, height: 24, child: Center(child: icon)),
-          const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: color)),
-        ],
+    return SizedBox(
+      height: 40,
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor: color,
+          disabledForegroundColor: color,
+          minimumSize: const Size(0, 40),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(width: 24, height: 24, child: Center(child: icon)),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(color: color)),
+          ],
+        ),
       ),
     );
   }
