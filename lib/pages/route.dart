@@ -342,7 +342,7 @@ class _RoutePageState extends State<_RoutePage> {
           currentIndex: index,
           stopIndex: 0,
           eta: originEta,
-          remainingStops: index + 1,
+          remainingStops: index,
           scheduled: currentScheduled,
         );
         setState(

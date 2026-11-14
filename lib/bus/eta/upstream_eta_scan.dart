@@ -49,7 +49,7 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
           currentIndex: currentIndex,
           stopIndex: downstreamIndex,
           eta: downstreamEta,
-          remainingStops: currentIndex - downstreamIndex + 1,
+          remainingStops: currentIndex - downstreamIndex,
           scheduled: scheduled,
         );
       }
