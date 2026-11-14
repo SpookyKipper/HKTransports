@@ -1152,8 +1152,10 @@ class _UpstreamEtaBanner extends StatelessWidget {
     final String clock = DateFormat('HH:mm').format(hkTime);
     final int minutes = eta.difference(DateTime.now().toUtc()).inMinutes;
     final bool departure = notice.stopIndex == 0;
+    final bool willDepart =
+        notice.scheduled || eta.isAfter(DateTime.now().toUtc());
     final String text = departure
-        ? notice.scheduled
+        ? willDepart
               ? _scheduledDepartureText(settings, clock, minutes)
               : settings.text(
                   '下班車已在 $stopName 開出（剩餘 ${notice.remainingStops} 個站）',
