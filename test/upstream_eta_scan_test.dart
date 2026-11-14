@@ -21,7 +21,6 @@ void main() {
         sample(5, 1),
         sample(4, 20),
       ],
-      now: now,
       scheduled: true,
     );
 
@@ -42,7 +41,6 @@ void main() {
         sample(5, 8),
         sample(4, 3),
       ],
-      now: now,
       scheduled: false,
     );
 
@@ -59,7 +57,6 @@ void main() {
         sample(5, 1),
         sample(4, 20),
       ],
-      now: now,
       scheduled: false,
     );
 
@@ -76,7 +73,6 @@ void main() {
         sample(5, 1),
         sample(4, 20),
       ],
-      now: now,
       scheduled: false,
     );
 
@@ -85,12 +81,23 @@ void main() {
     expect(notice.remainingStops, 3);
   });
 
+  test('detects even a one-minute increase between adjacent stops', () {
+    final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+      currentIndex: 8,
+      currentEta: now.add(const Duration(minutes: 5)),
+      upstream: <UpstreamEtaSample>[sample(7, 6)],
+      scheduled: false,
+    );
+
+    expect(notice, isNotNull);
+    expect(notice!.stopIndex, 8);
+  });
+
   test('detects a jump immediately before the current stop', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
       currentEta: now.add(const Duration(minutes: 5)),
       upstream: <UpstreamEtaSample>[sample(7, 20)],
-      now: now,
       scheduled: false,
     );
 

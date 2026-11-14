@@ -22,7 +22,7 @@ class UpstreamEtaNotice {
 }
 
 /// Walks from the currently viewed stop towards the origin and finds the first
-/// place where the upstream ETA jumps sharply later than the downstream ETA.
+/// place where an upstream arrival time is later than the downstream one.
 ///
 /// [upstream] must be ordered from the stop immediately before the current one
 /// towards the origin. Each item should contain the first ETA for that stop.
@@ -31,9 +31,7 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
   required int currentIndex,
   required DateTime? currentEta,
   required Iterable<UpstreamEtaSample> upstream,
-  required DateTime now,
   required bool scheduled,
-  int jumpMinutes = 5,
 }) {
   DateTime? downstreamEta = currentEta;
   int downstreamIndex = currentIndex;
@@ -41,18 +39,14 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
   for (final UpstreamEtaSample sample in upstream) {
     final DateTime? eta = sample.eta;
     if (eta == null) return null;
-    if (downstreamEta != null) {
-      final int upstreamMinutes = eta.difference(now).inMinutes;
-      final int downstreamMinutes = downstreamEta.difference(now).inMinutes;
-      if (upstreamMinutes > downstreamMinutes + jumpMinutes) {
-        return UpstreamEtaNotice(
-          currentIndex: currentIndex,
-          stopIndex: downstreamIndex,
-          eta: downstreamEta,
-          remainingStops: currentIndex - downstreamIndex,
-          scheduled: scheduled,
-        );
-      }
+    if (downstreamEta != null && eta.isAfter(downstreamEta)) {
+      return UpstreamEtaNotice(
+        currentIndex: currentIndex,
+        stopIndex: downstreamIndex,
+        eta: downstreamEta,
+        remainingStops: currentIndex - downstreamIndex,
+        scheduled: scheduled,
+      );
     }
     downstreamEta = eta;
     downstreamIndex = sample.stopIndex;
