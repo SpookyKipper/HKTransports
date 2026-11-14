@@ -39,11 +39,20 @@ bool _literalUnderOneMinute(String literal) {
       text.contains('leaving');
 }
 
+bool _isCitybusProprietary(BusEta eta) {
+  if (eta.company != BusCompany.ctb) return false;
+  return proprietaryClockLabel(eta) != null ||
+      proprietaryMinutesLabel(eta) != null ||
+      eta.distanceKm != null ||
+      (eta.statusZh?.trim().isNotEmpty ?? false) ||
+      (eta.statusEn?.trim().isNotEmpty ?? false);
+}
+
 /// The minute portion of an ETA row.
 ///
-/// Citybus rows with a live distance keep the literal "<1 分鐘" indication.
-/// Once Citybus reports that the bus has arrived, the minute portion is hidden.
-/// Other operators use a dash for under-one-minute and departed states.
+/// Citybus proprietary rows keep their literal minute text and special states.
+/// Other rows show a dash once the ETA is at or before now, and "<1" for a
+/// future arrival less than a minute away.
 String? etaWaitLabel(
   BusEta eta,
   AppSettings settings,
@@ -52,20 +61,27 @@ String? etaWaitLabel(
   bool shortMinuteUnit = false,
 }) {
   final String minuteUnit = settings.text(shortMinuteUnit ? '分' : '分鐘', 'min');
-  final bool citybus = eta.company == BusCompany.ctb;
-  if (citybus && _statusArrived(eta)) return null;
+  final bool citybusProprietary = _isCitybusProprietary(eta);
+  if (!citybusProprietary) {
+    if (atOrigin &&
+        minutes != null &&
+        minutes < 1 &&
+        eta.company != BusCompany.ctb) {
+      return settings.text('即場開出', 'Departing now');
+    }
+    return etaMinuteWaitLabel(eta.eta, minuteUnit);
+  }
+
+  if (_statusArrived(eta)) return null;
   final String? literal = proprietaryMinutesLabel(eta);
   final bool underOne =
       (minutes != null && minutes < 1) ||
       (literal != null && _literalUnderOneMinute(literal));
-  if (atOrigin && minutes != null && minutes < 1 && !citybus) {
-    return settings.text('即場開出', 'Departing now');
-  }
-  if (citybus && _statusLeaving(eta)) {
+  if (_statusLeaving(eta)) {
     return '- $minuteUnit';
   }
   if (underOne) {
-    if (citybus && eta.distanceKm != null) {
+    if (eta.distanceKm != null) {
       return '<1 $minuteUnit';
     }
     return '- $minuteUnit';
@@ -75,6 +91,21 @@ String? etaWaitLabel(
   }
   if (minutes == null) return null;
   return '$minutes $minuteUnit';
+}
+
+String? etaMinuteWaitLabel(
+  DateTime? etaTime,
+  String minuteUnit, {
+  DateTime? now,
+}) {
+  if (etaTime == null) return null;
+  final DateTime reference = (now ?? DateTime.now()).toUtc();
+  final Duration difference = etaTime.toUtc().difference(reference);
+  if (difference.inMicroseconds <= 0) return '- $minuteUnit';
+  if (difference.compareTo(const Duration(minutes: 1)) < 0) {
+    return '<1 $minuteUnit';
+  }
+  return '${difference.inMinutes} $minuteUnit';
 }
 
 /// Changes whenever the base ETA content changes, excluding live status.
