@@ -298,7 +298,7 @@ class _RoutePageState extends State<_RoutePage> {
         children: [
           SizedBox(width: 24, height: 24, child: Center(child: icon)),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: color)),
+          Text(label, style: TextStyle(color: color, height: 1)),
         ],
       ),
     );
@@ -316,8 +316,14 @@ class _RoutePageState extends State<_RoutePage> {
         return _buildTextActionButton(
           context,
           icon: loading
-              ? const M3ELoadingIndicator(size: 24)
-              : const Icon(Icons.refresh),
+              ? M3ELoadingIndicator(
+                  size: 24,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                )
+              : Icon(
+                  Icons.refresh,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           label: settings.text('$seconds 秒', '${seconds}s'),
           onPressed: loading ? null : () => _startRefresh(index),
           tooltip: settings.text(
@@ -954,46 +960,39 @@ class _RoutePageState extends State<_RoutePage> {
           children: [
             if (_etas[index] != null)
               _buildReloadAction(context, settings, index),
-            Expanded(
-              child: Wrap(
-                alignment: WrapAlignment.end,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 4,
-                children: [
-                  M3EIconButton(
-                    tooltip: settings.text('收藏此站', 'Favourite this stop'),
-                    icon: const Icon(Icons.star_border),
-                    selectedIcon: const Icon(Icons.star),
-                    isSelected: repository.isEntryInAnyGroup(route.key, index),
-                    variant: M3EIconButtonVariant.standard,
-                    size: M3EIconButtonSize.xs,
-                    inflateHitTarget: false,
-                    onPressed: () =>
-                        showRouteGroupSheet(context, route, stopSeq: index),
-                  ),
-                  M3EIconButton(
-                    tooltip: isPinned
-                        ? settings.text('取消釘選', 'Unpin station')
-                        : settings.text('釘選', 'Pin station'),
-                    icon: const Icon(Icons.push_pin_outlined),
-                    selectedIcon: const Icon(Icons.push_pin),
-                    isSelected: isPinned,
-                    variant: M3EIconButtonVariant.standard,
-                    size: M3EIconButtonSize.xs,
-                    inflateHitTarget: false,
-                    onPressed: () => pinned.toggle(
-                      PinnedStation(routeKey: route.key, seq: index),
-                    ),
-                  ),
-                  _buildTextActionButton(
-                    context,
-                    icon: Icon(Icons.info_outline, color: secondaryColor),
-                    label: settings.text('車站資訊', 'Stop information'),
-                    onPressed: () =>
-                        _showStopInfo(context, route, stopIds[index], index),
-                  ),
-                ],
-              ),
+            const Spacer(),
+            M3EIconButton(
+              tooltip: settings.text('收藏此站', 'Favourite this stop'),
+              icon: const Icon(Icons.star_border),
+              selectedIcon: const Icon(Icons.star),
+              isSelected: repository.isEntryInAnyGroup(route.key, index),
+              variant: M3EIconButtonVariant.standard,
+              size: M3EIconButtonSize.xs,
+              inflateHitTarget: false,
+              onPressed: () =>
+                  showRouteGroupSheet(context, route, stopSeq: index),
+            ),
+            const SizedBox(width: 4),
+            M3EIconButton(
+              tooltip: isPinned
+                  ? settings.text('取消釘選', 'Unpin station')
+                  : settings.text('釘選', 'Pin station'),
+              icon: const Icon(Icons.push_pin_outlined),
+              selectedIcon: const Icon(Icons.push_pin),
+              isSelected: isPinned,
+              variant: M3EIconButtonVariant.standard,
+              size: M3EIconButtonSize.xs,
+              inflateHitTarget: false,
+              onPressed: () =>
+                  pinned.toggle(PinnedStation(routeKey: route.key, seq: index)),
+            ),
+            const SizedBox(width: 4),
+            _buildTextActionButton(
+              context,
+              icon: Icon(Icons.info_outline, color: secondaryColor),
+              label: settings.text('車站資訊', 'Stop information'),
+              onPressed: () =>
+                  _showStopInfo(context, route, stopIds[index], index),
             ),
           ],
         ),
