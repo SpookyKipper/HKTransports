@@ -407,7 +407,13 @@ class _RoutePageState extends State<_RoutePage> {
       return;
     }
     final BusEta? current = _firstEta(_etas[index]);
-    final bool currentScheduled = current == null || current.isScheduledLike;
+    if (current == null) {
+      if (_upstreamEtaNotice != null) {
+        setState(() => _upstreamEtaNotice = null);
+      }
+      return;
+    }
+    final bool currentScheduled = current.isScheduledLike;
     final DateTime now = DateTime.now().toUtc();
     final bool currentArrived = _isArrivedEta(current, now);
 
@@ -436,7 +442,7 @@ class _RoutePageState extends State<_RoutePage> {
       );
       final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
         currentIndex: index,
-        currentEta: current?.eta,
+        currentEta: current.eta,
         currentArrived: currentArrived,
         upstream: samples,
         now: now,
@@ -923,7 +929,8 @@ class _RoutePageState extends State<_RoutePage> {
         index > 0 &&
         settings.upstreamEtaScan &&
         notice != null &&
-        notice.currentIndex == index;
+        notice.currentIndex == index &&
+        _firstEta(_etas[index]) != null;
     final String noticeStopName = showNotice
         ? repository
                   .stopById(stopIds[notice.stopIndex])

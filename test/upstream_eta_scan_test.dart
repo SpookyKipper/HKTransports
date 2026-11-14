@@ -69,7 +69,7 @@ void main() {
     expect(notice, isNull);
   });
 
-  test('can find an edge when the current stop has no ETA', () {
+  test('returns null when the current stop has no ETA', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
       currentArrived: false,
@@ -84,9 +84,7 @@ void main() {
       scheduled: false,
     );
 
-    expect(notice, isNotNull);
-    expect(notice!.stopIndex, 5);
-    expect(notice.remainingStops, 3);
+    expect(notice, isNull);
   });
 
   test('detects a one-minute increase from N-1 to N', () {

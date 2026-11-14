@@ -31,7 +31,7 @@ class UpstreamEtaNotice {
 ///
 /// [upstream] must be ordered from the stop immediately before the current one
 /// towards the origin. Each item should contain the first ETA for that stop.
-/// A missing ETA stops the scan.
+/// A missing current ETA returns null; a missing upstream ETA stops the scan.
 UpstreamEtaNotice? findUpstreamEtaNotice({
   required int currentIndex,
   required DateTime? currentEta,
@@ -40,6 +40,7 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
   required DateTime now,
   required bool scheduled,
 }) {
+  if (currentEta == null) return null;
   final List<UpstreamEtaSample> samples = upstream.toList(growable: false);
   final Map<int, UpstreamEtaSample> byIndex = <int, UpstreamEtaSample>{
     for (final UpstreamEtaSample sample in samples) sample.stopIndex: sample,
