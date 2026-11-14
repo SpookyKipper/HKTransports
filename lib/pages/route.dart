@@ -1208,7 +1208,7 @@ class _UpstreamEtaBanner extends StatelessWidget {
         'Next bus will depart from $stopName in $shownMinutes min',
       ),
       EtaFormat.exact => settings.text(
-        '下班車將在 「$clock」 於 $stopName 開出',
+        '下班車將在「$clock」於「$stopName」開出',
         'Next bus will depart from $stopName at $clock',
       ),
       EtaFormat.mixed => settings.text(
@@ -1221,15 +1221,15 @@ class _UpstreamEtaBanner extends StatelessWidget {
   String _arrivalText(AppSettings settings, String clock, int minutes) {
     return switch (settings.etaFormat) {
       EtaFormat.diff => settings.text(
-        '下班車將於「$minutes 分鐘後」到達 $stopName（剩餘 ${notice.remainingStops} 個站）',
+        '下班車將於「$minutes 分鐘後」到達「$stopName」（剩餘 ${notice.remainingStops} 個站）',
         'Next bus will arrive at $stopName in $minutes min (${notice.remainingStops} stops remaining)',
       ),
       EtaFormat.exact => settings.text(
-        '下班車將於「$clock」到達 $stopName（剩餘 ${notice.remainingStops} 個站）',
+        '下班車將於「$clock」到達「$stopName」（剩餘 ${notice.remainingStops} 個站）',
         'Next bus will arrive at $stopName at $clock (${notice.remainingStops} stops remaining)',
       ),
       EtaFormat.mixed => settings.text(
-        '下班車將於「$clock - $minutes 分鐘後」到達 $stopName（剩餘 ${notice.remainingStops} 個站）',
+        '下班車將於「$clock - $minutes 分鐘後」到達「$stopName」（剩餘 ${notice.remainingStops} 個站）',
         'Next bus will arrive at $stopName at $clock (in $minutes min, ${notice.remainingStops} stops remaining)',
       ),
     };
