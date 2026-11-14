@@ -14,6 +14,7 @@ void main() {
   test('finds the stop before an upstream ETA jump', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
+      currentArrived: false,
       currentEta: now.add(const Duration(minutes: 20)),
       upstream: <UpstreamEtaSample>[
         sample(7, 18),
@@ -21,6 +22,7 @@ void main() {
         sample(5, 1),
         sample(4, 20),
       ],
+      now: now,
       scheduled: true,
     );
 
@@ -34,6 +36,7 @@ void main() {
   test('returns null when the upstream ETAs are monotonic', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
+      currentArrived: false,
       currentEta: now.add(const Duration(minutes: 20)),
       upstream: <UpstreamEtaSample>[
         sample(7, 16),
@@ -41,6 +44,7 @@ void main() {
         sample(5, 8),
         sample(4, 3),
       ],
+      now: now,
       scheduled: false,
     );
 
@@ -50,6 +54,7 @@ void main() {
   test('stops when an upstream stop has no live ETA', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
+      currentArrived: false,
       currentEta: now.add(const Duration(minutes: 20)),
       upstream: <UpstreamEtaSample>[
         sample(7, 15),
@@ -57,6 +62,7 @@ void main() {
         sample(5, 1),
         sample(4, 20),
       ],
+      now: now,
       scheduled: false,
     );
 
@@ -66,6 +72,7 @@ void main() {
   test('can find an edge when the current stop has no ETA', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
+      currentArrived: false,
       currentEta: null,
       upstream: <UpstreamEtaSample>[
         sample(7, 15),
@@ -73,6 +80,7 @@ void main() {
         sample(5, 1),
         sample(4, 20),
       ],
+      now: now,
       scheduled: false,
     );
 
@@ -84,25 +92,46 @@ void main() {
   test('detects even a one-minute increase between adjacent stops', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
+      currentArrived: false,
       currentEta: now.add(const Duration(minutes: 5)),
       upstream: <UpstreamEtaSample>[sample(7, 6)],
+      now: now,
       scheduled: false,
     );
 
-    expect(notice, isNotNull);
-    expect(notice!.stopIndex, 8);
+    expect(notice, isNull);
   });
 
-  test('detects a jump immediately before the current stop', () {
+  test('moves the notice to the next stop when the edge stop has arrived', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
-      currentIndex: 8,
-      currentEta: now.add(const Duration(minutes: 5)),
-      upstream: <UpstreamEtaSample>[sample(7, 20)],
+      currentIndex: 7,
+      currentEta: now.add(const Duration(minutes: 10)),
+      currentArrived: false,
+      upstream: <UpstreamEtaSample>[
+        sample(6, 4),
+        sample(5, 2),
+        sample(4, 0),
+        sample(3, 20),
+      ],
+      now: now,
       scheduled: false,
     );
 
     expect(notice, isNotNull);
-    expect(notice!.stopIndex, 8);
-    expect(notice.remainingStops, 0);
+    expect(notice!.stopIndex, 5);
+    expect(notice.remainingStops, 2);
+  });
+
+  test('hides an edge whose next stop is the current stop', () {
+    final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+      currentIndex: 8,
+      currentArrived: false,
+      currentEta: now.add(const Duration(minutes: 5)),
+      upstream: <UpstreamEtaSample>[sample(7, 20)],
+      now: now,
+      scheduled: false,
+    );
+
+    expect(notice, isNull);
   });
 }

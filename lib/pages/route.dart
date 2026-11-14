@@ -372,6 +372,19 @@ class _RoutePageState extends State<_RoutePage> {
     }
   }
 
+  bool _isArrivedEta(BusEta? eta, DateTime now) {
+    if (eta == null) return false;
+    final String status = '${eta.statusZh ?? ''} ${eta.statusEn ?? ''}'
+        .toLowerCase();
+    if (status.contains('已到達') ||
+        status.contains('已到站') ||
+        status.contains('arrived')) {
+      return true;
+    }
+    final DateTime? time = eta.eta;
+    return time != null && !time.isAfter(now);
+  }
+
   BusEta? _firstEta(List<BusEta>? etas) {
     for (final BusEta eta in etas ?? const <BusEta>[]) {
       if (eta.eta != null) return eta;
@@ -386,6 +399,8 @@ class _RoutePageState extends State<_RoutePage> {
     final int requestId = ++_upstreamEtaRequestId;
     final BusEta? current = _firstEta(_etas[index]);
     final bool currentScheduled = current == null || current.isScheduledLike;
+    final DateTime now = DateTime.now().toUtc();
+    final bool currentArrived = _isArrivedEta(current, now);
     final List<UpstreamEtaSample> samples = <UpstreamEtaSample>[];
     DateTime? originEta;
     for (int i = index - 1; i >= 0; i--) {
@@ -404,11 +419,19 @@ class _RoutePageState extends State<_RoutePage> {
       final BusEta? upstream = _firstEta(etas);
       if (upstream?.eta == null) break;
       if (i == 0) originEta = upstream!.eta;
-      samples.add(UpstreamEtaSample(stopIndex: i, eta: upstream!.eta));
+      samples.add(
+        UpstreamEtaSample(
+          stopIndex: i,
+          eta: upstream!.eta,
+          arrived: _isArrivedEta(upstream, now),
+        ),
+      );
       final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
         currentIndex: index,
         currentEta: current?.eta,
+        currentArrived: currentArrived,
         upstream: samples,
+        now: now,
         scheduled: currentScheduled,
       );
       if (notice != null) {
