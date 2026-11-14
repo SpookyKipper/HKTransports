@@ -53,19 +53,26 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
     if (downstreamEta != null && eta.isAfter(downstreamEta)) {
       int targetIndex = downstreamIndex;
       DateTime? targetEta = downstreamEta;
-      bool targetArrived = targetIndex == currentIndex
-          ? currentArrived
-          : (byIndex[targetIndex]?.arrived ?? false) || !targetEta.isAfter(now);
+      bool targetArrived = _effectivelyArrived(
+        targetEta,
+        targetIndex == currentIndex
+            ? currentArrived
+            : (byIndex[targetIndex]?.arrived ?? false),
+        now,
+      );
       while (targetIndex < currentIndex && targetArrived) {
         targetIndex++;
         targetEta = targetIndex == currentIndex
             ? currentEta
             : byIndex[targetIndex]?.eta;
         if (targetEta == null) return null;
-        targetArrived = targetIndex == currentIndex
-            ? currentArrived
-            : (byIndex[targetIndex]?.arrived ?? false) ||
-                  !targetEta.isAfter(now);
+        targetArrived = _effectivelyArrived(
+          targetEta,
+          targetIndex == currentIndex
+              ? currentArrived
+              : (byIndex[targetIndex]?.arrived ?? false),
+          now,
+        );
       }
       if (targetIndex > currentIndex || targetEta == null) return null;
       if (targetIndex == currentIndex &&
@@ -84,4 +91,11 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
     downstreamIndex = sample.stopIndex;
   }
   return null;
+}
+
+bool _effectivelyArrived(DateTime? eta, bool statusArrived, DateTime now) {
+  if (statusArrived) return true;
+  if (eta == null) return true;
+  if (!eta.isAfter(now)) return true;
+  return eta.difference(now) < const Duration(minutes: 1);
 }
