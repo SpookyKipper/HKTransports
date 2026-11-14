@@ -298,7 +298,7 @@ class _RoutePageState extends State<_RoutePage> {
         children: [
           SizedBox(width: 24, height: 24, child: Center(child: icon)),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: color, height: 1)),
+          Text(label, style: TextStyle(color: color)),
         ],
       ),
     );
