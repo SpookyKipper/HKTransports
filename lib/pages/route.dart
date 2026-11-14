@@ -1253,9 +1253,14 @@ class _EtaLine extends StatelessWidget {
     final String company = route.companyLabel(eta.company, settings.language);
 
     if (time == null) {
-      final String message = showCompany && eta.isDelayedJourney
-          ? '$company · $remark'
-          : remark;
+      final String message = <String>[
+        if (showCompany && eta.isDelayedJourney) company,
+        if (remark.isNotEmpty) remark,
+        if (eta.status(settings.language) != null)
+          eta.status(settings.language)!,
+        if (eta.distanceLabel(settings.language) != null)
+          eta.distanceLabel(settings.language)!,
+      ].join(' · ');
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Text(
@@ -1271,7 +1276,7 @@ class _EtaLine extends StatelessWidget {
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
     final String? departed = departedEtaLabel(eta, settings);
     final String wait =
-        proprietaryMinutesLabel(eta, settings) ??
+        proprietaryMinutesLabel(eta) ??
         (minutes < 1
             ? atOrigin
                   ? settings.text('即場開出', 'Departing now')

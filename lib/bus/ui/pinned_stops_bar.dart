@@ -334,8 +334,15 @@ class _PinnedChip extends StatelessWidget {
     if (eta == null) return '--';
     final DateTime? time = eta.eta;
     if (time == null) {
-      final String remark = eta.remark(settings.language);
-      return remark.isEmpty ? '--' : remark;
+      final String message = <String>[
+        if (eta.remark(settings.language).isNotEmpty)
+          eta.remark(settings.language),
+        if (eta.status(settings.language) != null)
+          eta.status(settings.language)!,
+        if (eta.distanceLabel(settings.language) != null)
+          eta.distanceLabel(settings.language)!,
+      ].join(' · ');
+      return message.isEmpty ? '--' : message;
     }
     final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
     final String clock =
@@ -343,16 +350,21 @@ class _PinnedChip extends StatelessWidget {
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
     final String? departed = departedEtaLabel(eta, settings);
     final String wait =
-        proprietaryMinutesLabel(eta, settings) ??
+        proprietaryMinutesLabel(eta) ??
         (minutes < 1
             ? settings.text('即將到達', 'Arriving')
             : '$minutes ${settings.text('分', 'min')}');
-    return departed != null
+    final String base = departed != null
         ? '$clock · $departed'
         : switch (settings.etaFormat) {
             EtaFormat.diff => wait,
             EtaFormat.exact => clock,
             EtaFormat.mixed => '$clock · $wait',
           };
+    final String liveStatus = <String?>[
+      eta.status(settings.language),
+      eta.distanceLabel(settings.language),
+    ].whereType<String>().where((String value) => value.isNotEmpty).join(' · ');
+    return liveStatus.isEmpty ? base : '$base · $liveStatus';
   }
 }

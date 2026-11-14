@@ -11,12 +11,10 @@ String? proprietaryClockLabel(BusEta eta) {
   return value == null || value.isEmpty ? null : value;
 }
 
-String? proprietaryMinutesLabel(BusEta eta, AppSettings settings) {
+String? proprietaryMinutesLabel(BusEta eta) {
   final String? value = eta.proprietaryMinutes?.trim();
   if (value == null || value.isEmpty) return null;
-  if (settings.isChinese) return value;
-  final String? digits = RegExp(r'\d+').firstMatch(value)?.group(0);
-  return digits == null ? value : '$digits min';
+  return value;
 }
 
 /// Changes whenever the base ETA content changes, excluding live status.

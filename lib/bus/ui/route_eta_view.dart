@@ -169,9 +169,16 @@ class _RouteEtaLine extends StatelessWidget {
     final DateTime? time = eta.eta;
     final String remark = eta.remark(settings.language);
     if (time == null) {
-      if (remark.isEmpty) return const SizedBox.shrink();
+      final String message = <String>[
+        if (remark.isNotEmpty) remark,
+        if (eta.status(settings.language) != null)
+          eta.status(settings.language)!,
+        if (eta.distanceLabel(settings.language) != null)
+          eta.distanceLabel(settings.language)!,
+      ].join(' · ');
+      if (message.isEmpty) return const SizedBox.shrink();
       return Text(
-        remark,
+        message,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.bodySmall,
@@ -182,9 +189,11 @@ class _RouteEtaLine extends StatelessWidget {
     final String clock =
         proprietaryClockLabel(eta) ?? DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
-    final String? departed = departedEtaLabel(eta, settings);
+    final String? departed = eta.proprietaryTime == null
+        ? departedEtaLabel(eta, settings)
+        : null;
     final String wait =
-        proprietaryMinutesLabel(eta, settings) ??
+        proprietaryMinutesLabel(eta) ??
         (minutes < 1
             ? atOrigin
                   ? settings.text('即場開出', 'Departing now')
@@ -197,6 +206,11 @@ class _RouteEtaLine extends StatelessWidget {
             EtaFormat.exact => clock,
             EtaFormat.mixed => '$clock  $wait',
           };
+    final String liveStatus = <String?>[
+      eta.status(settings.language),
+      eta.distanceLabel(settings.language),
+    ].whereType<String>().where((String value) => value.isNotEmpty).join(' · ');
+    final String display = liveStatus.isEmpty ? base : '$base · $liveStatus';
     final Color color = first
         ? Theme.of(context).colorScheme.primary
         : Theme.of(context).colorScheme.onSurfaceVariant;
@@ -214,7 +228,7 @@ class _RouteEtaLine extends StatelessWidget {
           ),
         Flexible(
           child: Text(
-            base,
+            display,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.end,
