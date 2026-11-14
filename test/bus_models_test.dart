@@ -85,6 +85,11 @@ void main() {
           },
         },
         'jt': '20',
+        'journeyTimes': {
+          'weekdayPeak': [120, 130],
+          'weekdayOffPeak': [100, 110],
+          'weekend': [90, 100],
+        },
         'gtfsId': null,
         'nlbId': null,
       };
@@ -168,6 +173,13 @@ void main() {
       expect(route.freq!['287']!['0600'], ['0900', '600']);
       expect(route.fareAt(0, holiday: false), '6.0');
       expect(route.jt, '20');
+      expect(
+        route.journeyTimes?.segmentSecondsFor(
+          DateTime(2026, 11, 16, 8),
+          holiday: false,
+        ),
+        <int>[120, 130],
+      );
     });
   });
 

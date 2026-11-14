@@ -15,9 +15,9 @@ class JourneyEstimate {
 }
 
 JourneyEstimate estimateJourney({
-  required RouteEntry route,
   required List<StopEntry> stops,
   required int startSeq,
+  List<int>? segmentSeconds,
 }) {
   if (stops.length < 2) {
     return const JourneyEstimate(
@@ -32,21 +32,23 @@ JourneyEstimate estimateJourney({
     distances.add(_distanceMetres(stops[index], stops[index + 1]));
   }
   final double totalDistance = distances.fold(0, (a, b) => a + b);
-  final int? parsedJourneyTime = int.tryParse(route.jt?.trim() ?? '');
-  final int? journeyTime = parsedJourneyTime != null && parsedJourneyTime > 0
-      ? parsedJourneyTime
-      : null;
-  final bool estimated = journeyTime == null;
-  final double totalMinutes =
-      journeyTime?.toDouble() ??
-      _estimateJourneyMinutes(totalDistance, stops.length);
-
-  final List<double> segmentMinutes = [];
-  for (final double distance in distances) {
-    if (totalDistance <= 0) {
-      segmentMinutes.add(totalMinutes / distances.length);
-    } else {
-      segmentMinutes.add(totalMinutes * distance / totalDistance);
+  final List<double> segmentMinutes;
+  if (segmentSeconds != null && segmentSeconds.length == distances.length) {
+    segmentMinutes = segmentSeconds
+        .map((int seconds) => seconds / 60 * 1.1)
+        .toList();
+  } else {
+    final double totalMinutes = _estimateJourneyMinutes(
+      totalDistance,
+      stops.length,
+    );
+    segmentMinutes = [];
+    for (final double distance in distances) {
+      if (totalDistance <= 0) {
+        segmentMinutes.add(totalMinutes / distances.length);
+      } else {
+        segmentMinutes.add(totalMinutes * distance / totalDistance);
+      }
     }
   }
 
@@ -62,7 +64,7 @@ JourneyEstimate estimateJourney({
   return JourneyEstimate(
     cumulativeMinutes: cumulative,
     totalMinutes: remaining,
-    estimated: estimated,
+    estimated: true,
   );
 }
 

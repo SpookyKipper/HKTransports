@@ -1,3 +1,4 @@
+import 'package:hktransports/bus/model/journey_times.dart';
 import 'package:hktransports/functions/title_case.dart';
 
 enum BusCompany {
@@ -246,6 +247,7 @@ class RouteEntry {
     this.faresHoliday,
     this.freq,
     this.jt,
+    this.journeyTimes,
     this.gtfsId,
     this.nlbId,
   });
@@ -264,6 +266,7 @@ class RouteEntry {
   final List<String>? faresHoliday;
   final Map<String, Map<String, List<String>?>>? freq;
   final String? jt;
+  final RouteJourneyTimes? journeyTimes;
   final String? gtfsId;
   final String? nlbId;
 
@@ -485,6 +488,11 @@ class BusDatabase {
           faresHoliday: _stringList(value['faresHoliday']),
           freq: freq,
           jt: value['jt']?.toString(),
+          journeyTimes: value['journeyTimes'] is Map<String, dynamic>
+              ? RouteJourneyTimes.fromJson(
+                  value['journeyTimes'] as Map<String, dynamic>,
+                )
+              : null,
           gtfsId: value['gtfsId']?.toString(),
           nlbId: value['nlbId']?.toString(),
         ),
@@ -535,6 +543,7 @@ class BusDatabase {
           faresHoliday: raw.faresHoliday,
           freq: raw.freq,
           jt: raw.jt,
+          journeyTimes: raw.journeyTimes,
           gtfsId: raw.gtfsId,
           nlbId: raw.nlbId,
         );
@@ -614,6 +623,7 @@ class _RawRoute {
     this.faresHoliday,
     this.freq,
     this.jt,
+    this.journeyTimes,
     this.gtfsId,
     this.nlbId,
   });
@@ -631,6 +641,7 @@ class _RawRoute {
   final List<String>? faresHoliday;
   final Map<String, Map<String, List<String>?>>? freq;
   final String? jt;
+  final RouteJourneyTimes? journeyTimes;
   final String? gtfsId;
   final String? nlbId;
 }

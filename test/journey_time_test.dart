@@ -1,25 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hktransports/bus/journey/journey_time.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
-
-RouteEntry _route({String? jt, int stopCount = 19}) {
-  final List<StopEntry> stops = _stops(stopCount);
-  return RouteEntry(
-    key: '117A+1',
-    slug: '117a',
-    route: '117A',
-    serviceType: '1',
-    companies: const <BusCompany>[BusCompany.gmb],
-    orig: const Terminal(en: 'Anderson', zh: '安達臣'),
-    dest: const Terminal(en: 'Sheung Tak', zh: '尚德'),
-    stops: <BusCompany, List<String>>{
-      BusCompany.gmb: stops.map((StopEntry stop) => stop.id).toList(),
-    },
-    bound: const <BusCompany, String>{BusCompany.gmb: 'O'},
-    seq: 0,
-    jt: jt,
-  );
-}
+import 'package:hktransports/bus/model/journey_times.dart';
 
 List<StopEntry> _stops(int count) {
   return List<StopEntry>.generate(count, (int index) {
@@ -36,50 +18,82 @@ List<StopEntry> _stops(int count) {
 }
 
 void main() {
-  test('uses an official journey time when present', () {
-    final List<StopEntry> stops = _stops(19);
+  test('uses segment times with the HK Bus ETA margin', () {
+    final List<StopEntry> stops = _stops(4);
     final JourneyEstimate estimate = estimateJourney(
-      route: _route(jt: '42', stopCount: stops.length),
       stops: stops,
       startSeq: 0,
+      segmentSeconds: const <int>[60, 120, 180],
     );
 
-    expect(estimate.estimated, isFalse);
-    expect(estimate.totalMinutes, 42);
-    expect(estimate.cumulativeMinutes.last, 42);
+    expect(estimate.cumulativeMinutes, <int>[0, 1, 3, 7]);
+    expect(estimate.totalMinutes, 7);
+    expect(estimate.estimated, isTrue);
   });
 
-  test(
-    'estimates missing journey times from distance, not stop count alone',
-    () {
-      final List<StopEntry> stops = _stops(19);
-      final JourneyEstimate estimate = estimateJourney(
-        route: _route(stopCount: stops.length),
-        stops: stops,
-        startSeq: 0,
-      );
-
-      expect(estimate.estimated, isTrue);
-      expect(estimate.totalMinutes, greaterThan(20));
-      expect(estimate.totalMinutes, lessThan(40));
-      expect(
-        estimate.totalMinutes,
-        lessThan((stops.length - 1) * 4),
-        reason: 'the old flat four-minutes-per-stop fallback was too large',
-      );
-      expect(estimate.cumulativeMinutes.last, estimate.totalMinutes);
-    },
-  );
-
-  test('treats an invalid official journey time as missing', () {
+  test('estimates missing journey times from distance', () {
     final List<StopEntry> stops = _stops(19);
-    final JourneyEstimate estimate = estimateJourney(
-      route: _route(jt: '0', stopCount: stops.length),
-      stops: stops,
-      startSeq: 0,
-    );
+    final JourneyEstimate estimate = estimateJourney(stops: stops, startSeq: 0);
 
     expect(estimate.estimated, isTrue);
+    expect(estimate.totalMinutes, greaterThan(20));
+    expect(estimate.totalMinutes, lessThan(40));
+    expect(
+      estimate.totalMinutes,
+      lessThan((stops.length - 1) * 4),
+      reason: 'the old flat four-minutes-per-stop fallback was too large',
+    );
+    expect(estimate.cumulativeMinutes.last, estimate.totalMinutes);
+  });
+
+  test('ignores segment times with the wrong number of segments', () {
+    final List<StopEntry> stops = _stops(4);
+    final JourneyEstimate estimate = estimateJourney(
+      stops: stops,
+      startSeq: 0,
+      segmentSeconds: const <int>[60],
+    );
+
+    expect(estimate.totalMinutes, lessThan(10));
     expect(estimate.totalMinutes, greaterThan(0));
+  });
+
+  test('treats travel time as seconds and applies the 10% margin', () {
+    final List<StopEntry> stops = _stops(3);
+    final JourneyEstimate estimate = estimateJourney(
+      stops: stops,
+      startSeq: 1,
+      segmentSeconds: const <int>[100, 200],
+    );
+
+    expect(estimate.cumulativeMinutes, <int>[0, 4]);
+    expect(estimate.totalMinutes, 4);
+  });
+
+  test('parses and selects journey time profiles', () {
+    final RouteJourneyTimes times = RouteJourneyTimes.fromJson(
+      <String, dynamic>{
+        'weekdayPeak': <int>[60, 120],
+        'weekdayOffPeak': <int>[50, 100],
+        'weekend': <int>[40, 80],
+      },
+    );
+
+    expect(
+      times.segmentSecondsFor(DateTime(2026, 11, 16, 8), holiday: false),
+      <int>[60, 120],
+    );
+    expect(
+      times.segmentSecondsFor(DateTime(2026, 11, 16, 12), holiday: false),
+      <int>[50, 100],
+    );
+    expect(
+      times.segmentSecondsFor(DateTime(2026, 11, 21, 12), holiday: false),
+      <int>[40, 80],
+    );
+    expect(
+      times.segmentSecondsFor(DateTime(2026, 11, 16, 8), holiday: true),
+      <int>[40, 80],
+    );
   });
 }
