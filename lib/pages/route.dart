@@ -279,7 +279,7 @@ class _RoutePageState extends State<_RoutePage> {
     }
   }
 
-  Widget _buildReloadButton(
+  Widget _buildReloadAction(
     BuildContext context,
     AppSettings settings,
     int index,
@@ -288,19 +288,26 @@ class _RoutePageState extends State<_RoutePage> {
       valueListenable: _refreshCountdown,
       builder: (BuildContext context, int seconds, Widget? child) {
         final bool loading = _loading.contains(index);
-        return M3EButton.icon(
+        return M3EIconButton(
+          tooltip: settings.text(
+            '立即重新整理（$seconds 秒）',
+            'Reload now (${seconds}s)',
+          ),
+          variant: M3EIconButtonVariant.standard,
+          size: M3EIconButtonSize.xs,
+          inflateHitTarget: false,
           onPressed: loading ? null : () => _startRefresh(index),
           icon: loading
               ? const SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: 18,
+                  height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.refresh, size: 18),
-          label: Text(settings.text('$seconds 秒', '${seconds}s')),
-          style: M3EButtonStyle.text,
-          size: M3EButtonSize.xs,
-          tooltip: settings.text('立即重新整理', 'Reload now'),
+              : Badge(
+                  isLabelVisible: seconds > 0,
+                  label: Text('$seconds'),
+                  child: const Icon(Icons.refresh),
+                ),
         );
       },
     );
@@ -890,11 +897,6 @@ class _RoutePageState extends State<_RoutePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: _buildReloadButton(context, settings, index),
-        ),
-        const SizedBox(height: 4),
         if (showNotice) ...[
           _UpstreamEtaBanner(notice: notice, stopName: noticeStopName),
           const SizedBox(height: 8),
@@ -925,50 +927,55 @@ class _RoutePageState extends State<_RoutePage> {
           stopIndex: index,
           stopIndexByCode: stopIndexByCode,
         ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Wrap(
-            alignment: WrapAlignment.end,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 4,
-            children: [
-              M3EIconButton(
-                tooltip: settings.text('收藏此站', 'Favourite this stop'),
-                icon: const Icon(Icons.star_border),
-                selectedIcon: const Icon(Icons.star),
-                isSelected: repository.isEntryInAnyGroup(route.key, index),
-                variant: M3EIconButtonVariant.standard,
-                size: M3EIconButtonSize.xs,
-                inflateHitTarget: false,
-                onPressed: () =>
-                    showRouteGroupSheet(context, route, stopSeq: index),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _buildReloadAction(context, settings, index),
+            Expanded(
+              child: Wrap(
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 4,
+                children: [
+                  M3EIconButton(
+                    tooltip: settings.text('收藏此站', 'Favourite this stop'),
+                    icon: const Icon(Icons.star_border),
+                    selectedIcon: const Icon(Icons.star),
+                    isSelected: repository.isEntryInAnyGroup(route.key, index),
+                    variant: M3EIconButtonVariant.standard,
+                    size: M3EIconButtonSize.xs,
+                    inflateHitTarget: false,
+                    onPressed: () =>
+                        showRouteGroupSheet(context, route, stopSeq: index),
+                  ),
+                  M3EIconButton(
+                    tooltip: isPinned
+                        ? settings.text('取消釘選', 'Unpin station')
+                        : settings.text('釘選', 'Pin station'),
+                    icon: const Icon(Icons.push_pin_outlined),
+                    selectedIcon: const Icon(Icons.push_pin),
+                    isSelected: isPinned,
+                    variant: M3EIconButtonVariant.standard,
+                    size: M3EIconButtonSize.xs,
+                    inflateHitTarget: false,
+                    onPressed: () => pinned.toggle(
+                      PinnedStation(routeKey: route.key, seq: index),
+                    ),
+                  ),
+                  M3EButton.icon(
+                    onPressed: () =>
+                        _showStopInfo(context, route, stopIds[index], index),
+                    style: M3EButtonStyle.text,
+                    icon: Icon(Icons.info_outline, color: secondaryColor),
+                    label: Text(
+                      settings.text('車站資訊', 'Stop information'),
+                      style: TextStyle(color: secondaryColor),
+                    ),
+                  ),
+                ],
               ),
-              M3EIconButton(
-                tooltip: isPinned
-                    ? settings.text('取消釘選', 'Unpin station')
-                    : settings.text('釘選', 'Pin station'),
-                icon: const Icon(Icons.push_pin_outlined),
-                selectedIcon: const Icon(Icons.push_pin),
-                isSelected: isPinned,
-                variant: M3EIconButtonVariant.standard,
-                size: M3EIconButtonSize.xs,
-                inflateHitTarget: false,
-                onPressed: () => pinned.toggle(
-                  PinnedStation(routeKey: route.key, seq: index),
-                ),
-              ),
-              M3EButton.icon(
-                onPressed: () =>
-                    _showStopInfo(context, route, stopIds[index], index),
-                style: M3EButtonStyle.text,
-                icon: Icon(Icons.info_outline, color: secondaryColor),
-                label: Text(
-                  settings.text('車站資訊', 'Stop information'),
-                  style: TextStyle(color: secondaryColor),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
