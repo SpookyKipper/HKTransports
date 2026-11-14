@@ -15,6 +15,28 @@ const String _android = 'android';
 
 enum ProprietaryAvailability { supported, updateRequired, unavailable }
 
+enum SpecialFeature { joyYouFare, scanUpstreamStation }
+
+extension SpecialFeatureInfo on SpecialFeature {
+  String get configKey {
+    switch (this) {
+      case SpecialFeature.joyYouFare:
+        return 'joyYouFare';
+      case SpecialFeature.scanUpstreamStation:
+        return 'scanUpstreamStation';
+    }
+  }
+
+  String label(AppSettings settings) {
+    switch (this) {
+      case SpecialFeature.joyYouFare:
+        return settings.text('樂悠車費', 'JoyYou fares');
+      case SpecialFeature.scanUpstreamStation:
+        return settings.text('掃描上游車站', 'Scan upstream stops');
+    }
+  }
+}
+
 class AppConfig {
   const AppConfig({
     required this.app,
@@ -24,19 +46,10 @@ class AppConfig {
     required this.doOtaUpdate,
     required this.lastCriticalVersionCode,
     required this.proprietaryApi,
+    required this.specialFeatures,
   });
 
   factory AppConfig.fromJson(Map<String, dynamic> json) {
-    final Map<String, int> proprietaryApi = <String, int>{};
-    final Object? rawApi = json['proprietaryApi'];
-    if (rawApi is Map) {
-      for (final MapEntry<Object?, Object?> entry in rawApi.entries) {
-        final String key = entry.key?.toString().trim() ?? '';
-        final int? value = _asInt(entry.value);
-        if (key.isEmpty || value == null) continue;
-        proprietaryApi[key] = value;
-      }
-    }
     return AppConfig(
       app: json['app']?.toString().trim() ?? '',
       os: json['os']?.toString().trim().toLowerCase() ?? '',
@@ -44,7 +57,8 @@ class AppConfig {
       latestVersionName: json['latestVersionName']?.toString().trim() ?? '',
       doOtaUpdate: _asBool(json['doOtaUpdate'], defaultValue: true),
       lastCriticalVersionCode: _asInt(json['lastCriticalVersionCode']) ?? 0,
-      proprietaryApi: Map<String, int>.unmodifiable(proprietaryApi),
+      proprietaryApi: _asIntMap(json['proprietaryApi']),
+      specialFeatures: _asIntMap(json['specialFeatures']),
     );
   }
 
@@ -55,6 +69,7 @@ class AppConfig {
   final bool doOtaUpdate;
   final int lastCriticalVersionCode;
   final Map<String, int> proprietaryApi;
+  final Map<String, int> specialFeatures;
 
   bool get matchesCurrentApp => app == _appId && os == _android;
 }
@@ -77,11 +92,15 @@ class AppConfigController {
   AppConfig? _config;
   int? _currentVersionCode;
   List<ProprietaryEndpoint> _disabledAtStartup = const <ProprietaryEndpoint>[];
+  List<SpecialFeature> _disabledSpecialFeaturesAtStartup =
+      const <SpecialFeature>[];
   Future<void>? _loadFuture;
 
   AppConfig? get config => _config;
   int? get currentVersionCode => _currentVersionCode;
   List<ProprietaryEndpoint> get disabledAtStartup => _disabledAtStartup;
+  List<SpecialFeature> get disabledSpecialFeaturesAtStartup =>
+      _disabledSpecialFeaturesAtStartup;
 
   bool get _matchesCurrentApp => _config?.matchesCurrentApp ?? false;
 
@@ -109,10 +128,28 @@ class AppConfigController {
     if (value == null || !value.matchesCurrentApp || current == null) {
       return ProprietaryAvailability.supported;
     }
-    final int? minimum = value.proprietaryApi[endpoint.configKey];
+    return _availabilityForVersion(value.proprietaryApi, endpoint.configKey);
+  }
+
+  ProprietaryAvailability availabilityForFeature(SpecialFeature feature) {
+    final AppConfig? value = _config;
+    final int? current = _currentVersionCode;
+    if (value == null || !value.matchesCurrentApp || current == null) {
+      return ProprietaryAvailability.supported;
+    }
+    return _availabilityForVersion(value.specialFeatures, feature.configKey);
+  }
+
+  ProprietaryAvailability _availabilityForVersion(
+    Map<String, int> minimums,
+    String key,
+  ) {
+    final int? minimum = minimums[key];
     if (minimum == null) return ProprietaryAvailability.supported;
     if (minimum < 0) return ProprietaryAvailability.unavailable;
-    if (minimum > current) return ProprietaryAvailability.updateRequired;
+    if (minimum > _currentVersionCode!) {
+      return ProprietaryAvailability.updateRequired;
+    }
     return ProprietaryAvailability.supported;
   }
 
@@ -127,6 +164,29 @@ class AppConfigController {
       disabled.add(endpoint);
     }
     _disabledAtStartup = List<ProprietaryEndpoint>.unmodifiable(disabled);
+
+    final List<SpecialFeature> disabledFeatures = <SpecialFeature>[];
+    for (final SpecialFeature feature in SpecialFeature.values) {
+      final bool enabled = switch (feature) {
+        SpecialFeature.joyYouFare => settings.showJoyYouFare,
+        SpecialFeature.scanUpstreamStation => settings.upstreamEtaScan,
+      };
+      if (!enabled) continue;
+      if (availabilityForFeature(feature) ==
+          ProprietaryAvailability.supported) {
+        continue;
+      }
+      switch (feature) {
+        case SpecialFeature.joyYouFare:
+          settings.setShowJoyYouFare(false);
+        case SpecialFeature.scanUpstreamStation:
+          settings.setUpstreamEtaScan(false);
+      }
+      disabledFeatures.add(feature);
+    }
+    _disabledSpecialFeaturesAtStartup = List<SpecialFeature>.unmodifiable(
+      disabledFeatures,
+    );
     return _disabledAtStartup;
   }
 
@@ -178,6 +238,18 @@ class AppConfigController {
       return null;
     }
   }
+}
+
+Map<String, int> _asIntMap(Object? raw) {
+  final Map<String, int> result = <String, int>{};
+  if (raw is! Map) return Map<String, int>.unmodifiable(result);
+  for (final MapEntry<Object?, Object?> entry in raw.entries) {
+    final String key = entry.key?.toString().trim() ?? '';
+    final int? value = _asInt(entry.value);
+    if (key.isEmpty || value == null) continue;
+    result[key] = value;
+  }
+  return Map<String, int>.unmodifiable(result);
 }
 
 bool _asBool(Object? value, {required bool defaultValue}) {
