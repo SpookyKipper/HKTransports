@@ -442,7 +442,7 @@ class _RoutePageState extends State<_RoutePage> {
       }
     }
 
-    if (currentScheduled) {
+    if (originEta != null || currentScheduled) {
       if (index == 0) {
         originEta = current?.eta;
       } else if (originEta == null) {
