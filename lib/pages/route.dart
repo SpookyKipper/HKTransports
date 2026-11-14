@@ -344,17 +344,9 @@ class _RoutePageState extends State<_RoutePage> {
     final int requestId = ++_upstreamEtaRequestId;
     final BusEta? current = _firstEta(_etas[index]);
     final bool currentScheduled = current == null || current.isScheduledLike;
-    final DateTime now = DateTime.now().toUtc();
     final List<UpstreamEtaSample> samples = <UpstreamEtaSample>[];
-    final UpstreamEtaNotice? previous = _upstreamEtaNotice;
-    final int lastIndex =
-        previous != null &&
-            previous.currentIndex == index &&
-            previous.stopIndex != index
-        ? math.max(0, previous.stopIndex)
-        : math.max(0, index - 30);
     DateTime? originEta;
-    for (int i = index - 1; i >= lastIndex; i--) {
+    for (int i = index - 1; i >= 0; i--) {
       final List<BusEta> etas = await _etaService.fetchRouteStop(
         widget.route,
         i,
@@ -372,7 +364,6 @@ class _RoutePageState extends State<_RoutePage> {
         currentIndex: index,
         currentEta: current?.eta,
         upstream: samples,
-        now: now,
         scheduled: currentScheduled,
       );
       if (notice != null) {
@@ -897,10 +888,6 @@ class _RoutePageState extends State<_RoutePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (showNotice) ...[
-          _UpstreamEtaBanner(notice: notice, stopName: noticeStopName),
-          const SizedBox(height: 8),
-        ],
         if (route.companies.contains(BusCompany.nlb))
           NlbStopLandmark(
             route: route,
@@ -918,6 +905,10 @@ class _RoutePageState extends State<_RoutePage> {
             ProprietaryEndpoint.citybusDatabase,
           ),
         ),
+        if (showNotice) ...[
+          _UpstreamEtaBanner(notice: notice, stopName: noticeStopName),
+          const SizedBox(height: 8),
+        ],
         _EtaList(
           route: route,
           loading: _loading.contains(index),
