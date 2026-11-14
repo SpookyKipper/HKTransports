@@ -281,26 +281,45 @@ class _RoutePageState extends State<_RoutePage> {
     }
   }
 
+  Widget _buildTextActionButton(
+    BuildContext context, {
+    required Widget icon,
+    required String label,
+    required VoidCallback? onPressed,
+    String? tooltip,
+  }) {
+    final Color color = Theme.of(context).colorScheme.onSurfaceVariant;
+    return M3EButton.text(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(width: 24, height: 24, child: Center(child: icon)),
+          const SizedBox(width: 8),
+          Text(label, style: TextStyle(color: color)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildReloadAction(
     BuildContext context,
     AppSettings settings,
     int index,
   ) {
-    final Color color = Theme.of(context).colorScheme.onSurfaceVariant;
     return ValueListenableBuilder<int>(
       valueListenable: _refreshCountdown,
       builder: (BuildContext context, int seconds, Widget? child) {
         final bool loading = _loading.contains(index);
-        return M3EButton.icon(
-          onPressed: loading ? null : () => _startRefresh(index),
-          style: M3EButtonStyle.text,
+        return _buildTextActionButton(
+          context,
           icon: loading
               ? const M3ELoadingIndicator(size: 24)
-              : Icon(Icons.refresh, color: color),
-          label: Text(
-            settings.text('$seconds 秒', '${seconds}s'),
-            style: TextStyle(color: color),
-          ),
+              : const Icon(Icons.refresh),
+          label: settings.text('$seconds 秒', '${seconds}s'),
+          onPressed: loading ? null : () => _startRefresh(index),
           tooltip: settings.text(
             '立即重新整理（$seconds 秒）',
             'Reload now (${seconds}s)',
@@ -966,15 +985,12 @@ class _RoutePageState extends State<_RoutePage> {
                       PinnedStation(routeKey: route.key, seq: index),
                     ),
                   ),
-                  M3EButton.icon(
+                  _buildTextActionButton(
+                    context,
+                    icon: Icon(Icons.info_outline, color: secondaryColor),
+                    label: settings.text('車站資訊', 'Stop information'),
                     onPressed: () =>
                         _showStopInfo(context, route, stopIds[index], index),
-                    style: M3EButtonStyle.text,
-                    icon: Icon(Icons.info_outline, color: secondaryColor),
-                    label: Text(
-                      settings.text('車站資訊', 'Stop information'),
-                      style: TextStyle(color: secondaryColor),
-                    ),
                   ),
                 ],
               ),
