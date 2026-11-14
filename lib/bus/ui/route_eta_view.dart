@@ -17,11 +17,13 @@ class RouteEtaView extends StatefulWidget {
     required this.route,
     required this.seq,
     this.refreshVersion = 0,
+    this.shortMinuteUnit = false,
   });
 
   final RouteEntry route;
   final int seq;
   final int refreshVersion;
+  final bool shortMinuteUnit;
 
   @override
   State<RouteEtaView> createState() => _RouteEtaViewState();
@@ -155,6 +157,7 @@ class _RouteEtaViewState extends State<RouteEtaView> {
                 eta: etas[index],
                 first: index == 0,
                 atOrigin: widget.seq == 0,
+                shortMinuteUnit: widget.shortMinuteUnit,
               ),
             ),
         ],
@@ -163,9 +166,18 @@ class _RouteEtaViewState extends State<RouteEtaView> {
   }
 }
 
-String? _proprietaryOnlyLabel(BusEta eta, AppSettings settings) {
+String? _proprietaryOnlyLabel(
+  BusEta eta,
+  AppSettings settings, {
+  bool shortMinuteUnit = false,
+}) {
   final String? time = proprietaryClockLabel(eta);
-  final String? minutes = etaWaitLabel(eta, settings, null);
+  final String? minutes = etaWaitLabel(
+    eta,
+    settings,
+    null,
+    shortMinuteUnit: shortMinuteUnit,
+  );
   final String base = switch (settings.etaFormat) {
     EtaFormat.diff => minutes ?? time ?? '',
     EtaFormat.exact => time ?? minutes ?? '',
@@ -182,11 +194,13 @@ class _RouteEtaLine extends StatelessWidget {
     required this.eta,
     required this.first,
     required this.atOrigin,
+    required this.shortMinuteUnit,
   });
 
   final BusEta eta;
   final bool first;
   final bool atOrigin;
+  final bool shortMinuteUnit;
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +208,11 @@ class _RouteEtaLine extends StatelessWidget {
     final DateTime? time = eta.eta;
     final String remark = eta.remark(settings.language);
     if (time == null) {
-      final String? proprietary = _proprietaryOnlyLabel(eta, settings);
+      final String? proprietary = _proprietaryOnlyLabel(
+        eta,
+        settings,
+        shortMinuteUnit: shortMinuteUnit,
+      );
       final String message = proprietary ?? remark;
       if (message.isEmpty) return const SizedBox.shrink();
       return Text(
@@ -214,6 +232,7 @@ class _RouteEtaLine extends StatelessWidget {
       settings,
       minutes,
       atOrigin: atOrigin,
+      shortMinuteUnit: shortMinuteUnit,
     );
     final String base = switch (settings.etaFormat) {
       EtaFormat.diff => wait ?? '',

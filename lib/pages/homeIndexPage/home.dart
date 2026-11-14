@@ -423,7 +423,12 @@ class _FavoriteRouteTile extends StatelessWidget {
         ? repository.stopById(stopIds[seq])
         : null;
     final Widget? etaOrTrailing = showEta
-        ? RouteEtaView(route: route, seq: seq, refreshVersion: refreshVersion)
+        ? RouteEtaView(
+            route: route,
+            seq: seq,
+            refreshVersion: refreshVersion,
+            shortMinuteUnit: true,
+          )
         : trailing;
 
     return InkWell(
