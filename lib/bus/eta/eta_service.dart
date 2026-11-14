@@ -40,6 +40,7 @@ class EtaService {
   final FerryEtaClient _ferry = FerryEtaClient();
   final CitybusEtaStatusClient _ctbStatus = CitybusEtaStatusClient();
   static const Duration _statusCacheTtl = Duration(seconds: 90);
+  static const Duration _citybusNoEtaRetryDelay = Duration(seconds: 5);
 
   final StreamController<EtaStatusUpdate> _statusUpdates =
       StreamController<EtaStatusUpdate>.broadcast();
@@ -143,6 +144,28 @@ class EtaService {
   }
 
   Future<List<BusEta>> _fetchCitybus(
+    RouteEntry route,
+    BusCompany company,
+    int seq,
+  ) async {
+    List<BusEta> first = const <BusEta>[];
+    try {
+      first = await _fetchCitybusOnce(route, company, seq);
+    } catch (error) {
+      debugPrint('Citybus ETA fetch failed: $error');
+    }
+    if (first.isNotEmpty) return first;
+
+    await Future<void>.delayed(_citybusNoEtaRetryDelay);
+    try {
+      return await _fetchCitybusOnce(route, company, seq);
+    } catch (error) {
+      debugPrint('Citybus ETA retry failed: $error');
+      return const <BusEta>[];
+    }
+  }
+
+  Future<List<BusEta>> _fetchCitybusOnce(
     RouteEntry route,
     BusCompany company,
     int seq,
