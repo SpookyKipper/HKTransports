@@ -334,7 +334,9 @@ class _PinnedChip extends StatelessWidget {
     if (eta == null) return '--';
     final DateTime? time = eta.eta;
     if (time == null) {
+      final String? proprietary = _proprietaryOnlyLabel(eta, settings);
       final String message = <String>[
+        if (proprietary != null) proprietary,
         if (eta.remark(settings.language).isNotEmpty)
           eta.remark(settings.language),
         if (eta.status(settings.language) != null)
@@ -367,4 +369,18 @@ class _PinnedChip extends StatelessWidget {
     ].whereType<String>().where((String value) => value.isNotEmpty).join(' · ');
     return liveStatus.isEmpty ? base : '$base · $liveStatus';
   }
+}
+
+String? _proprietaryOnlyLabel(BusEta eta, AppSettings settings) {
+  final String? time = proprietaryClockLabel(eta);
+  final String? minutes = proprietaryMinutesLabel(eta);
+  final String base = switch (settings.etaFormat) {
+    EtaFormat.diff => minutes ?? time ?? '',
+    EtaFormat.exact => time ?? minutes ?? '',
+    EtaFormat.mixed => <String?>[
+      time,
+      minutes,
+    ].whereType<String>().where((String value) => value.isNotEmpty).join('  '),
+  };
+  return base.isEmpty ? null : base;
 }
