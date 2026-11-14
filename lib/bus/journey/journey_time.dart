@@ -32,9 +32,14 @@ JourneyEstimate estimateJourney({
     distances.add(_distanceMetres(stops[index], stops[index + 1]));
   }
   final double totalDistance = distances.fold(0, (a, b) => a + b);
-  final int? jt = int.tryParse(route.jt ?? '');
-  final bool estimated = jt == null;
-  final double totalMinutes = (jt ?? (distances.length * 4)).toDouble();
+  final int? parsedJourneyTime = int.tryParse(route.jt?.trim() ?? '');
+  final int? journeyTime = parsedJourneyTime != null && parsedJourneyTime > 0
+      ? parsedJourneyTime
+      : null;
+  final bool estimated = journeyTime == null;
+  final double totalMinutes =
+      journeyTime?.toDouble() ??
+      _estimateJourneyMinutes(totalDistance, stops.length);
 
   final List<double> segmentMinutes = [];
   for (final double distance in distances) {
@@ -59,6 +64,18 @@ JourneyEstimate estimateJourney({
     totalMinutes: remaining,
     estimated: estimated,
   );
+}
+
+/// Estimates a full-route journey time from stop-to-stop distance.
+///
+/// The coefficients are calibrated against the routes that include an official
+/// journey time. Without this fallback, routes with no timetable data used a
+/// flat four minutes per stop, which badly overestimated short, closely spaced
+/// routes (for example 117A).
+double _estimateJourneyMinutes(double totalDistanceMetres, int stopCount) {
+  final double distanceKm = totalDistanceMetres / 1000;
+  final double minutes = distanceKm * 2.0 + stopCount * 0.8;
+  return minutes.clamp(1, 1440);
 }
 
 double _distanceMetres(StopEntry a, StopEntry b) {
