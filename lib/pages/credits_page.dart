@@ -53,6 +53,12 @@ class CreditsPage extends StatelessWidget {
             url: 'https://github.com/SpookyKipper/hk-bus-crawling/',
           ),
           _LinkTile(
+            icon: Icons.schedule,
+            title: 'HK Bus ETA journey times',
+            subtitle: settings.text('歷史車程資料', 'Historical journey times'),
+            url: 'https://github.com/HK-Bus-ETA/hk-bus-time-between-stops',
+          ),
+          _LinkTile(
             icon: Icons.alt_route,
             title: 'Transport Route Waypoints',
             subtitle: settings.text('路線走線資料', 'Route alignment data'),

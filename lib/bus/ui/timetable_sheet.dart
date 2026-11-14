@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/journey/journey_time.dart';
+import 'package:hktransports/bus/journey/journey_time_service.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/notice/citybus_remarks_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -311,11 +312,61 @@ class _JourneyTab extends StatefulWidget {
 
 class _JourneyTabState extends State<_JourneyTab> {
   late int _startSeq;
+  List<int>? _segmentSeconds;
+  bool _loadStarted = false;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
     super.initState();
     _startSeq = widget.initialStopIndex;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_loadStarted) return;
+    _loadStarted = true;
+    _loadJourneyTimes();
+  }
+
+  @override
+  void didUpdateWidget(covariant _JourneyTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.route.key != widget.route.key) {
+      _segmentSeconds = null;
+      _loadJourneyTimes();
+    }
+  }
+
+  Future<void> _loadJourneyTimes() async {
+    final BusRepository repository = context.read<BusRepository>();
+    final List<String> stopIds = widget.route.primaryStops;
+    final List<StopEntry> stops = stopIds
+        .map(repository.stopById)
+        .whereType<StopEntry>()
+        .toList();
+    if (stops.length != stopIds.length || stops.length < 2) return;
+
+    final DateTime now = hkNow();
+    final List<String> holidays =
+        repository.database?.holidays ?? const <String>[];
+    final List<int>? precomputed = widget.route.journeyTimes?.segmentSecondsFor(
+      now,
+      holiday: isHoliday(holidays, now),
+    );
+    final int generation = ++_loadGeneration;
+    if (precomputed != null) {
+      if (mounted) {
+        setState(() => _segmentSeconds = precomputed);
+      }
+      return;
+    }
+
+    final List<int>? fetched = await JourneyTimeService.instance
+        .fetchSegmentSeconds(stops: stops, holidays: holidays, now: now);
+    if (!mounted || generation != _loadGeneration) return;
+    setState(() => _segmentSeconds = fetched);
   }
 
   @override
@@ -334,9 +385,9 @@ class _JourneyTabState extends State<_JourneyTab> {
     }
     if (_startSeq >= stops.length) _startSeq = 0;
     final JourneyEstimate estimate = estimateJourney(
-      route: widget.route,
       stops: stops,
       startSeq: _startSeq,
+      segmentSeconds: _segmentSeconds,
     );
 
     return ListView.builder(
