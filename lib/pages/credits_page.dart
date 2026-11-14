@@ -54,8 +54,11 @@ class CreditsPage extends StatelessWidget {
           ),
           _LinkTile(
             icon: Icons.schedule,
-            title: 'HK Bus ETA journey times',
-            subtitle: settings.text('歷史車程資料', 'Historical journey times'),
+            title: 'HK Bus Time Between Stops',
+            subtitle: settings.text(
+              '歷史車站之間車程資料',
+              'Historical stop-to-stop journey times',
+            ),
             url: 'https://github.com/HK-Bus-ETA/hk-bus-time-between-stops',
           ),
           _LinkTile(
