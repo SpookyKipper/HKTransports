@@ -84,15 +84,21 @@ class _RouteEtaViewState extends State<RouteEtaView> {
 
   Future<void> _fetch() async {
     final int requestId = ++_requestId;
-    final List<BusEta> etas = await _etaService.fetchRouteStop(
-      widget.route,
-      widget.seq,
-    );
-    if (!mounted || requestId != _requestId) return;
-    setState(() {
-      _etas = etas;
-      _loading = false;
-    });
+    try {
+      final List<BusEta> etas = await _etaService.fetchRouteStop(
+        widget.route,
+        widget.seq,
+      );
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _etas = etas;
+        _loading = false;
+      });
+    } catch (error) {
+      debugPrint('ETA refresh failed: $error');
+      if (!mounted || requestId != _requestId) return;
+      setState(() => _loading = false);
+    }
   }
 
   void _onStatusUpdate(EtaStatusUpdate update) {

@@ -93,6 +93,7 @@ class _RoutePageState extends State<_RoutePage> {
   bool _upstreamEtaEnabled = false;
   bool _autoFocusAttempted = false;
   bool _userSelectedStation = false;
+  bool _disposed = false;
 
   @override
   void initState() {
@@ -206,6 +207,7 @@ class _RoutePageState extends State<_RoutePage> {
 
   @override
   void dispose() {
+    _disposed = true;
     _settings.removeListener(_onSettingsChanged);
     _timer?.cancel();
     _refreshCountdown.dispose();
@@ -215,7 +217,7 @@ class _RoutePageState extends State<_RoutePage> {
   }
 
   void _onSettingsChanged() {
-    if (!mounted) return;
+    if (!mounted || _disposed) return;
     final bool enabled = _settings.upstreamEtaScan;
     if (enabled == _upstreamEtaEnabled) return;
     _upstreamEtaEnabled = enabled;
@@ -266,7 +268,7 @@ class _RoutePageState extends State<_RoutePage> {
   }
 
   void _updateRefreshCountdown() {
-    if (!mounted) return;
+    if (!mounted || _disposed) return;
     final DateTime? next = _nextRefreshAt;
     final int seconds = next == null
         ? 0
@@ -311,17 +313,24 @@ class _RoutePageState extends State<_RoutePage> {
   Future<void> _fetch(int index, {bool scanUpstream = false}) async {
     if (_loading.contains(index)) return;
     setState(() => _loading.add(index));
-    final List<BusEta> etas = await _etaService.fetchRouteStop(
-      widget.route,
-      index,
-    );
-    if (!mounted) return;
-    setState(() {
-      _loading.remove(index);
-      _etas[index] = etas;
-    });
-    if (scanUpstream && _expandedIndex == index) {
-      unawaited(_scanUpstreamEta(index));
+    try {
+      final List<BusEta> etas = await _etaService.fetchRouteStop(
+        widget.route,
+        index,
+      );
+      if (!mounted || _disposed) return;
+      setState(() {
+        _loading.remove(index);
+        _etas[index] = etas;
+      });
+      if (scanUpstream && _expandedIndex == index) {
+        unawaited(_scanUpstreamEta(index));
+      }
+    } catch (error) {
+      debugPrint('ETA refresh failed: $error');
+      if (mounted && !_disposed) {
+        setState(() => _loading.remove(index));
+      }
     }
   }
 
@@ -342,10 +351,13 @@ class _RoutePageState extends State<_RoutePage> {
     final List<UpstreamEtaSample> samples = <UpstreamEtaSample>[];
     DateTime? originEta;
     for (int i = index - 1; i >= 0; i--) {
-      final List<BusEta> etas = await _etaService.fetchRouteStop(
-        widget.route,
-        i,
-      );
+      final List<BusEta> etas;
+      try {
+        etas = await _etaService.fetchRouteStop(widget.route, i);
+      } catch (error) {
+        debugPrint('Upstream ETA scan failed at $i: $error');
+        break;
+      }
       if (!mounted ||
           requestId != _upstreamEtaRequestId ||
           _expandedIndex != index) {
@@ -373,16 +385,20 @@ class _RoutePageState extends State<_RoutePage> {
       if (index == 0) {
         originEta = current?.eta;
       } else if (originEta == null) {
-        final List<BusEta> originEtas = await _etaService.fetchRouteStop(
-          widget.route,
-          0,
-        );
-        if (!mounted ||
-            requestId != _upstreamEtaRequestId ||
-            _expandedIndex != index) {
-          return;
+        try {
+          final List<BusEta> originEtas = await _etaService.fetchRouteStop(
+            widget.route,
+            0,
+          );
+          if (!mounted ||
+              requestId != _upstreamEtaRequestId ||
+              _expandedIndex != index) {
+            return;
+          }
+          originEta = _firstEta(originEtas)?.eta;
+        } catch (error) {
+          debugPrint('Upstream origin ETA failed: $error');
         }
-        originEta = _firstEta(originEtas)?.eta;
       }
       if (originEta != null) {
         final UpstreamEtaNotice notice = UpstreamEtaNotice(
@@ -405,6 +421,7 @@ class _RoutePageState extends State<_RoutePage> {
 
   void _onExpansionChanged(int index, bool expanded) {
     _userSelectedStation = true;
+    if (_disposed) return;
     if (expanded) {
       ++_upstreamEtaRequestId;
       setState(() {
