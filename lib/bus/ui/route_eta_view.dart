@@ -122,7 +122,12 @@ class _RouteEtaViewState extends State<RouteEtaView> {
   @override
   Widget build(BuildContext context) {
     final List<BusEta> etas = (_etas ?? const [])
-        .where((eta) => eta.eta != null)
+        .where(
+          (eta) =>
+              eta.eta != null ||
+              eta.proprietaryTime != null ||
+              eta.proprietaryMinutes != null,
+        )
         .take(3)
         .toList();
     if (_loading && _etas == null) {
@@ -152,6 +157,20 @@ class _RouteEtaViewState extends State<RouteEtaView> {
   }
 }
 
+String? _proprietaryOnlyLabel(BusEta eta, AppSettings settings) {
+  final String? time = proprietaryClockLabel(eta);
+  final String? minutes = proprietaryMinutesLabel(eta);
+  final String base = switch (settings.etaFormat) {
+    EtaFormat.diff => minutes ?? time ?? '',
+    EtaFormat.exact => time ?? minutes ?? '',
+    EtaFormat.mixed => <String?>[
+      time,
+      minutes,
+    ].whereType<String>().where((String value) => value.isNotEmpty).join('  '),
+  };
+  return base.isEmpty ? null : base;
+}
+
 class _RouteEtaLine extends StatelessWidget {
   const _RouteEtaLine({
     required this.eta,
@@ -169,9 +188,11 @@ class _RouteEtaLine extends StatelessWidget {
     final DateTime? time = eta.eta;
     final String remark = eta.remark(settings.language);
     if (time == null) {
-      if (remark.isEmpty) return const SizedBox.shrink();
+      final String? proprietary = _proprietaryOnlyLabel(eta, settings);
+      final String message = proprietary ?? remark;
+      if (message.isEmpty) return const SizedBox.shrink();
       return Text(
-        remark,
+        message,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.bodySmall,

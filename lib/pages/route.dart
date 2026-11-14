@@ -1178,6 +1178,8 @@ class _EtaList extends StatelessWidget {
         .where(
           (eta) =>
               eta.eta != null ||
+              eta.proprietaryTime != null ||
+              eta.proprietaryMinutes != null ||
               eta.remark(settings.language).isNotEmpty ||
               eta.status(settings.language) != null,
         )
@@ -1249,8 +1251,10 @@ class _EtaLine extends StatelessWidget {
     final String company = route.companyLabel(eta.company, settings.language);
 
     if (time == null) {
+      final String? proprietary = _proprietaryOnlyLabel(eta, settings);
       final String message = <String>[
         if (showCompany && eta.isDelayedJourney) company,
+        if (proprietary != null) proprietary,
         if (remark.isNotEmpty) remark,
         if (eta.status(settings.language) != null)
           eta.status(settings.language)!,
@@ -1410,6 +1414,20 @@ class _EtaLine extends StatelessWidget {
       },
     );
   }
+}
+
+String? _proprietaryOnlyLabel(BusEta eta, AppSettings settings) {
+  final String? time = proprietaryClockLabel(eta);
+  final String? minutes = proprietaryMinutesLabel(eta);
+  final String base = switch (settings.etaFormat) {
+    EtaFormat.diff => minutes ?? time ?? '',
+    EtaFormat.exact => time ?? minutes ?? '',
+    EtaFormat.mixed => <String?>[
+      time,
+      minutes,
+    ].whereType<String>().where((String value) => value.isNotEmpty).join('  '),
+  };
+  return base.isEmpty ? null : base;
 }
 
 String? _citybusStopId(RouteEntry route, String stopId, int stopIndex) {
