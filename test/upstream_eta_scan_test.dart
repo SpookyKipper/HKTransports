@@ -89,7 +89,7 @@ void main() {
     expect(notice.remainingStops, 3);
   });
 
-  test('detects even a one-minute increase between adjacent stops', () {
+  test('detects a one-minute increase from N-1 to N', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
       currentArrived: false,
@@ -99,7 +99,9 @@ void main() {
       scheduled: false,
     );
 
-    expect(notice, isNull);
+    expect(notice, isNotNull);
+    expect(notice!.stopIndex, 8);
+    expect(notice.remainingStops, 0);
   });
 
   test('moves the notice to the next stop when the edge stop has arrived', () {
@@ -122,11 +124,26 @@ void main() {
     expect(notice.remainingStops, 2);
   });
 
-  test('hides an edge whose next stop is the current stop', () {
+  test('uses the current stop when N-1 is later than N', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
       currentArrived: false,
       currentEta: now.add(const Duration(minutes: 5)),
+      upstream: <UpstreamEtaSample>[sample(7, 20)],
+      now: now,
+      scheduled: false,
+    );
+
+    expect(notice, isNotNull);
+    expect(notice!.stopIndex, 8);
+    expect(notice.remainingStops, 0);
+  });
+
+  test('hides the current stop when it has already arrived', () {
+    final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+      currentIndex: 8,
+      currentArrived: true,
+      currentEta: now,
       upstream: <UpstreamEtaSample>[sample(7, 20)],
       now: now,
       scheduled: false,

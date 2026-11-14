@@ -949,8 +949,7 @@ class _RoutePageState extends State<_RoutePage> {
     final bool showNotice =
         settings.upstreamEtaScan &&
         notice != null &&
-        notice.currentIndex == index &&
-        notice.stopIndex != index;
+        notice.currentIndex == index;
     final String noticeStopName = showNotice
         ? repository
                   .stopById(stopIds[notice.stopIndex])
