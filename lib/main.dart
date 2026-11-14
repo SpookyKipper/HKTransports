@@ -188,6 +188,9 @@ void main() async {
   final List<ProprietaryEndpoint> disabledEndpoints = appConfig.isCritical
       ? const <ProprietaryEndpoint>[]
       : appConfig.applyToSettings(settings);
+  final List<SpecialFeature> disabledFeatures = appConfig.isCritical
+      ? const <SpecialFeature>[]
+      : appConfig.disabledSpecialFeaturesAtStartup;
 
   if (!appConfig.isCritical) {
     if (!settings.isProprietaryEnabled(ProprietaryEndpoint.kmbInterchange)) {
@@ -241,13 +244,17 @@ void main() async {
   if (!appConfig.isCritical) {
     repository.startAutoUpdate();
     unawaited(location.ensureStarted());
-    if (disabledEndpoints.isNotEmpty) {
+    if (disabledEndpoints.isNotEmpty || disabledFeatures.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final BuildContext? context =
             _navigatorKey.currentState?.overlay?.context;
         if (context == null) return;
         unawaited(
-          showDisabledProprietaryApisDialog(context, disabledEndpoints),
+          showDisabledProprietaryApisDialog(
+            context,
+            disabledEndpoints,
+            features: disabledFeatures,
+          ),
         );
       });
     }

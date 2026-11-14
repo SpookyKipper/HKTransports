@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hktransports/app/app_config.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:hktransports/bus/ui/app_config_dialogs.dart';
 import 'package:hktransports/functions/app.dart';
 import 'package:hktransports/location/location_controller.dart';
 import 'package:hktransports/location/location_service.dart';
@@ -23,6 +25,13 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
+    final AppConfigController appConfig = context.read<AppConfigController>();
+    final bool scanUpstreamAvailable =
+        appConfig.availabilityForFeature(SpecialFeature.scanUpstreamStation) ==
+        ProprietaryAvailability.supported;
+    final bool joyYouFareAvailable =
+        appConfig.availabilityForFeature(SpecialFeature.joyYouFare) ==
+        ProprietaryAvailability.supported;
 
     return Scaffold(
       appBar: buildPageBar(context, title: settings.text('設定', 'Settings')),
@@ -128,8 +137,12 @@ class SettingsPage extends StatelessWidget {
                 'When a stop is expanded, check previous stops to locate the next bus.',
               ),
             ),
-            value: settings.upstreamEtaScan,
-            onChanged: settings.setUpstreamEtaScan,
+            value: settings.upstreamEtaScan && scanUpstreamAvailable,
+            onChanged: (bool value) => _setSpecialFeature(
+              context,
+              SpecialFeature.scanUpstreamStation,
+              value,
+            ),
           ),
           SwitchListTile(
             secondary: const Icon(Icons.credit_card_outlined),
@@ -140,8 +153,9 @@ class SettingsPage extends StatelessWidget {
                 'Show JoyYou Card fares next to adult fares',
               ),
             ),
-            value: settings.showJoyYouFare,
-            onChanged: settings.setShowJoyYouFare,
+            value: settings.showJoyYouFare && joyYouFareAvailable,
+            onChanged: (bool value) =>
+                _setSpecialFeature(context, SpecialFeature.joyYouFare, value),
           ),
           _SliderSetting(
             icon: Icons.refresh,
@@ -304,6 +318,37 @@ class SettingsPage extends StatelessWidget {
         return settings.text('到站時間', 'Clock time');
       case EtaFormat.mixed:
         return settings.text('到站時間 + 到站時差', 'Clock time + minutes remaining');
+    }
+  }
+
+  Future<void> _setSpecialFeature(
+    BuildContext context,
+    SpecialFeature feature,
+    bool value,
+  ) async {
+    final AppSettings settings = context.read<AppSettings>();
+    if (!value) {
+      switch (feature) {
+        case SpecialFeature.joyYouFare:
+          settings.setShowJoyYouFare(false);
+        case SpecialFeature.scanUpstreamStation:
+          settings.setUpstreamEtaScan(false);
+      }
+      return;
+    }
+
+    final ProprietaryAvailability availability = context
+        .read<AppConfigController>()
+        .availabilityForFeature(feature);
+    if (availability != ProprietaryAvailability.supported) {
+      await showFeatureAvailabilityDialog(context, feature, availability);
+      return;
+    }
+    switch (feature) {
+      case SpecialFeature.joyYouFare:
+        settings.setShowJoyYouFare(true);
+      case SpecialFeature.scanUpstreamStation:
+        settings.setUpstreamEtaScan(true);
     }
   }
 

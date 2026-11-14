@@ -9,6 +9,7 @@ AppConfig _config({
   bool ota = true,
   int critical = 1,
   Map<String, int> proprietaryApi = const <String, int>{},
+  Map<String, int> specialFeatures = const <String, int>{},
 }) {
   return AppConfig.fromJson(<String, dynamic>{
     'app': 'com.spookysrv.hktransports',
@@ -18,6 +19,7 @@ AppConfig _config({
     'doOtaUpdate': ota,
     'lastCriticalVersionCode': critical,
     'proprietaryApi': proprietaryApi,
+    'specialFeatures': specialFeatures,
   });
 }
 
@@ -35,6 +37,11 @@ void main() {
         'kmb-interchange': '4',
         'ignored': 'nope',
       },
+      'specialFeatures': <String, Object>{
+        'joyYouFare': -1,
+        'scanUpstreamStation': '4',
+        'ignored': 'nope',
+      },
     });
 
     expect(config.latestVersionCode, 3);
@@ -44,6 +51,9 @@ void main() {
     expect(config.proprietaryApi['ctb-eta'], -1);
     expect(config.proprietaryApi['kmb-interchange'], 4);
     expect(config.proprietaryApi.containsKey('ignored'), isFalse);
+    expect(config.specialFeatures['joyYouFare'], -1);
+    expect(config.specialFeatures['scanUpstreamStation'], 4);
+    expect(config.specialFeatures.containsKey('ignored'), isFalse);
     expect(config.matchesCurrentApp, isTrue);
   });
 
@@ -158,12 +168,72 @@ void main() {
     );
   });
 
+  test('maps special feature version limits using version codes', () {
+    final AppConfigController config = AppConfigController(
+      initialConfig: _config(
+        specialFeatures: <String, int>{
+          'joyYouFare': 2,
+          'scanUpstreamStation': 3,
+        },
+      ),
+      initialVersionCode: 2,
+    );
+
+    expect(
+      config.availabilityForFeature(SpecialFeature.joyYouFare),
+      ProprietaryAvailability.supported,
+    );
+    expect(
+      config.availabilityForFeature(SpecialFeature.scanUpstreamStation),
+      ProprietaryAvailability.updateRequired,
+    );
+  });
+
+  test('fully disables a special feature with a negative minimum', () {
+    final AppConfigController config = AppConfigController(
+      initialConfig: _config(
+        specialFeatures: <String, int>{
+          'joyYouFare': -1,
+          'scanUpstreamStation': -1,
+        },
+      ),
+      initialVersionCode: 99,
+    );
+
+    expect(
+      config.availabilityForFeature(SpecialFeature.joyYouFare),
+      ProprietaryAvailability.unavailable,
+    );
+    expect(
+      config.availabilityForFeature(SpecialFeature.scanUpstreamStation),
+      ProprietaryAvailability.unavailable,
+    );
+  });
+
+  test('treats missing special features as supported', () {
+    final AppConfigController config = AppConfigController(
+      initialConfig: _config(),
+      initialVersionCode: 1,
+    );
+
+    expect(
+      config.availabilityForFeature(SpecialFeature.joyYouFare),
+      ProprietaryAvailability.supported,
+    );
+    expect(
+      config.availabilityForFeature(SpecialFeature.scanUpstreamStation),
+      ProprietaryAvailability.supported,
+    );
+  });
+
   test('uses the expected config keys', () {
     expect(ProprietaryEndpoint.noticeFeed.configKey, 'hkbus-notice');
     expect(ProprietaryEndpoint.kmbInterchange.configKey, 'kmb-interchange');
     expect(ProprietaryEndpoint.citybusDatabase.configKey, 'ctb-routedata');
     expect(ProprietaryEndpoint.citybusEtaStatus.configKey, 'ctb-eta');
     expect(ProprietaryEndpoint.nlbProprietaryData.configKey, 'nlb-routedata');
+    expect(SpecialFeature.joyYouFare.configKey, 'joyYouFare');
+    expect(SpecialFeature.scanUpstreamStation.configKey, 'scanUpstreamStation');
   });
 
   test('points non-OTA update prompts at the app repository page', () {
