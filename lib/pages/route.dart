@@ -378,7 +378,10 @@ class _RoutePageState extends State<_RoutePage> {
         .toLowerCase();
     if (status.contains('已到達') ||
         status.contains('已到站') ||
-        status.contains('arrived')) {
+        status.contains('arrived') ||
+        status.contains('正在離') ||
+        status.contains('leaving') ||
+        status.contains('departing')) {
       return true;
     }
     final DateTime? time = eta.eta;

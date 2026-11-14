@@ -124,6 +124,29 @@ void main() {
     expect(notice.remainingStops, 2);
   });
 
+  test('shifts when the edge stop is under one minute away', () {
+    final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+      currentIndex: 7,
+      currentEta: now.add(const Duration(minutes: 10)),
+      currentArrived: false,
+      upstream: <UpstreamEtaSample>[
+        sample(6, 4),
+        sample(5, 2),
+        UpstreamEtaSample(
+          stopIndex: 4,
+          eta: now.add(const Duration(seconds: 30)),
+        ),
+        sample(3, 20),
+      ],
+      now: now,
+      scheduled: false,
+    );
+
+    expect(notice, isNotNull);
+    expect(notice!.stopIndex, 5);
+    expect(notice.remainingStops, 2);
+  });
+
   test('uses the current stop when N-1 is later than N', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
