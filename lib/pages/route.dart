@@ -248,7 +248,7 @@ class _RoutePageState extends State<_RoutePage> {
     final AppSettings settings = context.read<AppSettings>();
     _timer = Timer.periodic(
       Duration(seconds: settings.refreshSeconds),
-      (_) => _fetch(index),
+      (_) => _fetch(index, scanUpstream: true),
     );
   }
 
@@ -285,7 +285,13 @@ class _RoutePageState extends State<_RoutePage> {
     final bool currentScheduled = current == null || current.isScheduledLike;
     final DateTime now = DateTime.now().toUtc();
     final List<UpstreamEtaSample> samples = <UpstreamEtaSample>[];
-    final int lastIndex = math.max(0, index - 30);
+    final UpstreamEtaNotice? previous = _upstreamEtaNotice;
+    final int lastIndex =
+        previous != null &&
+            previous.currentIndex == index &&
+            previous.stopIndex != index
+        ? math.max(0, previous.stopIndex)
+        : math.max(0, index - 30);
     DateTime? originEta;
     for (int i = index - 1; i >= lastIndex; i--) {
       final List<BusEta> etas = await _etaService.fetchRouteStop(
