@@ -424,7 +424,7 @@ class _RoutePageState extends State<_RoutePage> {
         etas = await _etaService.fetchRouteStop(widget.route, i);
       } catch (error) {
         debugPrint('Upstream ETA scan failed at $i: $error');
-        continue;
+        break;
       }
       if (!mounted ||
           requestId != _upstreamEtaRequestId ||
@@ -432,7 +432,7 @@ class _RoutePageState extends State<_RoutePage> {
         return;
       }
       final BusEta? upstream = _firstEta(etas);
-      if (upstream?.eta == null) continue;
+      if (upstream?.eta == null) break;
       samples.add(
         UpstreamEtaSample(
           stopIndex: i,
@@ -455,6 +455,21 @@ class _RoutePageState extends State<_RoutePage> {
     }
 
     if (mounted && requestId == _upstreamEtaRequestId) {
+      if (currentScheduled && samples.isNotEmpty) {
+        final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+          currentIndex: index,
+          currentEta: current.eta,
+          currentArrived: currentArrived,
+          upstream: samples,
+          now: now,
+          scheduled: currentScheduled,
+          scanComplete: true,
+        );
+        if (notice != null) {
+          setState(() => _upstreamEtaNotice = notice);
+          return;
+        }
+      }
       setState(() => _upstreamEtaNotice = null);
     }
   }

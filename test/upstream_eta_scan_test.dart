@@ -51,6 +51,62 @@ void main() {
     expect(notice, isNull);
   });
 
+  test('shows origin departure after a scheduled bus reaches the origin', () {
+    final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+      currentIndex: 8,
+      currentArrived: false,
+      currentEta: now.add(const Duration(minutes: 20)),
+      upstream: <UpstreamEtaSample>[
+        sample(7, 18),
+        sample(6, 15),
+        sample(5, 12),
+        sample(4, 9),
+        sample(3, 6),
+        sample(2, 4),
+        sample(1, 2),
+        sample(0, 1),
+      ],
+      now: now,
+      scheduled: true,
+      scanComplete: true,
+    );
+
+    expect(notice, isNotNull);
+    expect(notice!.stopIndex, 0);
+    expect(notice.remainingStops, 8);
+    expect(notice.scheduled, isTrue);
+  });
+
+  test('uses the last reached stop when a scheduled scan stops midway', () {
+    final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+      currentIndex: 8,
+      currentArrived: false,
+      currentEta: now.add(const Duration(minutes: 20)),
+      upstream: <UpstreamEtaSample>[sample(7, 18), sample(6, 15)],
+      now: now,
+      scheduled: true,
+      scanComplete: true,
+    );
+
+    expect(notice, isNotNull);
+    expect(notice!.stopIndex, 6);
+    expect(notice.remainingStops, 2);
+    expect(notice.scheduled, isTrue);
+  });
+
+  test('does not fall back while the scheduled scan is incomplete', () {
+    final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+      currentIndex: 8,
+      currentArrived: false,
+      currentEta: now.add(const Duration(minutes: 20)),
+      upstream: <UpstreamEtaSample>[sample(7, 18), sample(6, 15)],
+      now: now,
+      scheduled: true,
+    );
+
+    expect(notice, isNull);
+  });
+
   test('stops when an upstream stop has no live ETA', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
