@@ -17,6 +17,17 @@ String? proprietaryMinutesLabel(BusEta eta) {
   return value;
 }
 
+/// Citybus nwp3 normally supplies only a clock time. When it is within a
+/// minute, show the established "<1 min" label instead of the generic
+/// open-data "arriving" wording.
+String? proprietaryWaitLabel(BusEta eta, AppSettings settings, int minutes) {
+  final String? literal = proprietaryMinutesLabel(eta);
+  if (literal != null) return literal;
+  if (eta.proprietaryTime == null) return null;
+  if (minutes < 1) return '<1 min';
+  return '$minutes ${settings.text('分鐘', 'min')}';
+}
+
 /// Changes whenever the base ETA content changes, excluding live status.
 String etaDisplayKey(BusEta eta) {
   return <String>[
