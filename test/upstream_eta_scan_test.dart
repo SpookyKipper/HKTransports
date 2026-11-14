@@ -94,6 +94,23 @@ void main() {
     expect(notice.scheduled, isTrue);
   });
 
+  test('falls back to the last reached stop without a scheduled status', () {
+    final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+      currentIndex: 8,
+      currentArrived: false,
+      currentEta: now.add(const Duration(minutes: 20)),
+      upstream: <UpstreamEtaSample>[sample(7, 18), sample(6, 15)],
+      now: now,
+      scheduled: false,
+      scanComplete: true,
+    );
+
+    expect(notice, isNotNull);
+    expect(notice!.stopIndex, 6);
+    expect(notice.remainingStops, 2);
+    expect(notice.scheduled, isFalse);
+  });
+
   test('does not fall back while the scheduled scan is incomplete', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
