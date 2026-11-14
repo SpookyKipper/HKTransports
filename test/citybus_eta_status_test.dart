@@ -95,6 +95,23 @@ void main() {
     expect(statuses.single.statusZh, '未開出');
   });
 
+  test('keeps literal less-than-one-minute text', () {
+    final List<CitybusEtaStatus> statuses = parseCitybusEtaStatuses('''
+      <div id="nextbus_listitem">
+        <table><tr>
+          <td><table><tr><td>22:10</td></tr></table></td>
+          <td><table>
+            <tr><td>往: 中環</td></tr>
+            <tr><td>&lt;1 min</td></tr>
+          </table></td>
+        </tr></table>
+      </div>
+    ''');
+
+    expect(statuses, hasLength(1));
+    expect(statuses.single.minutesText, '<1 min');
+  });
+
   test('strips the operator name from joint-route statuses', () {
     final List<CitybusEtaStatus> statuses = parseCitybusEtaStatuses('''
       <div id="nextbus_listitem">

@@ -32,8 +32,9 @@ class CitybusEtaStatus {
 
 /// Reads Citybus' proprietary nwp3 ETA popup.
 ///
-/// Its timestamps are not reliable, so callers should only use the returned
-/// statuses in the same order as the open-data ETAs for the same stop.
+/// Route ETA display consumes these rows directly when the proprietary Citybus
+/// ETA option is enabled. The literal time and minutes fields are preserved;
+/// time is also parsed for ordering and upstream comparisons.
 class CitybusEtaStatusClient {
   CitybusEtaStatusClient({Duration timeout = const Duration(seconds: 20)})
     : _timeout = timeout;
@@ -442,25 +443,38 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
       }
       statusText ??= text;
     }
-    if (statusText == null || statusText.isEmpty) continue;
-    statusText = _stripOperatorPrefix(statusText);
+    if ((statusText == null || statusText.isEmpty) &&
+        minutesText == null &&
+        timeText == null) {
+      continue;
+    }
+    String? normalizedStatus = statusText;
+    if (normalizedStatus != null) {
+      normalizedStatus = _stripOperatorPrefix(normalizedStatus);
+    }
 
     double? distanceKm;
+    final String statusForDistance = normalizedStatus ?? '';
     final RegExpMatch? distance = RegExp(
       r'距離\s*([0-9]+(?:\.[0-9]+)?)\s*公里',
-    ).firstMatch(statusText);
+    ).firstMatch(statusForDistance);
     if (distance != null) {
       distanceKm = double.tryParse(distance.group(1) ?? '');
-      statusText = statusText
+      normalizedStatus = statusForDistance
           .replaceRange(distance.start, distance.end, '')
           .trim();
     }
 
-    final String? statusZh = statusText.isEmpty ? null : statusText;
+    final String? statusZh =
+        normalizedStatus == null || normalizedStatus.isEmpty
+        ? null
+        : normalizedStatus;
     final String? statusEn = statusZh == null
         ? null
         : _translateStatus(statusZh);
-    if (statusZh == null && distanceKm == null) continue;
+    if (statusZh == null && distanceKm == null && minutesText == null) {
+      continue;
+    }
     statuses.add(
       CitybusEtaStatus(
         statusZh: statusZh,
@@ -481,7 +495,7 @@ String _cleanText(String value) {
 }
 
 final RegExp _minutesPattern = RegExp(
-  r'\d+\s*(?:分鐘|分|minutes|minute|mins|min)',
+  r'(?:少於|<|＜)?\s*\d+\s*(?:分鐘|分|minutes|minute|mins|min)',
   caseSensitive: false,
 );
 
