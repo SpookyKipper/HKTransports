@@ -350,30 +350,24 @@ class _PinnedChip extends StatelessWidget {
     final String clock =
         proprietaryClockLabel(eta) ?? DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
-    final String? departed = departedEtaLabel(eta, settings);
-    final String wait =
-        proprietaryWaitLabel(eta, settings, minutes) ??
-        (minutes < 1
-            ? settings.text('即將到達', 'Arriving')
-            : '$minutes ${settings.text('分', 'min')}');
-    final String base = departed != null
-        ? '$clock · $departed'
-        : switch (settings.etaFormat) {
-            EtaFormat.diff => wait,
-            EtaFormat.exact => clock,
-            EtaFormat.mixed => '$clock · $wait',
-          };
+    final String? wait = etaWaitLabel(eta, settings, minutes);
+    final String base = switch (settings.etaFormat) {
+      EtaFormat.diff => wait ?? '',
+      EtaFormat.exact => clock,
+      EtaFormat.mixed => wait == null ? clock : '$clock · $wait',
+    };
     final String liveStatus = <String?>[
       eta.status(settings.language),
       eta.distanceLabel(settings.language),
     ].whereType<String>().where((String value) => value.isNotEmpty).join(' · ');
+    if (base.isEmpty) return liveStatus.isEmpty ? '--' : liveStatus;
     return liveStatus.isEmpty ? base : '$base · $liveStatus';
   }
 }
 
 String? _proprietaryOnlyLabel(BusEta eta, AppSettings settings) {
   final String? time = proprietaryClockLabel(eta);
-  final String? minutes = proprietaryMinutesLabel(eta);
+  final String? minutes = etaWaitLabel(eta, settings, null);
   final String base = switch (settings.etaFormat) {
     EtaFormat.diff => minutes ?? time ?? '',
     EtaFormat.exact => time ?? minutes ?? '',
