@@ -295,7 +295,7 @@ class _RoutePageState extends State<_RoutePage> {
           onPressed: loading ? null : () => _startRefresh(index),
           style: M3EButtonStyle.text,
           icon: loading
-              ? const M3ELoadingIndicator(size: 18)
+              ? const M3ELoadingIndicator(size: 24)
               : Icon(Icons.refresh, color: color),
           label: Text(
             settings.text('$seconds 秒', '${seconds}s'),
