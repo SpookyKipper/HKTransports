@@ -128,7 +128,7 @@ Future<void> startAppUpdate(
 ) async {
   final AppConfig? config = controller.config;
   if (config == null || !controller.hasUpdate) return;
-  if (!config.doOtaUpdate) {
+  if (!controller.canUseInAppUpdate) {
     bool opened = false;
     try {
       opened = await openAppRepositoryPage();

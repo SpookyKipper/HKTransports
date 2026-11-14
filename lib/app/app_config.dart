@@ -50,12 +50,16 @@ class AppConfig {
   });
 
   factory AppConfig.fromJson(Map<String, dynamic> json) {
+    final int latestVersionCode = _asInt(json['latestVersionCode']) ?? 0;
     return AppConfig(
       app: json['app']?.toString().trim() ?? '',
       os: json['os']?.toString().trim().toLowerCase() ?? '',
-      latestVersionCode: _asInt(json['latestVersionCode']) ?? 0,
+      latestVersionCode: latestVersionCode,
       latestVersionName: json['latestVersionName']?.toString().trim() ?? '',
-      doOtaUpdate: _asBool(json['doOtaUpdate'], defaultValue: true),
+      doOtaUpdate: _otaMinimumVersionCode(
+        json['doOtaUpdate'],
+        latestVersionCode: latestVersionCode,
+      ),
       lastCriticalVersionCode: _asInt(json['lastCriticalVersionCode']) ?? 0,
       proprietaryApi: _asIntMap(json['proprietaryApi']),
       specialFeatures: _asIntMap(json['specialFeatures']),
@@ -66,7 +70,7 @@ class AppConfig {
   final String os;
   final int latestVersionCode;
   final String latestVersionName;
-  final bool doOtaUpdate;
+  final int doOtaUpdate;
   final int lastCriticalVersionCode;
   final Map<String, int> proprietaryApi;
   final Map<String, int> specialFeatures;
@@ -120,6 +124,15 @@ class AppConfigController {
         value != null &&
         current != null &&
         value.lastCriticalVersionCode > current;
+  }
+
+  bool get canUseInAppUpdate {
+    final AppConfig? value = _config;
+    final int? current = _currentVersionCode;
+    return _matchesCurrentApp &&
+        value != null &&
+        current != null &&
+        current >= value.doOtaUpdate;
   }
 
   ProprietaryAvailability availabilityFor(ProprietaryEndpoint endpoint) {
@@ -240,6 +253,16 @@ class AppConfigController {
   }
 }
 
+int _otaMinimumVersionCode(Object? raw, {required int latestVersionCode}) {
+  final int? value = _asInt(raw);
+  if (value != null) return value;
+  // Accept the previous boolean config while the server migrates.
+  if (raw is bool) {
+    return raw ? 0 : latestVersionCode + 1;
+  }
+  return 0;
+}
+
 Map<String, int> _asIntMap(Object? raw) {
   final Map<String, int> result = <String, int>{};
   if (raw is! Map) return Map<String, int>.unmodifiable(result);
@@ -250,21 +273,6 @@ Map<String, int> _asIntMap(Object? raw) {
     result[key] = value;
   }
   return Map<String, int>.unmodifiable(result);
-}
-
-bool _asBool(Object? value, {required bool defaultValue}) {
-  if (value is bool) return value;
-  if (value is String) {
-    switch (value.trim().toLowerCase()) {
-      case 'true':
-      case '1':
-        return true;
-      case 'false':
-      case '0':
-        return false;
-    }
-  }
-  return defaultValue;
 }
 
 int? _asInt(Object? value) {

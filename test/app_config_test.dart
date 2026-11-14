@@ -6,7 +6,7 @@ import 'package:hktransports/bus/state/app_settings.dart';
 AppConfig _config({
   int latest = 3,
   String name = '0.0.1',
-  bool ota = true,
+  int ota = 0,
   int critical = 1,
   Map<String, int> proprietaryApi = const <String, int>{},
   Map<String, int> specialFeatures = const <String, int>{},
@@ -30,7 +30,7 @@ void main() {
       'os': 'android',
       'latestVersionCode': '3',
       'latestVersionName': '0.0.1',
-      'doOtaUpdate': false,
+      'doOtaUpdate': 2,
       'lastCriticalVersionCode': 2,
       'proprietaryApi': <String, Object>{
         'ctb-eta': -1,
@@ -46,7 +46,7 @@ void main() {
 
     expect(config.latestVersionCode, 3);
     expect(config.latestVersionName, '0.0.1');
-    expect(config.doOtaUpdate, isFalse);
+    expect(config.doOtaUpdate, 2);
     expect(config.lastCriticalVersionCode, 2);
     expect(config.proprietaryApi['ctb-eta'], -1);
     expect(config.proprietaryApi['kmb-interchange'], 4);
@@ -76,7 +76,7 @@ void main() {
     );
   });
 
-  test('defaults doOtaUpdate to true when the config omits it', () {
+  test('defaults doOtaUpdate to the lowest version code', () {
     final AppConfig config = AppConfig.fromJson(<String, dynamic>{
       'app': 'com.spookysrv.hktransports',
       'os': 'android',
@@ -85,17 +85,58 @@ void main() {
       'lastCriticalVersionCode': 1,
     });
 
-    expect(config.doOtaUpdate, isTrue);
+    expect(config.doOtaUpdate, 0);
   });
 
-  test('keeps updates available when in-app OTA is disabled', () {
+  test('keeps updates available but redirects below the OTA minimum', () {
     final AppConfigController config = AppConfigController(
-      initialConfig: _config(ota: false),
+      initialConfig: _config(ota: 2),
       initialVersionCode: 1,
     );
 
     expect(config.hasUpdate, isTrue);
-    expect(config.config!.doOtaUpdate, isFalse);
+    expect(config.canUseInAppUpdate, isFalse);
+  });
+
+  test('allows in-app OTA at or above the OTA minimum', () {
+    final AppConfigController atMinimum = AppConfigController(
+      initialConfig: _config(ota: 2),
+      initialVersionCode: 2,
+    );
+    final AppConfigController aboveMinimum = AppConfigController(
+      initialConfig: _config(ota: 2),
+      initialVersionCode: 3,
+    );
+    final AppConfigController belowMinimum = AppConfigController(
+      initialConfig: _config(ota: 3),
+      initialVersionCode: 2,
+    );
+
+    expect(atMinimum.canUseInAppUpdate, isTrue);
+    expect(aboveMinimum.canUseInAppUpdate, isTrue);
+    expect(belowMinimum.canUseInAppUpdate, isFalse);
+  });
+
+  test('maps the previous boolean OTA flag during migration', () {
+    final AppConfig enabled = AppConfig.fromJson(<String, dynamic>{
+      'app': 'com.spookysrv.hktransports',
+      'os': 'android',
+      'latestVersionCode': 3,
+      'latestVersionName': '0.0.1',
+      'doOtaUpdate': true,
+      'lastCriticalVersionCode': 1,
+    });
+    final AppConfig disabled = AppConfig.fromJson(<String, dynamic>{
+      'app': 'com.spookysrv.hktransports',
+      'os': 'android',
+      'latestVersionCode': 3,
+      'latestVersionName': '0.0.1',
+      'doOtaUpdate': false,
+      'lastCriticalVersionCode': 1,
+    });
+
+    expect(enabled.doOtaUpdate, 0);
+    expect(disabled.doOtaUpdate, 4);
   });
 
   test('compares version codes only, never version names', () {
