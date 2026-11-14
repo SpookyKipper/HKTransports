@@ -435,9 +435,7 @@ class _RoutePageState extends State<_RoutePage> {
           remainingStops: index,
           scheduled: true,
         );
-        setState(
-          () => _upstreamEtaNotice = notice.stopIndex == index ? null : notice,
-        );
+        setState(() => _upstreamEtaNotice = notice);
       } else if (mounted && requestId == _upstreamEtaRequestId) {
         setState(() => _upstreamEtaNotice = null);
       }
@@ -476,9 +474,7 @@ class _RoutePageState extends State<_RoutePage> {
         scheduled: currentScheduled,
       );
       if (notice != null) {
-        setState(
-          () => _upstreamEtaNotice = notice.stopIndex == index ? null : notice,
-        );
+        setState(() => _upstreamEtaNotice = notice);
         return;
       }
     }
@@ -1159,19 +1155,23 @@ class _UpstreamEtaBanner extends StatelessWidget {
     final String clock = DateFormat('HH:mm').format(hkTime);
     final int minutes = eta.difference(DateTime.now().toUtc()).inMinutes;
     final bool departure = notice.stopIndex == 0;
+    final bool nextStopIsViewedStop =
+        notice.stopIndex == notice.currentIndex && !departure;
     final bool willDepart =
         notice.scheduled || eta.isAfter(DateTime.now().toUtc());
-    final String text = departure
+    final String text = nextStopIsViewedStop
+        ? settings.text('下個站到你', 'The next stop is this')
+        : departure
         ? willDepart
               ? _scheduledDepartureText(settings, clock, minutes)
               : settings.text(
                   '下班車已在 $stopName 開出（剩餘 ${notice.remainingStops} 個站）',
                   'Next bus has already departed from $stopName (${notice.remainingStops} stops remaining)',
                 )
-        : minutes <= 0
+        : minutes < 1
         ? settings.text(
-            '下班車已到達 $stopName（剩餘 ${notice.remainingStops} 個站）',
-            'Next bus has arrived at $stopName (${notice.remainingStops} stops remaining)',
+            '下班車即將到達 $stopName（剩餘 ${notice.remainingStops} 個站）',
+            'Next bus is arriving at $stopName (${notice.remainingStops} stops remaining)',
           )
         : _arrivalText(settings, clock, minutes);
     return FadeIn(
