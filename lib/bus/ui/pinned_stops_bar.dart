@@ -352,7 +352,7 @@ class _PinnedChip extends StatelessWidget {
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
     final String? departed = departedEtaLabel(eta, settings);
     final String wait =
-        proprietaryMinutesLabel(eta) ??
+        proprietaryWaitLabel(eta, settings, minutes) ??
         (minutes < 1
             ? settings.text('即將到達', 'Arriving')
             : '$minutes ${settings.text('分', 'min')}');

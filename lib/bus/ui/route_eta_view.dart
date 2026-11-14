@@ -213,7 +213,7 @@ class _RouteEtaLine extends StatelessWidget {
         ? departedEtaLabel(eta, settings)
         : null;
     final String wait =
-        proprietaryMinutesLabel(eta) ??
+        proprietaryWaitLabel(eta, settings, minutes) ??
         (minutes < 1
             ? atOrigin
                   ? settings.text('即場開出', 'Departing now')

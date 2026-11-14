@@ -1321,7 +1321,7 @@ class _EtaLine extends StatelessWidget {
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
     final String? departed = departedEtaLabel(eta, settings);
     final String wait =
-        proprietaryMinutesLabel(eta) ??
+        proprietaryWaitLabel(eta, settings, minutes) ??
         (minutes < 1
             ? atOrigin
                   ? settings.text('即場開出', 'Departing now')
