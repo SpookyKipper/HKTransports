@@ -292,7 +292,6 @@ class _RoutePageState extends State<_RoutePage> {
             previous.stopIndex != index
         ? math.max(0, previous.stopIndex)
         : math.max(0, index - 30);
-    DateTime? originEta;
     for (int i = index - 1; i >= lastIndex; i--) {
       final List<BusEta> etas = await _etaService.fetchRouteStop(
         widget.route,
@@ -305,7 +304,6 @@ class _RoutePageState extends State<_RoutePage> {
       }
       final BusEta? upstream = _firstEta(etas);
       if (upstream?.eta == null) break;
-      if (i == 0) originEta = upstream!.eta;
       samples.add(UpstreamEtaSample(stopIndex: i, eta: upstream!.eta));
       final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
         currentIndex: index,
@@ -322,35 +320,6 @@ class _RoutePageState extends State<_RoutePage> {
       }
     }
 
-    if (currentScheduled) {
-      if (index == 0) {
-        originEta = current?.eta;
-      } else if (originEta == null) {
-        final List<BusEta> originEtas = await _etaService.fetchRouteStop(
-          widget.route,
-          0,
-        );
-        if (!mounted ||
-            requestId != _upstreamEtaRequestId ||
-            _expandedIndex != index) {
-          return;
-        }
-        originEta = _firstEta(originEtas)?.eta;
-      }
-      if (originEta != null) {
-        final UpstreamEtaNotice notice = UpstreamEtaNotice(
-          currentIndex: index,
-          stopIndex: 0,
-          eta: originEta,
-          remainingStops: index + 1,
-          scheduled: currentScheduled,
-        );
-        setState(
-          () => _upstreamEtaNotice = notice.stopIndex == index ? null : notice,
-        );
-        return;
-      }
-    }
     if (mounted && requestId == _upstreamEtaRequestId) {
       setState(() => _upstreamEtaNotice = null);
     }
