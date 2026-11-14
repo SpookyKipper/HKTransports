@@ -31,10 +31,10 @@ class EtaText extends StatelessWidget {
     final String? text = appended;
     List<InlineSpan> spans(double opacity) {
       return <InlineSpan>[
-        TextSpan(text: base),
+        if (base.isNotEmpty) TextSpan(text: base),
         if (text != null && text.isNotEmpty)
           TextSpan(
-            text: ' · $text',
+            text: base.isEmpty ? text : ' · $text',
             style: TextStyle(color: color.withValues(alpha: opacity)),
           ),
         if (wheelchair)

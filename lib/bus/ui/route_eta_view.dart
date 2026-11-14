@@ -165,7 +165,7 @@ class _RouteEtaViewState extends State<RouteEtaView> {
 
 String? _proprietaryOnlyLabel(BusEta eta, AppSettings settings) {
   final String? time = proprietaryClockLabel(eta);
-  final String? minutes = proprietaryMinutesLabel(eta);
+  final String? minutes = etaWaitLabel(eta, settings, null);
   final String base = switch (settings.etaFormat) {
     EtaFormat.diff => minutes ?? time ?? '',
     EtaFormat.exact => time ?? minutes ?? '',
@@ -209,23 +209,17 @@ class _RouteEtaLine extends StatelessWidget {
     final String clock =
         proprietaryClockLabel(eta) ?? DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
-    final String? departed = eta.proprietaryTime == null
-        ? departedEtaLabel(eta, settings)
-        : null;
-    final String wait =
-        proprietaryWaitLabel(eta, settings, minutes) ??
-        (minutes < 1
-            ? atOrigin
-                  ? settings.text('即場開出', 'Departing now')
-                  : settings.text('即將到達', 'Arriving')
-            : '$minutes ${settings.text('分', 'min')}');
-    final String base = departed != null
-        ? '$clock  $departed'
-        : switch (settings.etaFormat) {
-            EtaFormat.diff => wait,
-            EtaFormat.exact => clock,
-            EtaFormat.mixed => '$clock  $wait',
-          };
+    final String? wait = etaWaitLabel(
+      eta,
+      settings,
+      minutes,
+      atOrigin: atOrigin,
+    );
+    final String base = switch (settings.etaFormat) {
+      EtaFormat.diff => wait ?? '',
+      EtaFormat.exact => clock,
+      EtaFormat.mixed => wait == null ? clock : '$clock  $wait',
+    };
     final Color color = first
         ? Theme.of(context).colorScheme.primary
         : Theme.of(context).colorScheme.onSurfaceVariant;

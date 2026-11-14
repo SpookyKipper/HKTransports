@@ -1,10 +1,6 @@
 import 'package:hktransports/bus/eta/eta_models.dart';
+import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
-
-String? departedEtaLabel(BusEta eta, AppSettings settings) {
-  if (!eta.hasDepartedAt(DateTime.now().toUtc())) return null;
-  return settings.text('正在離站', 'Leaving now');
-}
 
 String? proprietaryClockLabel(BusEta eta) {
   final String? value = eta.proprietaryTime?.trim();
@@ -17,14 +13,63 @@ String? proprietaryMinutesLabel(BusEta eta) {
   return value;
 }
 
-/// Citybus nwp3 normally supplies only a clock time. When it is within a
-/// minute, show the established "<1 min" label instead of the generic
-/// open-data "arriving" wording.
-String? proprietaryWaitLabel(BusEta eta, AppSettings settings, int minutes) {
+bool _statusArrived(BusEta eta) {
+  final String text = '${eta.statusZh ?? ''} ${eta.statusEn ?? ''}'
+      .toLowerCase();
+  return text.contains('已到達') ||
+      text.contains('已到站') ||
+      text.contains('arrived');
+}
+
+bool _statusLeaving(BusEta eta) {
+  final String text = '${eta.statusZh ?? ''} ${eta.statusEn ?? ''}'
+      .toLowerCase();
+  return text.contains('正在離') ||
+      text.contains('正在離開') ||
+      text.contains('leaving');
+}
+
+bool _literalUnderOneMinute(String literal) {
+  final String text = literal.toLowerCase();
+  return text.contains('<') ||
+      text.contains('少於') ||
+      text.contains('即將到達') ||
+      text.contains('arriving') ||
+      text.contains('正在離') ||
+      text.contains('leaving');
+}
+
+/// The minute portion of an ETA row.
+///
+/// Citybus rows with a live distance keep the literal "<1 分鐘" indication.
+/// Once Citybus reports that the bus has arrived, the minute portion is hidden.
+/// Other operators use a dash for under-one-minute and departed states.
+String? etaWaitLabel(
+  BusEta eta,
+  AppSettings settings,
+  int? minutes, {
+  bool atOrigin = false,
+}) {
+  final bool citybus = eta.company == BusCompany.ctb;
+  if (citybus && _statusArrived(eta)) return null;
   final String? literal = proprietaryMinutesLabel(eta);
+  final bool underOne =
+      (minutes != null && minutes < 1) ||
+      (literal != null && _literalUnderOneMinute(literal));
+  if (atOrigin && minutes != null && minutes < 1 && !citybus) {
+    return settings.text('即場開出', 'Departing now');
+  }
+  if (citybus && _statusLeaving(eta)) {
+    return '- ${settings.text('分鐘', 'min')}';
+  }
+  if (underOne) {
+    if (citybus && eta.distanceKm != null) {
+      return '<1 ${settings.text('分鐘', 'min')}';
+    }
+    return '- ${settings.text('分鐘', 'min')}';
+  }
   if (literal != null) return literal;
-  if (eta.proprietaryTime == null) return null;
-  if (minutes < 1) return '<1 min';
+  if (minutes == null) return null;
   return '$minutes ${settings.text('分鐘', 'min')}';
 }
 
