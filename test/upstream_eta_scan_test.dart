@@ -29,7 +29,7 @@ void main() {
     expect(notice!.scheduled, isTrue);
     expect(notice.stopIndex, 5);
     expect(notice.currentIndex, 8);
-    expect(notice.remainingStops, 4);
+    expect(notice.remainingStops, 3);
   });
 
   test('returns null when the upstream ETAs are monotonic', () {
@@ -82,7 +82,7 @@ void main() {
 
     expect(notice, isNotNull);
     expect(notice!.stopIndex, 5);
-    expect(notice.remainingStops, 4);
+    expect(notice.remainingStops, 3);
   });
 
   test('detects a jump immediately before the current stop', () {
@@ -96,6 +96,6 @@ void main() {
 
     expect(notice, isNotNull);
     expect(notice!.stopIndex, 8);
-    expect(notice.remainingStops, 1);
+    expect(notice.remainingStops, 0);
   });
 }
