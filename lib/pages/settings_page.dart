@@ -120,6 +120,18 @@ class SettingsPage extends StatelessWidget {
             onChanged: settings.setEtaFormat,
           ),
           SwitchListTile(
+            secondary: const Icon(Icons.travel_explore_outlined),
+            title: Text(settings.text('掃描上游車站', 'Scan upstream stops')),
+            subtitle: Text(
+              settings.text(
+                '展開車站詳情時，查看前幾個車站以找出下班車的位置。',
+                'When a stop is expanded, check previous stops to locate the next bus.',
+              ),
+            ),
+            value: settings.upstreamEtaScan,
+            onChanged: settings.setUpstreamEtaScan,
+          ),
+          SwitchListTile(
             secondary: const Icon(Icons.credit_card_outlined),
             title: Text(settings.text('顯示樂悠車費', 'Show JoyYou fares')),
             subtitle: Text(

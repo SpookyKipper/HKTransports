@@ -12,6 +12,7 @@ import 'package:hktransports/bus/data/bus_repository.dart';
 import 'package:hktransports/bus/eta/eta_display.dart';
 import 'package:hktransports/bus/eta/eta_models.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
+import 'package:hktransports/bus/eta/upstream_eta_scan.dart';
 import 'package:hktransports/bus/model/bus_models.dart';
 import 'package:hktransports/bus/model/route_display_name.dart';
 import 'package:hktransports/bus/nlb/nlb_timetable_service.dart';
@@ -76,6 +77,7 @@ class _RoutePageState extends State<_RoutePage> {
   static const double _stationInnerRadius = 8;
   static const double _autoFocusMaxDistanceMeters = 2000;
 
+  late final AppSettings _settings;
   late final EtaService _etaService;
   StreamSubscription<EtaStatusUpdate>? _statusSubscription;
   final Map<int, List<BusEta>?> _etas = {};
@@ -84,6 +86,9 @@ class _RoutePageState extends State<_RoutePage> {
   final Map<int, GlobalKey> _stationKeys = {};
   Timer? _timer;
   int? _expandedIndex;
+  UpstreamEtaNotice? _upstreamEtaNotice;
+  int _upstreamEtaRequestId = 0;
+  bool _upstreamEtaEnabled = false;
   bool _autoFocusAttempted = false;
   bool _userSelectedStation = false;
 
@@ -91,6 +96,9 @@ class _RoutePageState extends State<_RoutePage> {
   void initState() {
     super.initState();
     final AppSettings settings = context.read<AppSettings>();
+    _settings = settings;
+    _upstreamEtaEnabled = settings.upstreamEtaScan;
+    settings.addListener(_onSettingsChanged);
     final BusRepository repository = context.read<BusRepository>();
     _etaService = EtaService(
       language: settings.language,
@@ -196,10 +204,29 @@ class _RoutePageState extends State<_RoutePage> {
 
   @override
   void dispose() {
+    _settings.removeListener(_onSettingsChanged);
     _timer?.cancel();
     _statusSubscription?.cancel();
     _etaService.dispose();
     super.dispose();
+  }
+
+  void _onSettingsChanged() {
+    if (!mounted) return;
+    final bool enabled = _settings.upstreamEtaScan;
+    if (enabled == _upstreamEtaEnabled) return;
+    _upstreamEtaEnabled = enabled;
+    if (!enabled) {
+      ++_upstreamEtaRequestId;
+      if (_upstreamEtaNotice != null) {
+        setState(() => _upstreamEtaNotice = null);
+      }
+      return;
+    }
+    final int? index = _expandedIndex;
+    if (index != null) {
+      unawaited(_fetch(index, scanUpstream: true));
+    }
   }
 
   void _onStatusUpdate(EtaStatusUpdate update) {
@@ -217,7 +244,7 @@ class _RoutePageState extends State<_RoutePage> {
 
   void _startRefresh(int index) {
     _timer?.cancel();
-    _fetch(index);
+    _fetch(index, scanUpstream: true);
     final AppSettings settings = context.read<AppSettings>();
     _timer = Timer.periodic(
       Duration(seconds: settings.refreshSeconds),
@@ -225,7 +252,7 @@ class _RoutePageState extends State<_RoutePage> {
     );
   }
 
-  Future<void> _fetch(int index) async {
+  Future<void> _fetch(int index, {bool scanUpstream = false}) async {
     if (_loading.contains(index)) return;
     setState(() => _loading.add(index));
     final List<BusEta> etas = await _etaService.fetchRouteStop(
@@ -237,17 +264,102 @@ class _RoutePageState extends State<_RoutePage> {
       _loading.remove(index);
       _etas[index] = etas;
     });
+    if (scanUpstream && _expandedIndex == index) {
+      unawaited(_scanUpstreamEta(index));
+    }
+  }
+
+  BusEta? _firstEta(List<BusEta>? etas) {
+    for (final BusEta eta in etas ?? const <BusEta>[]) {
+      if (eta.eta != null) return eta;
+    }
+    return null;
+  }
+
+  Future<void> _scanUpstreamEta(int index) async {
+    if (!mounted || !_settings.upstreamEtaScan || _expandedIndex != index) {
+      return;
+    }
+    final int requestId = ++_upstreamEtaRequestId;
+    final BusEta? current = _firstEta(_etas[index]);
+    final bool currentScheduled = current == null || current.isScheduledLike;
+    final DateTime now = DateTime.now().toUtc();
+    final List<UpstreamEtaSample> samples = <UpstreamEtaSample>[];
+    final int lastIndex = math.max(0, index - 30);
+    DateTime? originEta;
+    for (int i = index - 1; i >= lastIndex; i--) {
+      final List<BusEta> etas = await _etaService.fetchRouteStop(
+        widget.route,
+        i,
+      );
+      if (!mounted ||
+          requestId != _upstreamEtaRequestId ||
+          _expandedIndex != index) {
+        return;
+      }
+      final BusEta? upstream = _firstEta(etas);
+      if (upstream?.eta == null) break;
+      if (i == 0) originEta = upstream!.eta;
+      samples.add(UpstreamEtaSample(stopIndex: i, eta: upstream!.eta));
+      final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+        currentIndex: index,
+        currentEta: current?.eta,
+        upstream: samples,
+        now: now,
+      );
+      if (notice != null) {
+        setState(() => _upstreamEtaNotice = notice);
+        return;
+      }
+    }
+
+    if (currentScheduled) {
+      if (index == 0) {
+        originEta = current?.eta;
+      } else if (originEta == null) {
+        final List<BusEta> originEtas = await _etaService.fetchRouteStop(
+          widget.route,
+          0,
+        );
+        if (!mounted ||
+            requestId != _upstreamEtaRequestId ||
+            _expandedIndex != index) {
+          return;
+        }
+        originEta = _firstEta(originEtas)?.eta;
+      }
+      if (originEta != null) {
+        setState(
+          () => _upstreamEtaNotice = UpstreamEtaNotice(
+            currentIndex: index,
+            stopIndex: 0,
+            eta: originEta!,
+            remainingStops: index + 1,
+          ),
+        );
+        return;
+      }
+    }
+    if (mounted && requestId == _upstreamEtaRequestId) {
+      setState(() => _upstreamEtaNotice = null);
+    }
   }
 
   void _onExpansionChanged(int index, bool expanded) {
     _userSelectedStation = true;
     if (expanded) {
-      setState(() => _expandedIndex = index);
+      ++_upstreamEtaRequestId;
+      setState(() {
+        _expandedIndex = index;
+        _upstreamEtaNotice = null;
+      });
       _startRefresh(index);
       _mapKey.currentState?.focusStation(index);
     } else {
+      ++_upstreamEtaRequestId;
       setState(() {
         _expandedIndex = null;
+        _upstreamEtaNotice = null;
         _loading.remove(index);
       });
       _timer?.cancel();
@@ -495,7 +607,9 @@ class _RoutePageState extends State<_RoutePage> {
             child: M3ERefreshIndicator.contained(
               onRefresh: () async {
                 final int? index = _expandedIndex;
-                if (index != null) await _fetch(index);
+                if (index != null) {
+                  await _fetch(index, scanUpstream: true);
+                }
               },
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -702,9 +816,25 @@ class _RoutePageState extends State<_RoutePage> {
         stopIndexByCode.putIfAbsent(code, () => i);
       }
     }
+    final UpstreamEtaNotice? notice = _upstreamEtaNotice;
+    final bool showNotice =
+        settings.upstreamEtaScan &&
+        notice != null &&
+        notice.currentIndex == index;
+    final String noticeStopName = showNotice
+        ? repository
+                  .stopById(stopIds[notice.stopIndex])
+                  ?.displayName(settings.language) ??
+              stopIds[notice.stopIndex]
+        : '';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (showNotice) ...[
+          _UpstreamEtaBanner(notice: notice, stopName: noticeStopName),
+          const SizedBox(height: 8),
+        ],
         if (route.companies.contains(BusCompany.nlb))
           NlbStopLandmark(
             route: route,
@@ -875,6 +1005,56 @@ class _RouteSpecialTag extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UpstreamEtaBanner extends StatelessWidget {
+  const _UpstreamEtaBanner({required this.notice, required this.stopName});
+
+  final UpstreamEtaNotice notice;
+  final String stopName;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final DateTime eta = notice.eta;
+    final DateTime hkTime = eta.toUtc().add(const Duration(hours: 8));
+    final String clock = DateFormat('HH:mm').format(hkTime);
+    final int minutes = eta.difference(DateTime.now().toUtc()).inMinutes;
+    final bool departure = notice.stopIndex == 0;
+    final String text = departure
+        ? minutes <= 0
+              ? settings.text(
+                  '下班車已在 $stopName 開出（剩餘 ${notice.remainingStops} 個站）',
+                  'Next bus has departed from $stopName (${notice.remainingStops} stops remaining)',
+                )
+              : settings.text(
+                  '下班車將於 $clock $minutes 分鐘後在 $stopName 開出（剩餘 ${notice.remainingStops} 個站）',
+                  'Next bus will depart from $stopName at $clock (in $minutes min, ${notice.remainingStops} stops remaining)',
+                )
+        : minutes <= 0
+        ? settings.text(
+            '下班車已到達 $stopName（剩餘 ${notice.remainingStops} 個站）',
+            'Next bus has arrived at $stopName (${notice.remainingStops} stops remaining)',
+          )
+        : settings.text(
+            '下班車將於 $clock $minutes 分鐘後到達 $stopName（剩餘 ${notice.remainingStops} 個站）',
+            'Next bus will arrive at $stopName at $clock (in $minutes min, ${notice.remainingStops} stops remaining)',
+          );
+    return FadeIn(
+      key: ValueKey<String>(
+        '${notice.currentIndex}|${notice.stopIndex}|${eta.millisecondsSinceEpoch}',
+      ),
+      duration: const Duration(milliseconds: 300),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: scheme.primary,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

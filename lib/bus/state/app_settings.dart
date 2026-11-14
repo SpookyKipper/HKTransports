@@ -283,6 +283,7 @@ class AppSettings extends ChangeNotifier {
   bool _autoRenew = true;
   int _autoUpdateHours = 24;
   AutoUpdateNetwork _autoUpdateNetwork = AutoUpdateNetwork.wifiOrMobile;
+  bool _upstreamEtaScan = false;
   bool _locationEnabled = false;
   int _nearbyRadiusMeters = 200;
   String? _lastHomeTabId;
@@ -304,6 +305,7 @@ class AppSettings extends ChangeNotifier {
   bool get autoRenew => _autoRenew;
   int get autoUpdateHours => _autoUpdateHours;
   AutoUpdateNetwork get autoUpdateNetwork => _autoUpdateNetwork;
+  bool get upstreamEtaScan => _upstreamEtaScan;
   bool get locationEnabled => _locationEnabled;
   int get nearbyRadiusMeters => _nearbyRadiusMeters;
   String? get lastHomeTabId => _lastHomeTabId;
@@ -356,6 +358,7 @@ class AppSettings extends ChangeNotifier {
       (AutoUpdateNetwork value) => value.name == storedNetwork,
       orElse: () => AutoUpdateNetwork.wifiOrMobile,
     );
+    _upstreamEtaScan = sp.getBool('upstreamEtaScan') ?? false;
     _locationEnabled = sp.getBool('locationEnabled') ?? false;
     _nearbyRadiusMeters = (sp.getInt('nearbyRadiusMeters') ?? 200).clamp(
       20,
@@ -457,6 +460,13 @@ class AppSettings extends ChangeNotifier {
     if (_autoUpdateNetwork == network) return;
     _autoUpdateNetwork = network;
     sp.setString('autoUpdateNetwork', network.name);
+    notifyListeners();
+  }
+
+  void setUpstreamEtaScan(bool value) {
+    if (_upstreamEtaScan == value) return;
+    _upstreamEtaScan = value;
+    sp.setBool('upstreamEtaScan', value);
     notifyListeners();
   }
 
