@@ -401,51 +401,14 @@ class _RoutePageState extends State<_RoutePage> {
     final bool currentScheduled = current == null || current.isScheduledLike;
     final DateTime now = DateTime.now().toUtc();
     final bool currentArrived = _isArrivedEta(current, now);
-    final List<UpstreamEtaSample> samples = <UpstreamEtaSample>[];
-    DateTime? originEta;
-    for (int i = index - 1; i >= 0; i--) {
-      final List<BusEta> etas;
-      try {
-        etas = await _etaService.fetchRouteStop(widget.route, i);
-      } catch (error) {
-        debugPrint('Upstream ETA scan failed at $i: $error');
-        break;
-      }
-      if (!mounted ||
-          requestId != _upstreamEtaRequestId ||
-          _expandedIndex != index) {
-        return;
-      }
-      final BusEta? upstream = _firstEta(etas);
-      if (upstream?.eta == null) break;
-      if (i == 0) originEta = upstream!.eta;
-      samples.add(
-        UpstreamEtaSample(
-          stopIndex: i,
-          eta: upstream!.eta,
-          arrived: _isArrivedEta(upstream, now),
-        ),
-      );
-      final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
-        currentIndex: index,
-        currentEta: current?.eta,
-        currentArrived: currentArrived,
-        upstream: samples,
-        now: now,
-        scheduled: currentScheduled,
-      );
-      if (notice != null) {
-        setState(
-          () => _upstreamEtaNotice = notice.stopIndex == index ? null : notice,
-        );
-        return;
-      }
-    }
 
-    if (originEta != null || currentScheduled) {
+    // Scheduled buses have no useful live upstream edge. Go straight to the
+    // route origin and show its scheduled departure.
+    if (currentScheduled) {
+      DateTime? originEta;
       if (index == 0) {
         originEta = current?.eta;
-      } else if (originEta == null) {
+      } else {
         try {
           final List<BusEta> originEtas = await _etaService.fetchRouteStop(
             widget.route,
@@ -467,14 +430,56 @@ class _RoutePageState extends State<_RoutePage> {
           stopIndex: 0,
           eta: originEta,
           remainingStops: index,
-          scheduled: currentScheduled,
+          scheduled: true,
         );
+        setState(
+          () => _upstreamEtaNotice = notice.stopIndex == index ? null : notice,
+        );
+      } else if (mounted && requestId == _upstreamEtaRequestId) {
+        setState(() => _upstreamEtaNotice = null);
+      }
+      return;
+    }
+
+    final List<UpstreamEtaSample> samples = <UpstreamEtaSample>[];
+    for (int i = index - 1; i >= 0; i--) {
+      final List<BusEta> etas;
+      try {
+        etas = await _etaService.fetchRouteStop(widget.route, i);
+      } catch (error) {
+        debugPrint('Upstream ETA scan failed at $i: $error');
+        continue;
+      }
+      if (!mounted ||
+          requestId != _upstreamEtaRequestId ||
+          _expandedIndex != index) {
+        return;
+      }
+      final BusEta? upstream = _firstEta(etas);
+      if (upstream?.eta == null) continue;
+      samples.add(
+        UpstreamEtaSample(
+          stopIndex: i,
+          eta: upstream!.eta,
+          arrived: _isArrivedEta(upstream, now),
+        ),
+      );
+      final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+        currentIndex: index,
+        currentEta: current.eta,
+        currentArrived: currentArrived,
+        upstream: samples,
+        now: now,
+        scheduled: currentScheduled,
+      );
+      if (notice != null) {
         setState(
           () => _upstreamEtaNotice = notice.stopIndex == index ? null : notice,
         );
         return;
       }
     }
+
     if (mounted && requestId == _upstreamEtaRequestId) {
       setState(() => _upstreamEtaNotice = null);
     }
