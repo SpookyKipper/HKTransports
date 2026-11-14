@@ -284,30 +284,25 @@ class _RoutePageState extends State<_RoutePage> {
     AppSettings settings,
     int index,
   ) {
+    final Color color = Theme.of(context).colorScheme.onSurfaceVariant;
     return ValueListenableBuilder<int>(
       valueListenable: _refreshCountdown,
       builder: (BuildContext context, int seconds, Widget? child) {
         final bool loading = _loading.contains(index);
-        return M3EIconButton(
+        return M3EButton.icon(
+          onPressed: loading ? null : () => _startRefresh(index),
+          style: M3EButtonStyle.text,
+          icon: loading
+              ? const M3ELoadingIndicator(size: 18)
+              : Icon(Icons.refresh, color: color),
+          label: Text(
+            settings.text('$seconds 秒', '${seconds}s'),
+            style: TextStyle(color: color),
+          ),
           tooltip: settings.text(
             '立即重新整理（$seconds 秒）',
             'Reload now (${seconds}s)',
           ),
-          variant: M3EIconButtonVariant.standard,
-          size: M3EIconButtonSize.xs,
-          inflateHitTarget: false,
-          onPressed: loading ? null : () => _startRefresh(index),
-          icon: loading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Badge(
-                  isLabelVisible: seconds > 0,
-                  label: Text('$seconds'),
-                  child: const Icon(Icons.refresh),
-                ),
         );
       },
     );
@@ -921,7 +916,8 @@ class _RoutePageState extends State<_RoutePage> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _buildReloadAction(context, settings, index),
+            if (_etas[index] != null)
+              _buildReloadAction(context, settings, index),
             Expanded(
               child: Wrap(
                 alignment: WrapAlignment.end,
