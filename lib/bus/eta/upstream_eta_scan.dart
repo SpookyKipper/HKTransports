@@ -11,12 +11,14 @@ class UpstreamEtaNotice {
     required this.stopIndex,
     required this.eta,
     required this.remainingStops,
+    required this.scheduled,
   });
 
   final int currentIndex;
   final int stopIndex;
   final DateTime eta;
   final int remainingStops;
+  final bool scheduled;
 }
 
 /// Walks from the currently viewed stop towards the origin and finds the first
@@ -30,6 +32,7 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
   required DateTime? currentEta,
   required Iterable<UpstreamEtaSample> upstream,
   required DateTime now,
+  required bool scheduled,
   int jumpMinutes = 5,
 }) {
   DateTime? downstreamEta = currentEta;
@@ -47,6 +50,7 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
           stopIndex: downstreamIndex,
           eta: downstreamEta,
           remainingStops: currentIndex - downstreamIndex + 1,
+          scheduled: scheduled,
         );
       }
     }

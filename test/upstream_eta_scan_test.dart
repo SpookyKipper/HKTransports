@@ -22,10 +22,12 @@ void main() {
         sample(4, 20),
       ],
       now: now,
+      scheduled: true,
     );
 
     expect(notice, isNotNull);
-    expect(notice!.stopIndex, 5);
+    expect(notice!.scheduled, isTrue);
+    expect(notice.stopIndex, 5);
     expect(notice.currentIndex, 8);
     expect(notice.remainingStops, 4);
   });
@@ -41,6 +43,7 @@ void main() {
         sample(4, 3),
       ],
       now: now,
+      scheduled: false,
     );
 
     expect(notice, isNull);
@@ -57,6 +60,7 @@ void main() {
         sample(4, 20),
       ],
       now: now,
+      scheduled: false,
     );
 
     expect(notice, isNull);
@@ -73,6 +77,7 @@ void main() {
         sample(4, 20),
       ],
       now: now,
+      scheduled: false,
     );
 
     expect(notice, isNotNull);
@@ -86,6 +91,7 @@ void main() {
       currentEta: now.add(const Duration(minutes: 5)),
       upstream: <UpstreamEtaSample>[sample(7, 20)],
       now: now,
+      scheduled: false,
     );
 
     expect(notice, isNotNull);

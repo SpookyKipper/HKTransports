@@ -306,6 +306,7 @@ class _RoutePageState extends State<_RoutePage> {
         currentEta: current?.eta,
         upstream: samples,
         now: now,
+        scheduled: currentScheduled,
       );
       if (notice != null) {
         setState(() => _upstreamEtaNotice = notice);
@@ -335,6 +336,7 @@ class _RoutePageState extends State<_RoutePage> {
             stopIndex: 0,
             eta: originEta!,
             remainingStops: index + 1,
+            scheduled: currentScheduled,
           ),
         );
         return;
@@ -1027,14 +1029,14 @@ class _UpstreamEtaBanner extends StatelessWidget {
     final int minutes = eta.difference(DateTime.now().toUtc()).inMinutes;
     final bool departure = notice.stopIndex == 0;
     final String text = departure
-        ? minutes <= 0
+        ? notice.scheduled
               ? settings.text(
-                  '下班車已在 $stopName 開出（剩餘 ${notice.remainingStops} 個站）',
-                  'Next bus has departed from $stopName (${notice.remainingStops} stops remaining)',
+                  '下班車即將在 $clock 於 $stopName 開出（剩餘 ${notice.remainingStops} 個站）',
+                  'Next bus will depart from $stopName at $clock (${notice.remainingStops} stops remaining)',
                 )
               : settings.text(
-                  '下班車將於 $clock $minutes 分鐘後在 $stopName 開出（剩餘 ${notice.remainingStops} 個站）',
-                  'Next bus will depart from $stopName at $clock (in $minutes min, ${notice.remainingStops} stops remaining)',
+                  '下班車已在 $stopName 開出（剩餘 ${notice.remainingStops} 個站）',
+                  'Next bus has already departed from $stopName (${notice.remainingStops} stops remaining)',
                 )
         : minutes <= 0
         ? settings.text(
@@ -1047,7 +1049,7 @@ class _UpstreamEtaBanner extends StatelessWidget {
           );
     return FadeIn(
       key: ValueKey<String>(
-        '${notice.currentIndex}|${notice.stopIndex}|${eta.millisecondsSinceEpoch}',
+        '${notice.currentIndex}|${notice.stopIndex}|${eta.millisecondsSinceEpoch}|${notice.scheduled}',
       ),
       duration: const Duration(milliseconds: 300),
       child: Text(
