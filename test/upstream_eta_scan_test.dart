@@ -94,6 +94,39 @@ void main() {
     expect(notice.scheduled, isTrue);
   });
 
+  test('moves a passed fallback stop to the next downstream stop', () {
+    final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+      currentIndex: 8,
+      currentArrived: false,
+      currentEta: now.add(const Duration(minutes: 20)),
+      upstream: <UpstreamEtaSample>[sample(7, 15), sample(6, -2)],
+      now: now,
+      scheduled: true,
+      scanComplete: true,
+    );
+
+    expect(notice, isNotNull);
+    expect(notice!.stopIndex, 7);
+    expect(notice.remainingStops, 1);
+    expect(notice.scheduled, isTrue);
+  });
+
+  test('moves past fallback stops all the way to the current stop', () {
+    final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
+      currentIndex: 8,
+      currentArrived: false,
+      currentEta: now.add(const Duration(minutes: 20)),
+      upstream: <UpstreamEtaSample>[sample(7, -1), sample(6, -2)],
+      now: now,
+      scheduled: false,
+      scanComplete: true,
+    );
+
+    expect(notice, isNotNull);
+    expect(notice!.stopIndex, 8);
+    expect(notice.remainingStops, 0);
+  });
+
   test('falls back to the last reached stop without a scheduled status', () {
     final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
       currentIndex: 8,
