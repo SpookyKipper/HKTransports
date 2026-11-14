@@ -411,43 +411,6 @@ class _RoutePageState extends State<_RoutePage> {
     final DateTime now = DateTime.now().toUtc();
     final bool currentArrived = _isArrivedEta(current, now);
 
-    // Scheduled buses have no useful live upstream edge. Go straight to the
-    // route origin and show its scheduled departure.
-    if (currentScheduled) {
-      DateTime? originEta;
-      if (index == 0) {
-        originEta = current?.eta;
-      } else {
-        try {
-          final List<BusEta> originEtas = await _etaService.fetchRouteStop(
-            widget.route,
-            0,
-          );
-          if (!mounted ||
-              requestId != _upstreamEtaRequestId ||
-              _expandedIndex != index) {
-            return;
-          }
-          originEta = _firstEta(originEtas)?.eta;
-        } catch (error) {
-          debugPrint('Upstream origin ETA failed: $error');
-        }
-      }
-      if (originEta != null) {
-        final UpstreamEtaNotice notice = UpstreamEtaNotice(
-          currentIndex: index,
-          stopIndex: 0,
-          eta: originEta,
-          remainingStops: index,
-          scheduled: true,
-        );
-        setState(() => _upstreamEtaNotice = notice);
-      } else if (mounted && requestId == _upstreamEtaRequestId) {
-        setState(() => _upstreamEtaNotice = null);
-      }
-      return;
-    }
-
     final List<UpstreamEtaSample> samples = <UpstreamEtaSample>[];
     for (int i = index - 1; i >= 0; i--) {
       final List<BusEta> etas;
@@ -473,7 +436,7 @@ class _RoutePageState extends State<_RoutePage> {
       );
       final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
         currentIndex: index,
-        currentEta: current.eta,
+        currentEta: current?.eta,
         currentArrived: currentArrived,
         upstream: samples,
         now: now,
