@@ -456,7 +456,7 @@ class _RoutePageState extends State<_RoutePage> {
     }
 
     if (mounted && requestId == _upstreamEtaRequestId) {
-      if (currentScheduled && samples.isNotEmpty) {
+      if (samples.isNotEmpty) {
         final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
           currentIndex: index,
           currentEta: currentEta,

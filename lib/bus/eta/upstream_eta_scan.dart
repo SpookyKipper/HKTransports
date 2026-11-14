@@ -33,8 +33,8 @@ class UpstreamEtaNotice {
 /// towards the origin. Each item should contain the first ETA for that stop.
 /// A missing or already-passed current ETA returns null; a missing upstream
 /// ETA stops the scan.
-/// When [scanComplete] is set, a scheduled bus falls back to the last reached
-/// stop, which is the origin departure notice if the scan reached stop 1.
+/// When [scanComplete] is set, the scan falls back to the last reached stop,
+/// which is the origin departure notice if the scan reached stop 1.
 UpstreamEtaNotice? findUpstreamEtaNotice({
   required int currentIndex,
   required DateTime? currentEta,
@@ -95,7 +95,7 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
     downstreamEta = eta;
     downstreamIndex = sample.stopIndex;
   }
-  if (scheduled && scanComplete && samples.isNotEmpty) {
+  if (scanComplete && samples.isNotEmpty) {
     final UpstreamEtaSample last = samples.last;
     final DateTime? lastEta = last.eta;
     if (lastEta == null) return null;
@@ -104,7 +104,7 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
       stopIndex: last.stopIndex,
       eta: lastEta,
       remainingStops: currentIndex - last.stopIndex,
-      scheduled: true,
+      scheduled: scheduled,
     );
   }
   return null;
