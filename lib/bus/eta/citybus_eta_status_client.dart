@@ -450,7 +450,7 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
     }
     String? normalizedStatus = statusText;
     if (normalizedStatus != null) {
-      normalizedStatus = _stripOperatorPrefix(normalizedStatus);
+      normalizedStatus = _normalizeStatusText(normalizedStatus);
     }
 
     double? distanceKm;
@@ -460,9 +460,9 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
     ).firstMatch(statusForDistance);
     if (distance != null) {
       distanceKm = double.tryParse(distance.group(1) ?? '');
-      normalizedStatus = statusForDistance
-          .replaceRange(distance.start, distance.end, '')
-          .trim();
+      normalizedStatus = _normalizeStatusText(
+        statusForDistance.replaceRange(distance.start, distance.end, ''),
+      );
     }
 
     final String? statusZh =
@@ -513,6 +513,13 @@ int? _parseTimeMinutes(String value) {
 String _stripOperatorPrefix(String status) {
   return status
       .replaceFirst(RegExp(r'^(?:城巴|Citybus)\s+', caseSensitive: false), '')
+      .trim();
+}
+
+String _normalizeStatusText(String status) {
+  return _stripOperatorPrefix(status)
+      .replaceFirst(RegExp(r'^[,，、;；:：·\-\s]+'), '')
+      .replaceFirst(RegExp(r'[,，、;；:：·\-\s]+$'), '')
       .trim();
 }
 

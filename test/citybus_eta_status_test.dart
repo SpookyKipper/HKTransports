@@ -95,6 +95,25 @@ void main() {
     expect(statuses.single.statusZh, '未開出');
   });
 
+  test('strips leading punctuation from a combined status cell', () {
+    final List<CitybusEtaStatus> statuses = parseCitybusEtaStatuses('''
+      <div id="nextbus_listitem">
+        <table><tr>
+          <td><table><tr><td>23:50</td></tr></table></td>
+          <td><table>
+            <tr><td>往: 蘇屋</td></tr>
+            <tr><td>3分鐘, 尾班車 距離 0.8 公里</td></tr>
+          </table></td>
+        </tr></table>
+      </div>
+    ''');
+
+    expect(statuses, hasLength(1));
+    expect(statuses.single.minutesText, '3分鐘');
+    expect(statuses.single.statusZh, '尾班車');
+    expect(statuses.single.distanceKm, 0.8);
+  });
+
   test('parses distance with a colon', () {
     final List<CitybusEtaStatus> statuses = parseCitybusEtaStatuses('''
       <div id="nextbus_listitem">
