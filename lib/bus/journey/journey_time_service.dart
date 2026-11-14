@@ -26,6 +26,7 @@ class JourneyTimeService {
 
   static const List<String> defaultBaseUrls = <String>[
     'https://data.hktransports.spookysrv.com',
+    'https://timeinterval.hkbuseta.com',
     'https://raw.githubusercontent.com/HK-Bus-ETA/hk-bus-time-between-stops/refs/heads/pages',
   ];
 
