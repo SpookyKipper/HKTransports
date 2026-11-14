@@ -49,7 +49,9 @@ String? etaWaitLabel(
   AppSettings settings,
   int? minutes, {
   bool atOrigin = false,
+  bool shortMinuteUnit = false,
 }) {
+  final String minuteUnit = settings.text(shortMinuteUnit ? '分' : '分鐘', 'min');
   final bool citybus = eta.company == BusCompany.ctb;
   if (citybus && _statusArrived(eta)) return null;
   final String? literal = proprietaryMinutesLabel(eta);
@@ -60,17 +62,19 @@ String? etaWaitLabel(
     return settings.text('即場開出', 'Departing now');
   }
   if (citybus && _statusLeaving(eta)) {
-    return '- ${settings.text('分鐘', 'min')}';
+    return '- $minuteUnit';
   }
   if (underOne) {
     if (citybus && eta.distanceKm != null) {
-      return '<1 ${settings.text('分鐘', 'min')}';
+      return '<1 $minuteUnit';
     }
-    return '- ${settings.text('分鐘', 'min')}';
+    return '- $minuteUnit';
   }
-  if (literal != null) return literal;
+  if (literal != null) {
+    return shortMinuteUnit ? literal.replaceAll('分鐘', '分') : literal;
+  }
   if (minutes == null) return null;
-  return '$minutes ${settings.text('分鐘', 'min')}';
+  return '$minutes $minuteUnit';
 }
 
 /// Changes whenever the base ETA content changes, excluding live status.
