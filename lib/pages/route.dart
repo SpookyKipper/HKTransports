@@ -407,14 +407,15 @@ class _RoutePageState extends State<_RoutePage> {
       return;
     }
     final BusEta? current = _firstEta(_etas[index]);
-    if (current == null) {
+    final DateTime now = DateTime.now().toUtc();
+    final DateTime? currentEta = current?.eta;
+    if (current == null || currentEta == null || !currentEta.isAfter(now)) {
       if (_upstreamEtaNotice != null) {
         setState(() => _upstreamEtaNotice = null);
       }
       return;
     }
     final bool currentScheduled = current.isScheduledLike;
-    final DateTime now = DateTime.now().toUtc();
     final bool currentArrived = _isArrivedEta(current, now);
 
     final List<UpstreamEtaSample> samples = <UpstreamEtaSample>[];
@@ -442,7 +443,7 @@ class _RoutePageState extends State<_RoutePage> {
       );
       final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
         currentIndex: index,
-        currentEta: current.eta,
+        currentEta: currentEta,
         currentArrived: currentArrived,
         upstream: samples,
         now: now,
@@ -458,7 +459,7 @@ class _RoutePageState extends State<_RoutePage> {
       if (currentScheduled && samples.isNotEmpty) {
         final UpstreamEtaNotice? notice = findUpstreamEtaNotice(
           currentIndex: index,
-          currentEta: current.eta,
+          currentEta: currentEta,
           currentArrived: currentArrived,
           upstream: samples,
           now: now,
@@ -940,12 +941,14 @@ class _RoutePageState extends State<_RoutePage> {
       }
     }
     final UpstreamEtaNotice? notice = _upstreamEtaNotice;
+    final DateTime? currentEta = _firstEta(_etas[index])?.eta;
     final bool showNotice =
         index > 0 &&
         settings.upstreamEtaScan &&
         notice != null &&
         notice.currentIndex == index &&
-        _firstEta(_etas[index]) != null;
+        currentEta != null &&
+        currentEta.isAfter(DateTime.now().toUtc());
     final String noticeStopName = showNotice
         ? repository
                   .stopById(stopIds[notice.stopIndex])
