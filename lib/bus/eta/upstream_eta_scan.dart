@@ -97,13 +97,30 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
   }
   if (scanComplete && samples.isNotEmpty) {
     final UpstreamEtaSample last = samples.last;
-    final DateTime? lastEta = last.eta;
-    if (lastEta == null) return null;
+    int targetIndex = last.stopIndex;
+    DateTime? targetEta = last.eta;
+    bool targetPassed = _pastTarget(targetEta, last.arrived, now);
+    while (targetIndex < currentIndex && targetPassed) {
+      targetIndex++;
+      if (targetIndex == currentIndex) {
+        targetEta = currentEta;
+        targetPassed = _pastTarget(targetEta, currentArrived, now);
+      } else {
+        final UpstreamEtaSample? sample = byIndex[targetIndex];
+        targetEta = sample?.eta;
+        targetPassed = _pastTarget(targetEta, sample?.arrived ?? false, now);
+      }
+    }
+    if (targetIndex > currentIndex || targetEta == null) return null;
+    if (targetIndex == currentIndex &&
+        (currentArrived || !targetEta.isAfter(now))) {
+      return null;
+    }
     return UpstreamEtaNotice(
       currentIndex: currentIndex,
-      stopIndex: last.stopIndex,
-      eta: lastEta,
-      remainingStops: currentIndex - last.stopIndex,
+      stopIndex: targetIndex,
+      eta: targetEta,
+      remainingStops: currentIndex - targetIndex,
       scheduled: scheduled,
     );
   }
@@ -115,4 +132,10 @@ bool _effectivelyArrived(DateTime? eta, bool statusArrived, DateTime now) {
   if (eta == null) return true;
   if (!eta.isAfter(now)) return true;
   return eta.difference(now) < const Duration(minutes: 1);
+}
+
+bool _pastTarget(DateTime? eta, bool statusArrived, DateTime now) {
+  if (statusArrived) return true;
+  if (eta == null) return true;
+  return !eta.isAfter(now);
 }
