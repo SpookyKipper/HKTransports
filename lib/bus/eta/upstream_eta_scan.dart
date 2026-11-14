@@ -67,7 +67,11 @@ UpstreamEtaNotice? findUpstreamEtaNotice({
             : (byIndex[targetIndex]?.arrived ?? false) ||
                   !targetEta.isAfter(now);
       }
-      if (targetIndex >= currentIndex || targetEta == null) return null;
+      if (targetIndex > currentIndex || targetEta == null) return null;
+      if (targetIndex == currentIndex &&
+          (currentArrived || !targetEta.isAfter(now))) {
+        return null;
+      }
       return UpstreamEtaNotice(
         currentIndex: currentIndex,
         stopIndex: targetIndex,
