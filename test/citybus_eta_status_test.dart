@@ -52,6 +52,7 @@ void main() {
           <td><table>
             <tr><td>往: 火炭(駿洋邨)</td></tr>
             <tr><td>未開出</td></tr>
+            <tr><td>3分鐘</td></tr>
           </table></td>
         </tr></table>
         <table><tr>
@@ -69,9 +70,29 @@ void main() {
     expect(statuses[0].statusEn, 'Not yet departed');
     expect(statuses[0].distanceKm, isNull);
     expect(statuses[0].timeMinutes, 22 * 60 + 10);
+    expect(statuses[0].timeText, '22:10');
+    expect(statuses[0].minutesText, '3分鐘');
     expect(statuses[1].statusZh, isNull);
     expect(statuses[1].distanceKm, 1.2);
     expect(statuses[1].timeMinutes, 22 * 60 + 35);
+  });
+
+  test('extracts minutes from a combined status cell', () {
+    final List<CitybusEtaStatus> statuses = parseCitybusEtaStatuses('''
+      <div id="nextbus_listitem">
+        <table><tr>
+          <td><table><tr><td>22:10</td></tr></table></td>
+          <td><table>
+            <tr><td>往: 火炭(駿洋邨)</td></tr>
+            <tr><td>3分鐘 未開出</td></tr>
+          </table></td>
+        </tr></table>
+      </div>
+    ''');
+
+    expect(statuses, hasLength(1));
+    expect(statuses.single.minutesText, '3分鐘');
+    expect(statuses.single.statusZh, '未開出');
   });
 
   test('strips the operator name from joint-route statuses', () {

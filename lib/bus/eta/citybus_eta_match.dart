@@ -80,6 +80,8 @@ List<BusEta> applyCitybusStatusesByTime(
       statusZh: status.statusZh,
       statusEn: status.statusEn,
       distanceKm: status.distanceKm,
+      proprietaryTime: status.timeText,
+      proprietaryMinutes: status.minutesText,
     );
   }
   return result;

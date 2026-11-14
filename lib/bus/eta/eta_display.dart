@@ -6,6 +6,19 @@ String? departedEtaLabel(BusEta eta, AppSettings settings) {
   return settings.text('正在離站', 'Leaving now');
 }
 
+String? proprietaryClockLabel(BusEta eta) {
+  final String? value = eta.proprietaryTime?.trim();
+  return value == null || value.isEmpty ? null : value;
+}
+
+String? proprietaryMinutesLabel(BusEta eta, AppSettings settings) {
+  final String? value = eta.proprietaryMinutes?.trim();
+  if (value == null || value.isEmpty) return null;
+  if (settings.isChinese) return value;
+  final String? digits = RegExp(r'\d+').firstMatch(value)?.group(0);
+  return digits == null ? value : '$digits min';
+}
+
 /// Changes whenever the base ETA content changes, excluding live status.
 String etaDisplayKey(BusEta eta) {
   return <String>[
@@ -18,6 +31,8 @@ String etaDisplayKey(BusEta eta) {
     eta.platform ?? '',
     eta.destZh,
     eta.destEn,
+    eta.proprietaryTime ?? '',
+    eta.proprietaryMinutes ?? '',
   ].join('|');
 }
 

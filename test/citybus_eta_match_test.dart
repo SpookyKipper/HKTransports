@@ -16,11 +16,18 @@ BusEta _eta(DateTime time, int seq, {BusCompany company = BusCompany.ctb}) {
   );
 }
 
-CitybusEtaStatus _status(String label, {int? timeMinutes}) {
+CitybusEtaStatus _status(
+  String label, {
+  int? timeMinutes,
+  String? timeText,
+  String? minutesText,
+}) {
   return CitybusEtaStatus(
     statusZh: label,
     statusEn: label,
     timeMinutes: timeMinutes,
+    timeText: timeText,
+    minutesText: minutesText,
   );
 }
 
@@ -33,7 +40,12 @@ void main() {
       _eta(hkBase.add(const Duration(minutes: 40)), 2),
     ];
     final List<CitybusEtaStatus> statuses = <CitybusEtaStatus>[
-      _status('A', timeMinutes: 10 * 60 + 20),
+      _status(
+        'A',
+        timeMinutes: 10 * 60 + 20,
+        timeText: '10:20',
+        minutesText: '3分鐘',
+      ),
       _status('B', timeMinutes: 10 * 60 + 35),
       _status('C', timeMinutes: 11 * 60),
     ];
@@ -41,6 +53,8 @@ void main() {
     final List<BusEta> result = applyCitybusStatusesByTime(etas, statuses);
 
     expect(result[0].status('zh'), 'A');
+    expect(result[0].proprietaryTime, '10:20');
+    expect(result[0].proprietaryMinutes, '3分鐘');
     expect(result[1].status('zh'), 'B');
     expect(result.any((BusEta eta) => eta.status('zh') == 'C'), isFalse);
   });

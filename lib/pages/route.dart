@@ -1266,14 +1266,17 @@ class _EtaLine extends StatelessWidget {
     }
 
     final DateTime hkTime = time.toUtc().add(const Duration(hours: 8));
-    final String clock = DateFormat('HH:mm').format(hkTime);
+    final String clock =
+        proprietaryClockLabel(eta) ?? DateFormat('HH:mm').format(hkTime);
     final int minutes = time.difference(DateTime.now().toUtc()).inMinutes;
     final String? departed = departedEtaLabel(eta, settings);
-    final String wait = minutes < 1
-        ? atOrigin
-              ? settings.text('即場開出', 'Departing now')
-              : settings.text('即將到達', 'Arriving')
-        : '$minutes ${settings.text('分鐘', 'min')}';
+    final String wait =
+        proprietaryMinutesLabel(eta, settings) ??
+        (minutes < 1
+            ? atOrigin
+                  ? settings.text('即場開出', 'Departing now')
+                  : settings.text('即將到達', 'Arriving')
+            : '$minutes ${settings.text('分鐘', 'min')}');
 
     final String parts = departed != null
         ? '$clock  $departed'
