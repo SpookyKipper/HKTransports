@@ -59,25 +59,30 @@ class EtaService {
   }
 
   Future<List<BusEta>> fetchRouteStop(RouteEntry route, int seq) async {
-    final List<BusCompany> companies = route.sortedCompanies.where((company) {
-      final List<String>? stops = route.stops[company];
-      return stops != null && seq >= 0 && seq < stops.length;
-    }).toList();
-    if (companies.isEmpty) return const [];
+    try {
+      final List<BusCompany> companies = route.sortedCompanies.where((company) {
+        final List<String>? stops = route.stops[company];
+        return stops != null && seq >= 0 && seq < stops.length;
+      }).toList();
+      if (companies.isEmpty) return const [];
 
-    final List<Future<List<BusEta>>> tasks = companies.map((company) {
-      return _fetchCompany(route, company, seq).catchError((Object error) {
-        debugPrint('ETA fetch failed for ${company.name}: $error');
-        return <BusEta>[];
-      });
-    }).toList();
+      final List<Future<List<BusEta>>> tasks = companies.map((company) {
+        return _fetchCompany(route, company, seq).catchError((Object error) {
+          debugPrint('ETA fetch failed for ${company.name}: $error');
+          return <BusEta>[];
+        });
+      }).toList();
 
-    final List<List<BusEta>> results = await Future.wait(tasks);
-    final List<BusEta> merged = [];
-    for (final List<BusEta> result in results) {
-      merged.addAll(result);
+      final List<List<BusEta>> results = await Future.wait(tasks);
+      final List<BusEta> merged = [];
+      for (final List<BusEta> result in results) {
+        merged.addAll(result);
+      }
+      return _normalise(merged);
+    } catch (error) {
+      debugPrint('ETA fetch failed: $error');
+      return const <BusEta>[];
     }
-    return _normalise(merged);
   }
 
   Future<List<BusEta>> _fetchCompany(
