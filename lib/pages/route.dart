@@ -400,6 +400,12 @@ class _RoutePageState extends State<_RoutePage> {
       return;
     }
     final int requestId = ++_upstreamEtaRequestId;
+    if (index == 0) {
+      if (_upstreamEtaNotice != null) {
+        setState(() => _upstreamEtaNotice = null);
+      }
+      return;
+    }
     final BusEta? current = _firstEta(_etas[index]);
     final bool currentScheduled = current == null || current.isScheduledLike;
     final DateTime now = DateTime.now().toUtc();
@@ -951,6 +957,7 @@ class _RoutePageState extends State<_RoutePage> {
     }
     final UpstreamEtaNotice? notice = _upstreamEtaNotice;
     final bool showNotice =
+        index > 0 &&
         settings.upstreamEtaScan &&
         notice != null &&
         notice.currentIndex == index;
