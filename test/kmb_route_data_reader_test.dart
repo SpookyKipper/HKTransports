@@ -80,4 +80,12 @@ void main() {
     db.execute("UPDATE kmb_bound SET service_type_desc_eng = 'Normal'");
     expect(reader.serviceDescription(_route(), 'en'), '特別班次');
   });
+
+  test('removes brackets from service type descriptions', () {
+    db.execute(
+      "UPDATE kmb_bound SET service_type_desc_chi = '(經樂華)', service_type_desc_eng = '(Via Lok Wah)'",
+    );
+    expect(reader.serviceDescription(_route(), 'zh'), '經樂華');
+    expect(reader.serviceDescription(_route(), 'en'), 'Via Lok Wah');
+  });
 }

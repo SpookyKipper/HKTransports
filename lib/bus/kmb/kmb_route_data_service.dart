@@ -477,16 +477,20 @@ class KmbRouteDataReader {
     );
     if (rows.isEmpty) return null;
     final Row row = rows.first;
-    final String selected = _text(
-      language == 'en'
-          ? row['service_type_desc_eng']
-          : row['service_type_desc_chi'],
+    final String selected = _stripDescriptionBrackets(
+      _text(
+        language == 'en'
+            ? row['service_type_desc_eng']
+            : row['service_type_desc_chi'],
+      ),
     );
     if (!_isNormalDescription(selected)) return selected;
-    final String other = _text(
-      language == 'en'
-          ? row['service_type_desc_chi']
-          : row['service_type_desc_eng'],
+    final String other = _stripDescriptionBrackets(
+      _text(
+        language == 'en'
+            ? row['service_type_desc_chi']
+            : row['service_type_desc_eng'],
+      ),
     );
     return _isNormalDescription(other) ? null : other;
   }
@@ -513,6 +517,16 @@ String _kmbServiceType(String value) {
 }
 
 String _text(Object? value) => value?.toString().trim() ?? '';
+
+String _stripDescriptionBrackets(String value) {
+  String text = value.trim();
+  final RegExpMatch? outer = RegExp(
+    r'^[（(\[【]\s*(.*?)\s*[）)\]】]$',
+  ).firstMatch(text);
+  if (outer != null) text = outer.group(1) ?? text;
+  text = text.replaceAll(RegExp(r'[（）()\[\]【】]'), ' ');
+  return text.replaceAll(RegExp(r'\s+'), ' ').trim();
+}
 
 bool _isNormalDescription(String value) {
   final String text = value.trim().toLowerCase();
