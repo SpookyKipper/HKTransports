@@ -8,6 +8,7 @@ import 'package:hktransports/bus/model/route_category.dart';
 import 'package:hktransports/bus/model/route_display_name.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/citybus_route_description.dart';
+import 'package:hktransports/bus/ui/kmb_route_description.dart';
 import 'package:hktransports/bus/ui/nlb_route_special_tag.dart';
 import 'package:hktransports/bus/ui/route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/route_special_tag.dart';
@@ -262,6 +263,50 @@ class _SearchPageState extends State<SearchPage> {
                                                 .isProprietaryEnabled(
                                                   ProprietaryEndpoint
                                                       .citybusDatabase,
+                                                ),
+                                            fallback: '',
+                                            builder:
+                                                (
+                                                  BuildContext context,
+                                                  String label,
+                                                ) {
+                                                  if (label.isEmpty) {
+                                                    return const SizedBox.shrink();
+                                                  }
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          top: 2,
+                                                        ),
+                                                    child: Text(
+                                                      label,
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall
+                                                          ?.copyWith(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .primary,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                    ),
+                                                  );
+                                                },
+                                          ),
+                                          KmbRouteDescription(
+                                            route: route,
+                                            language: settings.language,
+                                            enabled: settings
+                                                .isProprietaryEnabled(
+                                                  ProprietaryEndpoint
+                                                      .kmbRouteDatabase,
                                                 ),
                                             fallback: '',
                                             builder:
