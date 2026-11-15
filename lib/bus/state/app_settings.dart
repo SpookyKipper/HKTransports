@@ -23,6 +23,7 @@ enum ProprietaryEndpoint {
   noticeFeed,
   kmbAnnouncements,
   kmbInterchange,
+  kmbRouteDatabase,
   citybusSpecialNotices,
   citybusRouteNotices,
   citybusStopNotices,
@@ -45,6 +46,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return 'kmb-routenotice';
       case ProprietaryEndpoint.kmbInterchange:
         return 'kmb-interchange';
+      case ProprietaryEndpoint.kmbRouteDatabase:
+        return 'kmb-routedata';
       case ProprietaryEndpoint.citybusSpecialNotices:
         return 'ctb-specialnotice';
       case ProprietaryEndpoint.citybusRouteNotices:
@@ -73,6 +76,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.kmbAnnouncements:
       case ProprietaryEndpoint.kmbInterchange:
         return 'proprietary.kmb';
+      case ProprietaryEndpoint.kmbRouteDatabase:
+        return 'proprietary.kmb.routedata';
       case ProprietaryEndpoint.citybusSpecialNotices:
       case ProprietaryEndpoint.citybusRouteNotices:
       case ProprietaryEndpoint.citybusStopNotices:
@@ -95,6 +100,7 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return ProprietaryGroup.notice;
       case ProprietaryEndpoint.kmbAnnouncements:
       case ProprietaryEndpoint.kmbInterchange:
+      case ProprietaryEndpoint.kmbRouteDatabase:
         return ProprietaryGroup.kmb;
       case ProprietaryEndpoint.citybusSpecialNotices:
       case ProprietaryEndpoint.citybusRouteNotices:
@@ -118,6 +124,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return settings.text('九巴/龍運路線通告', 'KMB/LWB route announcements');
       case ProprietaryEndpoint.kmbInterchange:
         return settings.text('九巴/龍運轉乘優惠', 'KMB/LWB interchange discounts');
+      case ProprietaryEndpoint.kmbRouteDatabase:
+        return settings.text('九巴/龍運路線資料庫', 'KMB/LWB route data');
       case ProprietaryEndpoint.citybusSpecialNotices:
         return settings.text('城巴特別通告', 'Citybus special notices');
       case ProprietaryEndpoint.citybusRouteNotices:
@@ -149,6 +157,11 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         return settings.text(
           '九巴/龍運轉乘優惠資料 ~ 61 MB',
           'KMB/LWB transfer data ~ 61 MB',
+        );
+      case ProprietaryEndpoint.kmbRouteDatabase:
+        return settings.text(
+          '擴展車站名稱及特別班次描述 ~ 5 MB',
+          'Extended stop names and special departure descriptions ~ 5 MB',
         );
       case ProprietaryEndpoint.citybusSpecialNotices:
         return settings.text('城巴特別通告', 'Citybus special notices');

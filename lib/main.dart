@@ -13,6 +13,7 @@ import 'package:hktransports/app/fade_forward_page.dart';
 import 'package:hktransports/app/m3e_scope.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/kmb/kmb_route_data_service.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
@@ -211,6 +212,30 @@ void main() async {
       unawaited(
         CitybusRoutelistService.instance.delete().catchError((Object error) {
           debugPrint('Unable to delete Citybus routelist: $error');
+        }),
+      );
+    }
+
+    final bool kmbRouteDataEnabled = settings.isProprietaryEnabled(
+      ProprietaryEndpoint.kmbRouteDatabase,
+    );
+    if (kmbRouteDataEnabled) {
+      final KmbRouteDataConfig? remote = appConfig.kmbRouteData;
+      if (remote != null && remote.isDownloadable) {
+        unawaited(
+          KmbRouteDataService.instance
+              .ensureDownloaded(remote: remote)
+              .catchError((Object error) {
+                debugPrint('Unable to update KMB route data: $error');
+              }),
+        );
+      } else {
+        debugPrint('KMB route data source is not configured');
+      }
+    } else {
+      unawaited(
+        KmbRouteDataService.instance.delete().catchError((Object error) {
+          debugPrint('Unable to delete KMB route data: $error');
         }),
       );
     }

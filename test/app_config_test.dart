@@ -42,6 +42,13 @@ void main() {
         'scanUpstreamStation': '4',
         'ignored': 'nope',
       },
+      'downloadInstructions': <String, Object>{
+        'kmbRouteData': <String, Object>{
+          'lastUpdate': '20250509022620',
+          'checkUpdateUrl': 'https://example.test/check',
+          'downloadUrl': 'https://example.test/base.db',
+        },
+      },
     });
 
     expect(config.latestVersionCode, 3);
@@ -54,6 +61,10 @@ void main() {
     expect(config.specialFeatures['joyYouFare'], -1);
     expect(config.specialFeatures['scanUpstreamStation'], 4);
     expect(config.specialFeatures.containsKey('ignored'), isFalse);
+    expect(config.kmbRouteData?.lastUpdate, '20250509022620');
+    expect(config.kmbRouteData?.checkUpdateUrl, 'https://example.test/check');
+    expect(config.kmbRouteData?.downloadUrl, 'https://example.test/base.db');
+    expect(config.kmbRouteData?.isDownloadable, isTrue);
     expect(config.matchesCurrentApp, isTrue);
   });
 

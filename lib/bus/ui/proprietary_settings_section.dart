@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/app_config.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
+import 'package:hktransports/bus/kmb/kmb_route_data_service.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/smooth_wavy_progress.dart';
@@ -91,10 +92,12 @@ class _EndpointTile extends StatelessWidget {
     AppSettings settings,
     bool value,
   ) async {
+    final AppConfigController appConfig = context.read<AppConfigController>();
+    KmbRouteDataConfig? kmbRemote;
     if (value) {
-      final ProprietaryAvailability availability = context
-          .read<AppConfigController>()
-          .availabilityFor(endpoint);
+      final ProprietaryAvailability availability = appConfig.availabilityFor(
+        endpoint,
+      );
       if (availability != ProprietaryAvailability.supported) {
         await showProprietaryAvailabilityDialog(
           context,
@@ -102,6 +105,22 @@ class _EndpointTile extends StatelessWidget {
           availability,
         );
         return;
+      }
+      if (endpoint == ProprietaryEndpoint.kmbRouteDatabase) {
+        kmbRemote = appConfig.kmbRouteData;
+        if (kmbRemote == null || !kmbRemote.isDownloadable) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                settings.text(
+                  '九巴/龍運路線資料下載來源暫時無法使用',
+                  'KMB/LWB route data source is currently unavailable',
+                ),
+              ),
+            ),
+          );
+          return;
+        }
       }
     }
     settings.setProprietaryEndpoint(endpoint, value);
@@ -130,6 +149,34 @@ class _EndpointTile extends StatelessWidget {
                 : settings.text(
                     '九巴/龍運轉乘資料下載失敗，可在「更新資料」重試',
                     'KMB/LWB interchange data download failed. Retry in Update data.',
+                  ),
+          ),
+        ),
+      );
+      return;
+    }
+    if (endpoint == ProprietaryEndpoint.kmbRouteDatabase) {
+      if (!value) {
+        await KmbRouteDataService.instance.delete();
+        return;
+      }
+      if (await KmbRouteDataService.instance.isDownloaded()) return;
+      if (!context.mounted) return;
+      final bool? downloaded = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) =>
+            _KmbRouteDataDownloadDialog(remote: kmbRemote!),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            downloaded == true
+                ? settings.text('九巴/龍運路線資料已下載', 'KMB/LWB route data downloaded')
+                : settings.text(
+                    '九巴/龍運路線資料下載失敗，可在「更新資料」重試',
+                    'KMB/LWB route data download failed. Retry in Update data.',
                   ),
           ),
         ),
@@ -175,6 +222,8 @@ class _EndpointTile extends StatelessWidget {
         return Icons.campaign_outlined;
       case ProprietaryEndpoint.kmbInterchange:
         return Icons.alt_route;
+      case ProprietaryEndpoint.kmbRouteDatabase:
+        return Icons.storage_outlined;
       case ProprietaryEndpoint.citybusSpecialNotices:
         return Icons.campaign_outlined;
       case ProprietaryEndpoint.citybusRouteNotices:
@@ -291,7 +340,8 @@ class _CitybusDownloadDialogState extends State<_CitybusDownloadDialog> {
         },
       );
       success = true;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('KMB route data download failed: $error\n$stackTrace');
       success = false;
     }
     if (!mounted) return;
@@ -304,6 +354,71 @@ class _CitybusDownloadDialogState extends State<_CitybusDownloadDialog> {
     final int percent = ((_progress ?? 0) * 100).round().clamp(0, 100);
     return AlertDialog(
       title: Text(settings.text('下載城巴專有資料', 'Downloading Citybus data')),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SmoothWavyProgressIndicator(value: _progress),
+          const SizedBox(height: 12),
+          Text(
+            _progress == null
+                ? settings.text('正在連線…', 'Connecting…')
+                : '$percent%',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KmbRouteDataDownloadDialog extends StatefulWidget {
+  const _KmbRouteDataDownloadDialog({required this.remote});
+
+  final KmbRouteDataConfig remote;
+
+  @override
+  State<_KmbRouteDataDownloadDialog> createState() =>
+      _KmbRouteDataDownloadDialogState();
+}
+
+class _KmbRouteDataDownloadDialogState
+    extends State<_KmbRouteDataDownloadDialog> {
+  double? _progress;
+
+  @override
+  void initState() {
+    super.initState();
+    _download();
+  }
+
+  Future<void> _download() async {
+    bool success = false;
+    try {
+      await KmbRouteDataService.instance.ensureDownloaded(
+        remote: widget.remote,
+        onProgress: (double? progress) {
+          if (!mounted) return;
+          setState(() => _progress = progress);
+        },
+      );
+      success = true;
+    } catch (error, stackTrace) {
+      debugPrint('KMB route data download failed: $error\n$stackTrace');
+      success = false;
+    }
+    if (!mounted) return;
+    Navigator.of(context).pop(success);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final int percent = ((_progress ?? 0) * 100).round().clamp(0, 100);
+    return AlertDialog(
+      title: Text(
+        settings.text('下載九巴/龍運路線資料', 'Downloading KMB/LWB route data'),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

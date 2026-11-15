@@ -23,6 +23,8 @@ import 'package:hktransports/bus/ui/citybus_route_description.dart';
 import 'package:hktransports/bus/ui/route_name_subtitle.dart';
 import 'package:hktransports/bus/ui/citybus_stop_landmark.dart';
 import 'package:hktransports/bus/ui/eta_text.dart';
+import 'package:hktransports/bus/ui/kmb_route_description.dart';
+import 'package:hktransports/bus/ui/kmb_stop_landmark.dart';
 import 'package:hktransports/bus/ui/fade_in.dart';
 import 'package:hktransports/bus/ui/nlb_fare_label.dart';
 import 'package:hktransports/bus/ui/nlb_route_special_tag.dart';
@@ -748,6 +750,29 @@ class _RoutePageState extends State<_RoutePage> {
       ),
       body: Column(
         children: [
+          KmbRouteDescription(
+            route: route,
+            language: settings.language,
+            enabled: settings.isProprietaryEnabled(
+              ProprietaryEndpoint.kmbRouteDatabase,
+            ),
+            fallback: '',
+            builder: (BuildContext context, String label) {
+              if (label.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              );
+            },
+          ),
           if (route.isSpecial)
             CitybusRouteDescription(
               route: route,
@@ -1014,6 +1039,14 @@ class _RoutePageState extends State<_RoutePage> {
               ProprietaryEndpoint.nlbProprietaryData,
             ),
           ),
+        KmbStopLandmark(
+          route: route,
+          stopIndex: index,
+          language: settings.language,
+          enabled: settings.isProprietaryEnabled(
+            ProprietaryEndpoint.kmbRouteDatabase,
+          ),
+        ),
         CitybusStopLandmark(
           route: route,
           stopIndex: index,
