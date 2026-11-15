@@ -69,6 +69,16 @@
 有新更新將在App內通知，請手動更新。<br>
 你亦可使用類似 Obtainium 等更新追蹤器，以自動下載更新新版本。
 
+## 建置
+
+建置 release APK 請使用：
+
+```sh
+./buildRelease.sh
+```
+
+輸出位置：`build/app/outputs/flutter-apk/app-release.apk`
+
 ## 授權
 本應用程式以 GPL-3.0 授權，詳情見 [LICENSE](LICENSE)。<br>
 依賴套件、數據來源授權在App內設定 -> 鳴謝 -> 開源授權 顯示
