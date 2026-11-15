@@ -1,0 +1,1 @@
+flutter build apk --release --obfuscate --split-debug-info=./debug-info
