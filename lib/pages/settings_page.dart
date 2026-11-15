@@ -262,7 +262,7 @@ class SettingsPage extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.badge_outlined),
             title: Text(
-              '${settings.text('版本', 'Version')} $appVersion ($appBuildLabel) [BETA]',
+              '${settings.text('版本', 'Version')} $appVersion [BETA]',
             ),
           ),
         ],
