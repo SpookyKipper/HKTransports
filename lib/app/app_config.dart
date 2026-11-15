@@ -15,6 +15,28 @@ const String _android = 'android';
 
 enum ProprietaryAvailability { supported, updateRequired, unavailable }
 
+class KmbRouteDataConfig {
+  const KmbRouteDataConfig({
+    required this.lastUpdate,
+    required this.downloadUrl,
+    this.checkUpdateUrl = '',
+  });
+
+  factory KmbRouteDataConfig.fromJson(Map<String, dynamic> json) {
+    return KmbRouteDataConfig(
+      lastUpdate: json['lastUpdate']?.toString().trim() ?? '',
+      checkUpdateUrl: json['checkUpdateUrl']?.toString().trim() ?? '',
+      downloadUrl: json['downloadUrl']?.toString().trim() ?? '',
+    );
+  }
+
+  final String lastUpdate;
+  final String checkUpdateUrl;
+  final String downloadUrl;
+
+  bool get isDownloadable => downloadUrl.isNotEmpty;
+}
+
 enum SpecialFeature { joyYouFare, scanUpstreamStation }
 
 extension SpecialFeatureInfo on SpecialFeature {
@@ -47,10 +69,15 @@ class AppConfig {
     required this.lastCriticalVersionCode,
     required this.proprietaryApi,
     required this.specialFeatures,
+    this.kmbRouteData,
   });
 
   factory AppConfig.fromJson(Map<String, dynamic> json) {
     final int latestVersionCode = _asInt(json['latestVersionCode']) ?? 0;
+    final Object? rawInstructions = json['downloadInstructions'];
+    final Object? rawKmb = rawInstructions is Map
+        ? rawInstructions['kmbRouteData']
+        : null;
     return AppConfig(
       app: json['app']?.toString().trim() ?? '',
       os: json['os']?.toString().trim().toLowerCase() ?? '',
@@ -63,6 +90,9 @@ class AppConfig {
       lastCriticalVersionCode: _asInt(json['lastCriticalVersionCode']) ?? 0,
       proprietaryApi: _asIntMap(json['proprietaryApi']),
       specialFeatures: _asIntMap(json['specialFeatures']),
+      kmbRouteData: rawKmb is Map<String, dynamic>
+          ? KmbRouteDataConfig.fromJson(rawKmb)
+          : null,
     );
   }
 
@@ -74,6 +104,7 @@ class AppConfig {
   final int lastCriticalVersionCode;
   final Map<String, int> proprietaryApi;
   final Map<String, int> specialFeatures;
+  final KmbRouteDataConfig? kmbRouteData;
 
   bool get matchesCurrentApp => app == _appId && os == _android;
 }
@@ -102,6 +133,8 @@ class AppConfigController {
 
   AppConfig? get config => _config;
   int? get currentVersionCode => _currentVersionCode;
+  KmbRouteDataConfig? get kmbRouteData =>
+      _matchesCurrentApp ? _config?.kmbRouteData : null;
   List<ProprietaryEndpoint> get disabledAtStartup => _disabledAtStartup;
   List<SpecialFeature> get disabledSpecialFeaturesAtStartup =>
       _disabledSpecialFeaturesAtStartup;

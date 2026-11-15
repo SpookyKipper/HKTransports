@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hktransports/app/app_config.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/kmb/kmb_route_data_service.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/smooth_wavy_progress.dart';
@@ -23,6 +25,11 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
   int? _routeBytes;
   int? _kmbBytes;
   DateTime? _kmbUpdatedAt;
+  int? _kmbRouteDataBytes;
+  DateTime? _kmbRouteDataUpdatedAt;
+  bool _refreshingKmbRouteData = false;
+  double? _kmbRouteDataProgress;
+  String? _kmbRouteDataError;
   int? _citybusBytes;
   DateTime? _citybusUpdatedAt;
   bool _refreshingCitybus = false;
@@ -41,6 +48,9 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     final BbiService bbi = const BbiService();
     final int kmbBytes = await bbi.storedBytes();
     final DateTime? kmbUpdatedAt = await bbi.storedUpdatedAt();
+    final KmbRouteDataService kmbRouteData = KmbRouteDataService.instance;
+    final int kmbRouteDataBytes = await kmbRouteData.storedBytes();
+    final DateTime? kmbRouteDataUpdatedAt = kmbRouteData.storedUpdatedAt;
     final CitybusRoutelistService citybus = CitybusRoutelistService.instance;
     final int citybusBytes = await citybus.storedBytes();
     final DateTime? citybusUpdatedAt = citybus.storedUpdatedAt;
@@ -49,6 +59,8 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
       _routeBytes = routeBytes;
       _kmbBytes = kmbBytes;
       _kmbUpdatedAt = kmbUpdatedAt;
+      _kmbRouteDataBytes = kmbRouteDataBytes;
+      _kmbRouteDataUpdatedAt = kmbRouteDataUpdatedAt;
       _citybusBytes = citybusBytes;
       _citybusUpdatedAt = citybusUpdatedAt;
     });
@@ -221,6 +233,83 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     }
   }
 
+  Future<void> _downloadKmbRouteData({required bool force}) async {
+    final AppSettings settings = context.read<AppSettings>();
+    final KmbRouteDataConfig? remote = context
+        .read<AppConfigController>()
+        .kmbRouteData;
+    if (remote == null || !remote.isDownloadable) {
+      _showMessage(
+        settings.text(
+          '九巴/龍運路線資料下載來源暫時無法使用',
+          'KMB/LWB route data source is currently unavailable',
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _refreshingKmbRouteData = true;
+      _kmbRouteDataProgress = null;
+      _kmbRouteDataError = null;
+    });
+    try {
+      await KmbRouteDataService.instance.ensureDownloaded(
+        remote: remote,
+        force: force,
+        onProgress: (double? progress) {
+          if (!mounted) return;
+          setState(() => _kmbRouteDataProgress = progress);
+        },
+      );
+      await _loadSizes();
+      if (!mounted) return;
+      _showMessage(settings.text('九巴/龍運路線資料已更新', 'KMB/LWB route data updated'));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _kmbRouteDataError = error.toString());
+      _showMessage(
+        settings.text('九巴/龍運路線資料下載失敗', 'KMB/LWB route data download failed'),
+      );
+    } finally {
+      if (mounted) setState(() => _refreshingKmbRouteData = false);
+    }
+  }
+
+  Future<void> _deleteKmbRouteData() async {
+    final AppSettings settings = context.read<AppSettings>();
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(
+            settings.text('刪除九巴/龍運路線資料', 'Delete KMB/LWB route data'),
+          ),
+          content: Text(
+            settings.text(
+              '擴展車站名稱及特別班次描述會被刪除。你仍可保持此 API 啟用並重新下載。',
+              'Extended stop names and special departure descriptions will be deleted. You can keep this API enabled and download it again.',
+            ),
+          ),
+          actions: [
+            M3EButton.text(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(settings.text('取消', 'Cancel')),
+            ),
+            M3EButton.text(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(settings.text('刪除', 'Delete')),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) return;
+    await KmbRouteDataService.instance.delete();
+    await _loadSizes();
+    if (!mounted) return;
+    _showMessage(settings.text('九巴/龍運路線資料已刪除', 'KMB/LWB route data deleted'));
+  }
+
   Future<void> _deleteCitybus() async {
     final AppSettings settings = context.read<AppSettings>();
     final bool? confirmed = await showDialog<bool>(
@@ -357,9 +446,16 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     final AppSettings settings = context.watch<AppSettings>();
     final BusRepository repository = context.watch<BusRepository>();
     final bool routeBusy = repository.status == BusDataStatus.updating;
-    final bool busy = routeBusy || _refreshingBbi || _refreshingCitybus;
+    final bool busy =
+        routeBusy ||
+        _refreshingBbi ||
+        _refreshingKmbRouteData ||
+        _refreshingCitybus;
     final bool kmbEnabled = settings.isProprietaryEnabled(
       ProprietaryEndpoint.kmbInterchange,
+    );
+    final bool kmbRouteDataEnabled = settings.isProprietaryEnabled(
+      ProprietaryEndpoint.kmbRouteDatabase,
     );
     final bool citybusEnabled = settings.isProprietaryEnabled(
       ProprietaryEndpoint.citybusDatabase,
@@ -505,6 +601,90 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                           onPressed: busy || (_kmbBytes ?? 0) == 0
                               ? null
                               : _deleteKmb,
+                          icon: const Icon(Icons.delete_outline),
+                          label: Text(settings.text('刪除', 'Delete')),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (kmbRouteDataEnabled) ...[
+            const SizedBox(height: 16),
+            Card.filled(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      settings.text('九巴/龍運路線資料', 'KMB/LWB route data'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      settings.text(
+                        '擴展車站名稱及特別班次描述',
+                        'Extended stop names and special departure descriptions',
+                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _sizeText(
+                      context,
+                      settings,
+                      _kmbRouteDataBytes,
+                      optional: true,
+                    ),
+                    if (_kmbRouteDataUpdatedAt != null)
+                      Text(
+                        '${settings.text('上次更新', 'Last updated')}: '
+                        '${DateFormat('yyyy-MM-dd HH:mm').format(_kmbRouteDataUpdatedAt!)}',
+                      ),
+                    if (_refreshingKmbRouteData) ...[
+                      const SizedBox(height: 12),
+                      SmoothWavyProgressIndicator(value: _kmbRouteDataProgress),
+                      const SizedBox(height: 6),
+                      Text(
+                        _kmbRouteDataProgress == null
+                            ? settings.text('正在下載', 'Downloading')
+                            : '${(_kmbRouteDataProgress! * 100).round()}%',
+                      ),
+                    ],
+                    if (_kmbRouteDataError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _kmbRouteDataError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        M3EButton.icon(
+                          onPressed: busy
+                              ? null
+                              : () => _downloadKmbRouteData(force: false),
+                          icon: const Icon(Icons.sync),
+                          label: Text(
+                            (_kmbRouteDataBytes ?? 0) > 0
+                                ? settings.text('更新九巴資料', 'Update KMB data')
+                                : settings.text('下載九巴資料', 'Download KMB data'),
+                          ),
+                        ),
+                        M3EButton.icon(
+                          style: M3EButtonStyle.text,
+                          onPressed: busy || (_kmbRouteDataBytes ?? 0) == 0
+                              ? null
+                              : _deleteKmbRouteData,
                           icon: const Icon(Icons.delete_outline),
                           label: Text(settings.text('刪除', 'Delete')),
                         ),
