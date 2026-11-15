@@ -220,6 +220,28 @@ void main() {
     );
   });
 
+  test('maps the KMB route data kill switch', () {
+    final AppConfigController disabled = AppConfigController(
+      initialConfig: _config(
+        proprietaryApi: <String, int>{'kmb-routedata': -1},
+      ),
+      initialVersionCode: 99,
+    );
+    final AppConfigController updateRequired = AppConfigController(
+      initialConfig: _config(proprietaryApi: <String, int>{'kmb-routedata': 4}),
+      initialVersionCode: 3,
+    );
+
+    expect(
+      disabled.availabilityFor(ProprietaryEndpoint.kmbRouteDatabase),
+      ProprietaryAvailability.unavailable,
+    );
+    expect(
+      updateRequired.availabilityFor(ProprietaryEndpoint.kmbRouteDatabase),
+      ProprietaryAvailability.updateRequired,
+    );
+  });
+
   test('maps special feature version limits using version codes', () {
     final AppConfigController config = AppConfigController(
       initialConfig: _config(
