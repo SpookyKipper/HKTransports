@@ -1023,7 +1023,11 @@ class _RoutePageState extends State<_RoutePage> {
           ),
         ),
         if (showNotice) ...[
-          _UpstreamEtaBanner(notice: notice, stopName: noticeStopName),
+          _UpstreamEtaBanner(
+            notice: notice,
+            stopName: noticeStopName,
+            companies: route.companies,
+          ),
           const SizedBox(height: 8),
         ],
         _EtaList(
@@ -1182,10 +1186,15 @@ class _RouteSpecialTag extends StatelessWidget {
 }
 
 class _UpstreamEtaBanner extends StatelessWidget {
-  const _UpstreamEtaBanner({required this.notice, required this.stopName});
+  const _UpstreamEtaBanner({
+    required this.notice,
+    required this.stopName,
+    required this.companies,
+  });
 
   final UpstreamEtaNotice notice;
   final String stopName;
+  final List<BusCompany> companies;
 
   @override
   Widget build(BuildContext context) {
@@ -1198,10 +1207,28 @@ class _UpstreamEtaBanner extends StatelessWidget {
     final bool departure = notice.stopIndex == 0;
     final bool nextStopIsViewedStop =
         notice.stopIndex == notice.currentIndex && !departure;
+    final bool ferry = companies.any(
+      (BusCompany company) =>
+          company == BusCompany.sunferry ||
+          company == BusCompany.fortuneferry ||
+          company == BusCompany.hkkf,
+    );
+    // MTR here includes Light Rail. MTR Bus (lrtfeeder) still waves.
+    final bool rail =
+        !ferry &&
+        companies.any(
+          (BusCompany company) =>
+              company == BusCompany.mtr || company == BusCompany.lightRail,
+        );
+    final String nextStopText = ferry
+        ? settings.text('祝旅途愉快', 'Safe travels!')
+        : rail
+        ? settings.text('請小心月台空隙', 'Please mind the gap')
+        : settings.text('準備揚手啦', 'Get ready to wave!');
     final bool willDepart =
         notice.scheduled || eta.isAfter(DateTime.now().toUtc());
     final String text = nextStopIsViewedStop
-        ? settings.text('準備揚手啦', 'Get ready to wave!')
+        ? nextStopText
         : departure
         ? willDepart
               ? _scheduledDepartureText(settings, clock, minutes)
