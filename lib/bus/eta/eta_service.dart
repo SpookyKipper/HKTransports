@@ -57,6 +57,7 @@ class EtaService {
 
   void dispose() {
     _statusUpdates.close();
+    unawaited(_ctbStatus.dispose());
   }
 
   Future<List<BusEta>> fetchRouteStop(RouteEntry route, int seq) async {

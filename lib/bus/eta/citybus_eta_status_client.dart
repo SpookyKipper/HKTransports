@@ -80,10 +80,16 @@ class CitybusEtaStatusClient {
   String? _ssid;
   String? _resultPath;
   Map<String, String> _cookies = const <String, String>{};
+  _HttpConnection? _connection;
   Future<void> _queue = Future<void>.value();
 
   bool get _hasSession =>
       _ssid != null && _resultPath != null && _cookies.isNotEmpty;
+
+  Future<void> dispose() async {
+    await _closeConnection();
+    _clearSession();
+  }
 
   Future<List<CitybusEtaStatus>> fetch(CitybusEtaArguments args) {
     final Completer<List<CitybusEtaStatus>> completer =
@@ -109,9 +115,27 @@ class CitybusEtaStatusClient {
         return parseCitybusEtaStatuses(body);
       } on _Nwp3ConnectionException catch (error) {
         lastError = error;
-        _clearSession();
+        await _closeConnection();
+        if (!hadSession) break;
+        // The cached connection may have gone stale. Retry the same nwp3
+        // session once on a fresh connection before bootstrapping again.
+        try {
+          final String body = await _fetchBody(args, bootstrap: false);
+          return parseCitybusEtaStatuses(body);
+        } on _Nwp3ConnectionException catch (retryError) {
+          lastError = retryError;
+          await _closeConnection();
+          _clearSession();
+          continue;
+        } on _Nwp3Exception catch (retryError) {
+          lastError = retryError;
+          await _closeConnection();
+          _clearSession();
+          continue;
+        }
       } on _Nwp3Exception catch (error) {
         lastError = error;
+        await _closeConnection();
         if (!hadSession) break;
         _clearSession();
       }
@@ -126,19 +150,9 @@ class CitybusEtaStatusClient {
     CitybusEtaArguments args, {
     required bool bootstrap,
   }) async {
-    _HttpConnection? connection;
     try {
-      final SecureSocket socket = await SecureSocket.connect(
-        _host,
-        443,
-        timeout: _timeout,
-        supportedProtocols: const <String>['http/1.1'],
-      );
-      connection = _HttpConnection(
-        socket,
-        timeout: _timeout,
-        cookies: _cookies,
-      );
+      final _HttpConnection connection = _connection ??=
+          await _openConnection();
 
       String ssid;
       String resultPath;
@@ -266,9 +280,23 @@ class CitybusEtaStatusClient {
       throw _Nwp3ConnectionException('$error');
     } on TimeoutException catch (error) {
       throw _Nwp3ConnectionException('$error');
-    } finally {
-      await connection?.close();
     }
+  }
+
+  Future<_HttpConnection> _openConnection() async {
+    final SecureSocket socket = await SecureSocket.connect(
+      _host,
+      443,
+      timeout: _timeout,
+      supportedProtocols: const <String>['http/1.1'],
+    );
+    return _HttpConnection(socket, timeout: _timeout, cookies: _cookies);
+  }
+
+  Future<void> _closeConnection() async {
+    final _HttpConnection? connection = _connection;
+    _connection = null;
+    await connection?.close();
   }
 
   Future<String> _fetchResultScriptPath(
