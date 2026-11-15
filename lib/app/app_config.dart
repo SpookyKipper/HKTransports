@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:http/http.dart' as http;
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:hktransports/app/app_version.dart';
 
 const String appConfigUrl = String.fromEnvironment(
   'APPCONFIG_URL',
@@ -276,13 +276,7 @@ class AppConfigController {
   }
 
   static Future<int?> _platformVersionCode() async {
-    try {
-      final PackageInfo info = await PackageInfo.fromPlatform();
-      return int.tryParse(info.buildNumber);
-    } catch (error) {
-      debugPrint('Unable to read package version code: $error');
-      return null;
-    }
+    return appBuildNumber > 0 ? appBuildNumber : null;
   }
 }
 
