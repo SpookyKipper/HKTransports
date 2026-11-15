@@ -160,8 +160,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         );
       case ProprietaryEndpoint.kmbRouteDatabase:
         return settings.text(
-          '擴展車站名稱及特別班次描述 ~ 5 MB',
-          'Extended stop names and special departure descriptions ~ 5 MB',
+          '擴展車站名稱及特別班次描述 ~ 6.5 MB',
+          'Extended stop names and special departure descriptions ~ 6.5 MB',
         );
       case ProprietaryEndpoint.citybusSpecialNotices:
         return settings.text('城巴特別通告', 'Citybus special notices');
