@@ -46,11 +46,14 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
+        resConfigs("en", "zh-rTW", "zh-rHK")
+
         ndk {
             abiFilters.clear()
             targetPlatforms
                 .mapNotNull { abiByTargetPlatform[it] }
                 .forEach { abiFilters.add(it) }
+            debugSymbolLevel = "NONE"
         }
     }
 
@@ -69,10 +72,22 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             // signingConfig = signingConfigs.getByName("debug")
             signingConfig = signingConfigs.getByName("release")
+
+            isMinifyEnabled = true
+            isShrinkResources = true
+            
+            // Use the setProguardFiles function with getDefaultProguardFile
+            setProguardFiles(listOf(getDefaultProguardFile("proguard-android-optimize.txt")))
         }
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-DEBUG"
+        }
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true   // deflate the .so payload
         }
     }
 }
