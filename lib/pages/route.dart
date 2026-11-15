@@ -76,11 +76,14 @@ class _RoutePageState extends State<_RoutePage> {
   static const double _stationGap = 3;
   static const double _stationInnerRadius = 8;
   static const double _autoFocusMaxDistanceMeters = 2000;
+  static const Duration _upstreamEtaCacheTtl = Duration(seconds: 60);
 
   late final AppSettings _settings;
   late final EtaService _etaService;
   StreamSubscription<EtaStatusUpdate>? _statusSubscription;
   final Map<int, List<BusEta>?> _etas = {};
+  final Map<int, _CachedRouteStopEtas> _routeStopEtaCache = {};
+  final Map<int, Future<List<BusEta>>> _routeStopEtaRequests = {};
   final Set<int> _loading = {};
   final GlobalKey<RouteMapState> _mapKey = GlobalKey<RouteMapState>();
   final Map<int, GlobalKey> _stationKeys = {};
@@ -230,7 +233,7 @@ class _RoutePageState extends State<_RoutePage> {
     }
     final int? index = _expandedIndex;
     if (index != null) {
-      unawaited(_fetch(index, scanUpstream: true));
+      unawaited(_fetch(index, scanUpstream: true, useUpstreamCache: false));
     }
   }
 
@@ -247,9 +250,9 @@ class _RoutePageState extends State<_RoutePage> {
     setState(() => _etas[update.seq] = updated);
   }
 
-  void _startRefresh(int index) {
+  void _startRefresh(int index, {bool useUpstreamCache = true}) {
     _timer?.cancel();
-    _fetch(index, scanUpstream: true);
+    _fetch(index, scanUpstream: true, useUpstreamCache: useUpstreamCache);
     _nextRefreshAt = DateTime.now().add(
       Duration(seconds: _settings.refreshSeconds),
     );
@@ -261,7 +264,7 @@ class _RoutePageState extends State<_RoutePage> {
       if (next == null) return;
       if (!next.isAfter(now)) {
         _nextRefreshAt = now.add(Duration(seconds: _settings.refreshSeconds));
-        _fetch(index, scanUpstream: true);
+        _fetch(index, scanUpstream: true, useUpstreamCache: false);
       }
       _updateRefreshCountdown();
     });
@@ -338,7 +341,9 @@ class _RoutePageState extends State<_RoutePage> {
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           label: settings.text('$seconds 秒', '${seconds}s'),
-          onPressed: loading ? null : () => _startRefresh(index),
+          onPressed: loading
+              ? null
+              : () => _startRefresh(index, useUpstreamCache: false),
           tooltip: settings.text(
             '立即重新整理（$seconds 秒）',
             'Reload now (${seconds}s)',
@@ -348,21 +353,22 @@ class _RoutePageState extends State<_RoutePage> {
     );
   }
 
-  Future<void> _fetch(int index, {bool scanUpstream = false}) async {
+  Future<void> _fetch(
+    int index, {
+    bool scanUpstream = false,
+    bool useUpstreamCache = true,
+  }) async {
     if (_loading.contains(index)) return;
     setState(() => _loading.add(index));
     try {
-      final List<BusEta> etas = await _etaService.fetchRouteStop(
-        widget.route,
-        index,
-      );
+      final List<BusEta> etas = await _fetchRouteStopEtas(index);
       if (!mounted || _disposed) return;
       setState(() {
         _loading.remove(index);
         _etas[index] = etas;
       });
       if (scanUpstream && _expandedIndex == index) {
-        unawaited(_scanUpstreamEta(index));
+        unawaited(_scanUpstreamEta(index, useCache: useUpstreamCache));
       }
     } catch (error) {
       debugPrint('ETA refresh failed: $error');
@@ -370,6 +376,46 @@ class _RoutePageState extends State<_RoutePage> {
         setState(() => _loading.remove(index));
       }
     }
+  }
+
+  Future<List<BusEta>> _fetchRouteStopEtas(
+    int index, {
+    bool useCache = false,
+  }) async {
+    final Future<List<BusEta>>? running = _routeStopEtaRequests[index];
+    if (running != null) return running;
+    if (useCache) {
+      final List<BusEta>? cached = _cachedRouteStopEtas(index);
+      if (cached != null) return cached;
+    }
+
+    final Future<List<BusEta>> future = _etaService.fetchRouteStop(
+      widget.route,
+      index,
+    );
+    _routeStopEtaRequests[index] = future;
+    try {
+      final List<BusEta> etas = await future;
+      _routeStopEtaCache[index] = _CachedRouteStopEtas(
+        etas: etas,
+        fetchedAt: DateTime.now(),
+      );
+      return etas;
+    } finally {
+      if (identical(_routeStopEtaRequests[index], future)) {
+        _routeStopEtaRequests.remove(index);
+      }
+    }
+  }
+
+  List<BusEta>? _cachedRouteStopEtas(int index) {
+    final _CachedRouteStopEtas? cached = _routeStopEtaCache[index];
+    if (cached == null) return null;
+    if (DateTime.now().difference(cached.fetchedAt) > _upstreamEtaCacheTtl) {
+      _routeStopEtaCache.remove(index);
+      return null;
+    }
+    return cached.etas;
   }
 
   bool _isArrivedEta(BusEta? eta, DateTime now) {
@@ -395,7 +441,7 @@ class _RoutePageState extends State<_RoutePage> {
     return null;
   }
 
-  Future<void> _scanUpstreamEta(int index) async {
+  Future<void> _scanUpstreamEta(int index, {bool useCache = true}) async {
     if (!mounted || !_settings.upstreamEtaScan || _expandedIndex != index) {
       return;
     }
@@ -422,7 +468,7 @@ class _RoutePageState extends State<_RoutePage> {
     for (int i = index - 1; i >= 0; i--) {
       final List<BusEta> etas;
       try {
-        etas = await _etaService.fetchRouteStop(widget.route, i);
+        etas = await _fetchRouteStopEtas(i, useCache: useCache);
       } catch (error) {
         debugPrint('Upstream ETA scan failed at $i: $error');
         break;
@@ -1685,6 +1731,13 @@ class _StationExpandable extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CachedRouteStopEtas {
+  const _CachedRouteStopEtas({required this.etas, required this.fetchedAt});
+
+  final List<BusEta> etas;
+  final DateTime fetchedAt;
 }
 
 class _RouteUpdateNotice extends StatefulWidget {
