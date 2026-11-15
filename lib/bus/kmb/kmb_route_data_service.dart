@@ -200,7 +200,11 @@ class KmbRouteDataService {
       );
       await _closeReader();
       if (await newSlim.exists()) await newSlim.delete();
-      await Isolate.run(() => _buildSlimFromBase(base.path, newSlim.path));
+      if (_isSlimDatabase(base.path)) {
+        await base.copy(newSlim.path);
+      } else {
+        await Isolate.run(() => _buildSlimFromBase(base.path, newSlim.path));
+      }
       await _replaceDatabase(newSlim);
       final String baseline = remote.lastUpdate.isNotEmpty
           ? remote.lastUpdate
@@ -517,6 +521,53 @@ bool _isNormalDescription(String value) {
       text == 'normal route' ||
       text == '正常' ||
       text == '正常路線';
+}
+
+bool _isSlimDatabase(String path) {
+  try {
+    final Database db = sqlite3.open(path, mode: OpenMode.readOnly);
+    try {
+      final Set<String> tables = db
+          .select("SELECT name FROM sqlite_master WHERE type='table'")
+          .map((Row row) => row['name'].toString())
+          .toSet();
+      if (!tables.contains('kmb_stop') || !tables.contains('kmb_bound')) {
+        return false;
+      }
+      final Set<String> stopColumns = _columns(db, 'kmb_stop');
+      final Set<String> boundColumns = _columns(db, 'kmb_bound');
+      return <String>{
+            'route_no',
+            'bound',
+            'stop_seq',
+            'service_type',
+            'stop_loc1',
+            'stop_loc2',
+            'stop_loc3',
+            'stop_loc_chi1',
+            'stop_loc_chi2',
+            'stop_loc_chi3',
+          }.every(stopColumns.contains) &&
+          <String>{
+            'route_no',
+            'bound_no',
+            'service_type',
+            'service_type_desc_eng',
+            'service_type_desc_chi',
+          }.every(boundColumns.contains);
+    } finally {
+      db.close();
+    }
+  } catch (_) {
+    return false;
+  }
+}
+
+Set<String> _columns(Database db, String table) {
+  return db
+      .select('PRAGMA table_info($table)')
+      .map((Row row) => row['name'].toString())
+      .toSet();
 }
 
 Future<void> _buildSlimFromBase(String basePath, String slimPath) async {
