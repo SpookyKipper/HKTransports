@@ -172,6 +172,41 @@ void main() {
     expect(result[0]!.single.remarkEn, 'No scheduled departure at this moment');
   });
 
+  test('keeps a last-bus-passed placeholder as an empty-state row', () async {
+    final MockClient mock = MockClient((http.Request request) async {
+      return _json(<Object>[
+        <String, Object>{
+          'routeNo': '290',
+          'bound': 2,
+          'service_type': 1,
+          'seq': 0,
+          'responsecode': 0,
+          'eta': <Object>[
+            <String, dynamic>{
+              't': '尾班車已過本站',
+              'ex': '2026-11-17 00:15:07',
+              'dis': null,
+              'ei': null,
+            },
+          ],
+        },
+      ]);
+    });
+
+    final Map<int, List<BusEta>>? result = await _client(
+      mock,
+    ).fetchRouteEtas(_route(stops: 1), language: 'zh');
+
+    expect(result, isNotNull);
+    expect(result![0], hasLength(1));
+    expect(result[0]!.single.eta, isNull);
+    expect(result[0]!.single.remarkZh, '尾班車已過本站');
+    expect(
+      result[0]!.single.remarkEn,
+      'The last bus has departed from this bus stop',
+    );
+  });
+
   test('drops Citybus rows from the KMB response', () async {
     final MockClient mock = MockClient((http.Request request) async {
       return _json(<Object>[

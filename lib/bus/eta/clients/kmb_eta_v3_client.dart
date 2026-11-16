@@ -163,6 +163,21 @@ class KmbEtaV3Client {
         );
         continue;
       }
+      if (_isLastBusPassedRow(display)) {
+        result.add(
+          BusEta(
+            company: BusCompany.kmb,
+            eta: null,
+            remarkZh: '尾班車已過本站',
+            remarkEn: 'The last bus has departed from this bus stop',
+            destZh: route.dest.zh,
+            destEn: route.dest.en,
+            etaSeq: index + 1,
+            kmbProprietary: true,
+          ),
+        );
+        continue;
+      }
       final RegExpMatch? match = RegExp(
         r'^(\d{1,2}:\d{2})\s*(.*)$',
       ).firstMatch(display);
@@ -244,6 +259,12 @@ class KmbEtaV3Client {
         lower.contains('no scheduled bus') ||
         display.contains('沒有預定班次') ||
         display.contains('没有预定班次');
+  }
+
+  bool _isLastBusPassedRow(String display) {
+    return display.contains('尾班車已過本站') ||
+        display.contains('尾班车已过本站') ||
+        display.toLowerCase().contains('last bus has departed');
   }
 
   bool _isCitybusRow(String display) {
