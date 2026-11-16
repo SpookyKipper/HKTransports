@@ -68,8 +68,35 @@ class EtaService {
       }).toList();
       if (companies.isEmpty) return const [];
 
+      final AppSettings? settings = _settings;
+      final bool jointCitybusProprietary = shouldUseCitybusProprietaryOnly(
+        companies: companies,
+        citybusProprietaryEnabled:
+            settings?.isProprietaryEnabled(
+              ProprietaryEndpoint.citybusEtaStatus,
+            ) ??
+            false,
+      );
+      if (jointCitybusProprietary) {
+        final List<BusEta> proprietary = await _fetchCitybus(
+          route,
+          BusCompany.ctb,
+          seq,
+        );
+        if (proprietary.isNotEmpty) return _normalise(proprietary);
+        debugPrint(
+          'Citybus proprietary ETA unavailable for joint route; '
+          'falling back to open data',
+        );
+      }
+
       final List<Future<List<BusEta>>> tasks = companies.map((company) {
-        return _fetchCompany(route, company, seq).catchError((Object error) {
+        return _fetchCompany(
+          route,
+          company,
+          seq,
+          allowCitybusProprietary: !jointCitybusProprietary,
+        ).catchError((Object error) {
           debugPrint('ETA fetch failed for ${company.name}: $error');
           return <BusEta>[];
         });
@@ -90,8 +117,9 @@ class EtaService {
   Future<List<BusEta>> _fetchCompany(
     RouteEntry route,
     BusCompany company,
-    int seq,
-  ) {
+    int seq, {
+    bool allowCitybusProprietary = true,
+  }) {
     switch (company) {
       case BusCompany.kmb:
         return _kmb.fetch(
@@ -101,7 +129,12 @@ class EtaService {
           language: _language,
         );
       case BusCompany.ctb:
-        return _fetchCitybus(route, company, seq);
+        return _fetchCitybus(
+          route,
+          company,
+          seq,
+          allowProprietary: allowCitybusProprietary,
+        );
       case BusCompany.nlb:
         return _fetchNlb(route, company, seq);
       case BusCompany.gmb:
@@ -147,11 +180,17 @@ class EtaService {
   Future<List<BusEta>> _fetchCitybus(
     RouteEntry route,
     BusCompany company,
-    int seq,
-  ) async {
+    int seq, {
+    bool allowProprietary = true,
+  }) async {
     List<BusEta> first = const <BusEta>[];
     try {
-      first = await _fetchCitybusOnce(route, company, seq);
+      first = await _fetchCitybusOnce(
+        route,
+        company,
+        seq,
+        allowProprietary: allowProprietary,
+      );
     } catch (error) {
       debugPrint('Citybus ETA fetch failed: $error');
     }
@@ -159,7 +198,12 @@ class EtaService {
 
     await Future<void>.delayed(_citybusNoEtaRetryDelay);
     try {
-      return await _fetchCitybusOnce(route, company, seq);
+      return await _fetchCitybusOnce(
+        route,
+        company,
+        seq,
+        allowProprietary: allowProprietary,
+      );
     } catch (error) {
       debugPrint('Citybus ETA retry failed: $error');
       return const <BusEta>[];
@@ -169,10 +213,12 @@ class EtaService {
   Future<List<BusEta>> _fetchCitybusOnce(
     RouteEntry route,
     BusCompany company,
-    int seq,
-  ) async {
+    int seq, {
+    bool allowProprietary = true,
+  }) async {
     final AppSettings? settings = _settings;
-    if (settings != null &&
+    if (allowProprietary &&
+        settings != null &&
         settings.isProprietaryEnabled(ProprietaryEndpoint.citybusEtaStatus)) {
       return _fetchCitybusProprietary(route, seq);
     }
@@ -312,6 +358,15 @@ class EtaService {
     });
     return sorted;
   }
+}
+
+bool shouldUseCitybusProprietaryOnly({
+  required Iterable<BusCompany> companies,
+  required bool citybusProprietaryEnabled,
+}) {
+  if (!citybusProprietaryEnabled) return false;
+  return companies.contains(BusCompany.kmb) &&
+      companies.contains(BusCompany.ctb);
 }
 
 class EtaStatusUpdate {
