@@ -175,6 +175,7 @@ class KmbEtaV3Client {
           solarPowered: solarPowered,
           occupancyPercent: _occupancyPercent(value['ol']),
           doubleWheelchair: value['wifi']?.toString() == 'Y',
+          kmbProprietary: true,
         ),
       );
     }

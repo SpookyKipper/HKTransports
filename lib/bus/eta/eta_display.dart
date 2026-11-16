@@ -48,6 +48,10 @@ bool _isCitybusProprietary(BusEta eta) {
       (eta.statusEn?.trim().isNotEmpty ?? false);
 }
 
+bool _isKmbProprietary(BusEta eta) {
+  return eta.company == BusCompany.kmb && eta.kmbProprietary;
+}
+
 /// The minute portion of an ETA row.
 ///
 /// Citybus proprietary rows keep their literal minute text and special states.
@@ -62,6 +66,12 @@ String? etaWaitLabel(
 }) {
   final String minuteUnit = settings.text(shortMinuteUnit ? '分' : '分鐘', 'min');
   final bool citybusProprietary = _isCitybusProprietary(eta);
+  if (_isKmbProprietary(eta)) {
+    if (minutes != null && minutes < 1) {
+      return eta.distanceKm != null ? '<1 $minuteUnit' : '- $minuteUnit';
+    }
+    return etaMinuteWaitLabel(eta.eta, minuteUnit);
+  }
   if (!citybusProprietary) {
     if (atOrigin &&
         minutes != null &&
@@ -81,16 +91,17 @@ String? etaWaitLabel(
     return '- $minuteUnit';
   }
   if (underOne) {
-    if (eta.distanceKm != null) {
-      return '<1 $minuteUnit';
-    }
-    return '- $minuteUnit';
+    return etaUnderOneWaitLabel(eta.distanceKm != null, minuteUnit);
   }
   if (literal != null) {
     return shortMinuteUnit ? literal.replaceAll('分鐘', '分') : literal;
   }
   if (minutes == null) return null;
   return '$minutes $minuteUnit';
+}
+
+String etaUnderOneWaitLabel(bool hasDistance, String minuteUnit) {
+  return hasDistance ? '<1 $minuteUnit' : '- $minuteUnit';
 }
 
 String? etaMinuteWaitLabel(
@@ -134,5 +145,6 @@ String etaLiveStatusKey(BusEta eta) {
     eta.solarPowered.toString(),
     eta.occupancyPercent?.toString() ?? '',
     eta.doubleWheelchair.toString(),
+    eta.kmbProprietary.toString(),
   ].join('|');
 }

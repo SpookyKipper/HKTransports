@@ -27,6 +27,11 @@ void main() {
     );
   });
 
+  test('uses distance for the under-one-minute label', () {
+    expect(etaUnderOneWaitLabel(true, '分鐘'), '<1 分鐘');
+    expect(etaUnderOneWaitLabel(false, '分鐘'), '- 分鐘');
+  });
+
   test('shows whole minutes for an ETA at least one minute away', () {
     expect(
       etaMinuteWaitLabel(now.add(const Duration(minutes: 1)), '分鐘', now: now),

@@ -19,6 +19,7 @@ class BusEta {
     this.solarPowered = false,
     this.occupancyPercent,
     this.doubleWheelchair = false,
+    this.kmbProprietary = false,
     this.wheelchair = false,
   });
 
@@ -51,6 +52,9 @@ class BusEta {
 
   /// Whether the source marks this vehicle as double-wheelchair accessible.
   final bool doubleWheelchair;
+
+  /// Whether the row came from the KMB proprietary ETA feed.
+  final bool kmbProprietary;
 
   /// Whether the vehicle is wheelchair accessible.
   final bool wheelchair;
@@ -91,6 +95,7 @@ class BusEta {
     bool? solarPowered,
     int? occupancyPercent,
     bool? doubleWheelchair,
+    bool? kmbProprietary,
     bool? wheelchair,
   }) {
     return BusEta(
@@ -111,6 +116,7 @@ class BusEta {
       solarPowered: solarPowered ?? this.solarPowered,
       occupancyPercent: occupancyPercent ?? this.occupancyPercent,
       doubleWheelchair: doubleWheelchair ?? this.doubleWheelchair,
+      kmbProprietary: kmbProprietary ?? this.kmbProprietary,
       wheelchair: wheelchair ?? this.wheelchair,
     );
   }

@@ -125,6 +125,7 @@ void main() {
     expect(result[0]!.first.distanceKm, closeTo(5.547, 0.0001));
     expect(result[0]!.first.solarPowered, isTrue);
     expect(result[0]!.first.occupancyPercent, 50);
+    expect(result[0]!.first.kmbProprietary, isTrue);
     expect(result[0]!.first.doubleWheelchair, isTrue);
     expect(result[0]!.first.wheelchair, isFalse);
     expect(result[0]!.last.scheduled, isTrue);
