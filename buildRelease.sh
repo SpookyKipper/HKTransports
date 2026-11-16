@@ -13,7 +13,14 @@ if [[ "${APP_BUILD}" == "${VERSION_LINE}" ]]; then
   APP_BUILD=0
 fi
 
+KMB_ETA_SECRET_FILE="${KMB_ETA_SECRET_FILE:-secrets/kmb_eta.json}"
+if [[ ! -f "${KMB_ETA_SECRET_FILE}" ]]; then
+  echo "Missing local KMB ETA secret file: ${KMB_ETA_SECRET_FILE}" >&2
+  exit 1
+fi
+
 flutter build apk --release --obfuscate \
   --split-debug-info=./debug-info \
   --dart-define=APP_VERSION="${APP_VERSION}" \
-  --dart-define=APP_BUILD="${APP_BUILD}"
+  --dart-define=APP_BUILD="${APP_BUILD}" \
+  --dart-define-from-file="${KMB_ETA_SECRET_FILE}"

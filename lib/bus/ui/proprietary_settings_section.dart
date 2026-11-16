@@ -224,6 +224,8 @@ class _EndpointTile extends StatelessWidget {
         return Icons.alt_route;
       case ProprietaryEndpoint.kmbRouteDatabase:
         return Icons.storage_outlined;
+      case ProprietaryEndpoint.kmbEtaStatus:
+        return Icons.schedule_outlined;
       case ProprietaryEndpoint.citybusSpecialNotices:
         return Icons.campaign_outlined;
       case ProprietaryEndpoint.citybusRouteNotices:

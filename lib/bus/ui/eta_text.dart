@@ -11,6 +11,8 @@ class EtaText extends StatelessWidget {
     required this.color,
     required this.appendedKey,
     this.wheelchair = false,
+    this.liveTracked = false,
+    this.liveTrackedLabel,
     this.maxLines,
     this.overflow,
     this.textAlign,
@@ -22,6 +24,8 @@ class EtaText extends StatelessWidget {
   final Color color;
   final String appendedKey;
   final bool wheelchair;
+  final bool liveTracked;
+  final String? liveTrackedLabel;
   final int? maxLines;
   final TextOverflow? overflow;
   final TextAlign? textAlign;
@@ -31,6 +35,24 @@ class EtaText extends StatelessWidget {
     final String? text = appended;
     List<InlineSpan> spans(double opacity) {
       return <InlineSpan>[
+        if (liveTracked)
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Tooltip(
+                message: liveTrackedLabel ?? 'Live tracked',
+                child: FadeIn(
+                  key: const ValueKey<String>('live-tracked'),
+                  child: Icon(
+                    Icons.eco,
+                    size: style?.fontSize ?? 14,
+                    color: color,
+                  ),
+                ),
+              ),
+            ),
+          ),
         if (base.isNotEmpty) TextSpan(text: base),
         if (text != null && text.isNotEmpty)
           TextSpan(

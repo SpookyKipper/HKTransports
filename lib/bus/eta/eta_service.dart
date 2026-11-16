@@ -9,6 +9,7 @@ import 'package:hktransports/bus/eta/clients/ctb_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/ferry_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/gmb_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/kmb_eta_client.dart';
+import 'package:hktransports/bus/eta/clients/kmb_eta_v3_client.dart';
 import 'package:hktransports/bus/eta/clients/lightrail_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/lrtfeeder_eta_client.dart';
 import 'package:hktransports/bus/eta/clients/mtr_eta_client.dart';
@@ -22,15 +23,18 @@ class EtaService {
     String language = 'zh',
     AppSettings? settings,
     BusDatabase? Function()? databaseProvider,
+    KmbEtaV3Client? kmbV3,
   }) : _language = language,
        _settings = settings,
-       _databaseProvider = databaseProvider;
+       _databaseProvider = databaseProvider,
+       _kmbV3 = kmbV3 ?? KmbEtaV3Client();
 
   String _language;
   final AppSettings? _settings;
   final BusDatabase? Function()? _databaseProvider;
 
   final KmbEtaClient _kmb = KmbEtaClient();
+  final KmbEtaV3Client _kmbV3;
   final CtbEtaClient _ctb = CtbEtaClient();
   final NlbEtaClient _nlb = NlbEtaClient();
   final GmbEtaClient _gmb = GmbEtaClient();
@@ -49,6 +53,10 @@ class EtaService {
   final Map<String, _CachedKmbRouteEtas> _kmbRouteCache =
       <String, _CachedKmbRouteEtas>{};
   final Map<String, Future<Map<int, List<BusEta>>?>> _kmbRouteRequests =
+      <String, Future<Map<int, List<BusEta>>?>>{};
+  final Map<String, _CachedKmbRouteEtas> _kmbV3RouteCache =
+      <String, _CachedKmbRouteEtas>{};
+  final Map<String, Future<Map<int, List<BusEta>>?>> _kmbV3RouteRequests =
       <String, Future<Map<int, List<BusEta>>?>>{};
 
   String get language => _language;
@@ -150,7 +158,28 @@ class EtaService {
     return Duration(seconds: seconds.clamp(5, 120));
   }
 
+  bool get _kmbV3Enabled =>
+      _settings?.isProprietaryEnabled(ProprietaryEndpoint.kmbEtaStatus) ==
+          true &&
+      _kmbV3.isConfigured;
+
   Future<List<BusEta>> _fetchKmbRouteStop(
+    RouteEntry route,
+    BusCompany company,
+    int seq,
+  ) async {
+    if (_kmbV3Enabled) {
+      final String key = _kmbV3RouteCacheKey(route);
+      final Map<int, List<BusEta>>? byIndex = await _kmbV3RouteEtas(route, key);
+      if (byIndex != null) {
+        final List<BusEta>? rows = byIndex[seq];
+        if (rows != null) return List<BusEta>.of(rows);
+      }
+    }
+    return _fetchPublicKmbRouteStop(route, company, seq);
+  }
+
+  Future<List<BusEta>> _fetchPublicKmbRouteStop(
     RouteEntry route,
     BusCompany company,
     int seq,
@@ -179,6 +208,48 @@ class EtaService {
 
   void invalidateKmbRouteCache(RouteEntry route) {
     _kmbRouteCache.remove(_kmbRouteCacheKey(route));
+    _kmbV3RouteCache.remove(_kmbV3RouteCacheKey(route));
+  }
+
+  String _kmbV3RouteCacheKey(RouteEntry route) {
+    return '${route.key}|${route.serviceType}|'
+        '${route.boundFor(BusCompany.kmb) ?? ''}|$_language';
+  }
+
+  Future<Map<int, List<BusEta>>?> _kmbV3RouteEtas(
+    RouteEntry route,
+    String key,
+  ) async {
+    final _CachedKmbRouteEtas? cached = _kmbV3RouteCache[key];
+    if (cached != null) {
+      if (DateTime.now().difference(cached.fetchedAt) <= _kmbRouteEtaCacheTtl) {
+        return cached.bySeq;
+      }
+      _kmbV3RouteCache.remove(key);
+    }
+
+    final Future<Map<int, List<BusEta>>?>? running = _kmbV3RouteRequests[key];
+    if (running != null) return running;
+
+    final Future<Map<int, List<BusEta>>?> future = _kmbV3.fetchRouteEtas(
+      route,
+      language: _language,
+    );
+    _kmbV3RouteRequests[key] = future;
+    try {
+      final Map<int, List<BusEta>>? byIndex = await future;
+      if (byIndex != null) {
+        _kmbV3RouteCache[key] = _CachedKmbRouteEtas(
+          bySeq: byIndex,
+          fetchedAt: DateTime.now(),
+        );
+      }
+      return byIndex;
+    } finally {
+      if (identical(_kmbV3RouteRequests[key], future)) {
+        _kmbV3RouteRequests.remove(key);
+      }
+    }
   }
 
   String _kmbRouteCacheKey(RouteEntry route) {

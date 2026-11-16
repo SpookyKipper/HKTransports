@@ -1540,6 +1540,8 @@ class _EtaLine extends StatelessWidget {
         style: style,
         color: color,
         wheelchair: eta.wheelchair,
+        liveTracked: eta.liveTracked,
+        liveTrackedLabel: settings.text('實時追蹤', 'Live tracked'),
       ),
     );
   }

@@ -51,3 +51,5 @@ hktransports/
 
 # Draft
 README\ copy.md
+# Local build secrets
+/secrets/

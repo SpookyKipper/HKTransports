@@ -16,6 +16,7 @@ class BusEta {
     this.distanceKm,
     this.proprietaryTime,
     this.proprietaryMinutes,
+    this.liveTracked = false,
     this.wheelchair = false,
   });
 
@@ -39,6 +40,9 @@ class BusEta {
   /// Literal time and minutes strings reported by a proprietary source.
   final String? proprietaryTime;
   final String? proprietaryMinutes;
+
+  /// Whether the live-tracking marker was present in the source row.
+  final bool liveTracked;
 
   /// Whether the vehicle is wheelchair accessible.
   final bool wheelchair;
@@ -70,6 +74,7 @@ class BusEta {
     String? proprietaryTime,
     String? proprietaryMinutes,
     int? etaSeq,
+    bool? liveTracked,
     bool? wheelchair,
   }) {
     return BusEta(
@@ -87,6 +92,7 @@ class BusEta {
       distanceKm: distanceKm ?? this.distanceKm,
       proprietaryTime: proprietaryTime ?? this.proprietaryTime,
       proprietaryMinutes: proprietaryMinutes ?? this.proprietaryMinutes,
+      liveTracked: liveTracked ?? this.liveTracked,
       wheelchair: wheelchair ?? this.wheelchair,
     );
   }
