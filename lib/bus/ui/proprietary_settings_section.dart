@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hktransports/app/app_config.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
+import 'package:hktransports/bus/kmb/kmb_eta_secret.dart';
 import 'package:hktransports/bus/kmb/kmb_route_data_service.dart';
 import 'package:hktransports/bus/notice/bbi_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -95,6 +96,15 @@ class _EndpointTile extends StatelessWidget {
     final AppConfigController appConfig = context.read<AppConfigController>();
     KmbRouteDataConfig? kmbRemote;
     if (value) {
+      if (endpoint == ProprietaryEndpoint.kmbEtaStatus &&
+          !kmbEtaSeedAvailable) {
+        await showProprietaryAvailabilityDialog(
+          context,
+          endpoint,
+          ProprietaryAvailability.unavailable,
+        );
+        return;
+      }
       final ProprietaryAvailability availability = appConfig.availabilityFor(
         endpoint,
       );

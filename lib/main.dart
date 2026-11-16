@@ -13,6 +13,7 @@ import 'package:hktransports/app/fade_forward_page.dart';
 import 'package:hktransports/app/m3e_scope.dart';
 import 'package:hktransports/bus/citybus/citybus_routelist_service.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
+import 'package:hktransports/bus/kmb/kmb_eta_secret.dart';
 import 'package:hktransports/bus/kmb/kmb_route_data_service.dart';
 import 'package:hktransports/bus/eta/eta_service.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
@@ -187,8 +188,16 @@ void main() async {
   final AppSettings settings = AppSettings();
   await appConfigFuture;
   final List<ProprietaryEndpoint> disabledEndpoints = appConfig.isCritical
-      ? const <ProprietaryEndpoint>[]
-      : appConfig.applyToSettings(settings);
+      ? <ProprietaryEndpoint>[]
+      : List<ProprietaryEndpoint>.of(appConfig.applyToSettings(settings));
+  if (!appConfig.isCritical &&
+      !kmbEtaSeedAvailable &&
+      settings.isProprietaryEnabled(ProprietaryEndpoint.kmbEtaStatus)) {
+    settings.setProprietaryEndpoint(ProprietaryEndpoint.kmbEtaStatus, false);
+    if (!disabledEndpoints.contains(ProprietaryEndpoint.kmbEtaStatus)) {
+      disabledEndpoints.add(ProprietaryEndpoint.kmbEtaStatus);
+    }
+  }
   final List<SpecialFeature> disabledFeatures = appConfig.isCritical
       ? const <SpecialFeature>[]
       : appConfig.disabledSpecialFeaturesAtStartup;
