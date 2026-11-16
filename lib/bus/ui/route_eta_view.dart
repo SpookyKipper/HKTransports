@@ -129,12 +129,15 @@ class _RouteEtaViewState extends State<RouteEtaView> {
 
   @override
   Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
     final List<BusEta> etas = (_etas ?? const [])
         .where(
           (eta) =>
               eta.eta != null ||
               eta.proprietaryTime != null ||
-              eta.proprietaryMinutes != null,
+              eta.proprietaryMinutes != null ||
+              eta.remark(settings.language).isNotEmpty ||
+              eta.status(settings.language) != null,
         )
         .take(3)
         .toList();

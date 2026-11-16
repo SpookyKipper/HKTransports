@@ -147,7 +147,22 @@ class KmbEtaV3Client {
       final dynamic value = raw[index];
       if (value is! Map<String, dynamic>) continue;
       final String display = (value['t'] ?? '').toString().trim();
-      if (_isCitybusRow(display) || _isNoServiceRow(display)) continue;
+      if (_isCitybusRow(display)) continue;
+      if (_isNoServiceRow(display)) {
+        result.add(
+          BusEta(
+            company: BusCompany.kmb,
+            eta: null,
+            remarkZh: '暫時沒有預定班次',
+            remarkEn: 'No scheduled departure at this moment',
+            destZh: route.dest.zh,
+            destEn: route.dest.en,
+            etaSeq: index + 1,
+            kmbProprietary: true,
+          ),
+        );
+        continue;
+      }
       final RegExpMatch? match = RegExp(
         r'^(\d{1,2}:\d{2})\s*(.*)$',
       ).firstMatch(display);

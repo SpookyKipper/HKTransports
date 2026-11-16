@@ -140,7 +140,7 @@ void main() {
     expect(result[2]!.single.solarPowered, isTrue);
   });
 
-  test('drops no-service placeholder rows', () async {
+  test('keeps no-service placeholder as an empty-state row', () async {
     final MockClient mock = MockClient((http.Request request) async {
       return _json(<Object>[
         <String, Object>{
@@ -166,7 +166,10 @@ void main() {
     ).fetchRouteEtas(_route(stops: 1), language: 'en');
 
     expect(result, isNotNull);
-    expect(result![0], isEmpty);
+    expect(result![0], hasLength(1));
+    expect(result[0]!.single.eta, isNull);
+    expect(result[0]!.single.remarkZh, '暫時沒有預定班次');
+    expect(result[0]!.single.remarkEn, 'No scheduled departure at this moment');
   });
 
   test('drops Citybus rows from the KMB response', () async {
