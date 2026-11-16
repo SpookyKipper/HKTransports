@@ -147,7 +147,7 @@ class KmbEtaV3Client {
       final dynamic value = raw[index];
       if (value is! Map<String, dynamic>) continue;
       final String display = (value['t'] ?? '').toString().trim();
-      if (_isCitybusRow(display)) continue;
+      if (_isCitybusRow(display) || _isNoServiceRow(display)) continue;
       final RegExpMatch? match = RegExp(
         r'^(\d{1,2}:\d{2})\s*(.*)$',
       ).firstMatch(display);
@@ -221,6 +221,14 @@ class KmbEtaV3Client {
       '',
     );
     return text.trim();
+  }
+
+  bool _isNoServiceRow(String display) {
+    final String lower = display.toLowerCase();
+    return lower.contains('no scheduled departure') ||
+        lower.contains('no scheduled bus') ||
+        display.contains('沒有預定班次') ||
+        display.contains('没有预定班次');
   }
 
   bool _isCitybusRow(String display) {

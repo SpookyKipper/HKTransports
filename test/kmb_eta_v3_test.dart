@@ -140,6 +140,35 @@ void main() {
     expect(result[2]!.single.solarPowered, isTrue);
   });
 
+  test('drops no-service placeholder rows', () async {
+    final MockClient mock = MockClient((http.Request request) async {
+      return _json(<Object>[
+        <String, Object>{
+          'routeNo': 'N290',
+          'bound': 1,
+          'service_type': 1,
+          'seq': 0,
+          'responsecode': 0,
+          'eta': <Object>[
+            <String, dynamic>{
+              't': 'No scheduled departure at this moment',
+              'ex': '2026-11-17 00:04:39',
+              'dis': null,
+              'ei': 'N',
+            },
+          ],
+        },
+      ]);
+    });
+
+    final Map<int, List<BusEta>>? result = await _client(
+      mock,
+    ).fetchRouteEtas(_route(stops: 1), language: 'en');
+
+    expect(result, isNotNull);
+    expect(result![0], isEmpty);
+  });
+
   test('drops Citybus rows from the KMB response', () async {
     final MockClient mock = MockClient((http.Request request) async {
       return _json(<Object>[
