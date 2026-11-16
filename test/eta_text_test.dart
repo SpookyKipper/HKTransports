@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hktransports/bus/ui/eta_text.dart';
 
 void main() {
-  testWidgets('shows solar and occupancy indicators', (
+  testWidgets('shows solar, occupancy and double-wheelchair indicators', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -19,6 +19,8 @@ void main() {
             solarLabel: 'Solar bus',
             occupancyPercent: 50,
             occupancyLabel: '50% full',
+            doubleWheelchair: true,
+            doubleWheelchairLabel: 'Double wheelchair bus',
           ),
         ),
       ),
@@ -27,6 +29,7 @@ void main() {
 
     expect(find.byIcon(Icons.solar_power), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.byIcon(Icons.accessible), findsNothing);
+    expect(find.byIcon(Icons.accessible), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
   });
 }

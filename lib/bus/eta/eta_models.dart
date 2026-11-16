@@ -18,6 +18,7 @@ class BusEta {
     this.proprietaryMinutes,
     this.solarPowered = false,
     this.occupancyPercent,
+    this.doubleWheelchair = false,
     this.wheelchair = false,
   });
 
@@ -47,6 +48,9 @@ class BusEta {
 
   /// Passenger load percentage when the source provides one.
   final int? occupancyPercent;
+
+  /// Whether the source marks this vehicle as double-wheelchair accessible.
+  final bool doubleWheelchair;
 
   /// Whether the vehicle is wheelchair accessible.
   final bool wheelchair;
@@ -86,6 +90,7 @@ class BusEta {
     int? etaSeq,
     bool? solarPowered,
     int? occupancyPercent,
+    bool? doubleWheelchair,
     bool? wheelchair,
   }) {
     return BusEta(
@@ -105,6 +110,7 @@ class BusEta {
       proprietaryMinutes: proprietaryMinutes ?? this.proprietaryMinutes,
       solarPowered: solarPowered ?? this.solarPowered,
       occupancyPercent: occupancyPercent ?? this.occupancyPercent,
+      doubleWheelchair: doubleWheelchair ?? this.doubleWheelchair,
       wheelchair: wheelchair ?? this.wheelchair,
     );
   }

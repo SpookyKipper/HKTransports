@@ -1544,6 +1544,8 @@ class _EtaLine extends StatelessWidget {
         solarLabel: settings.text('太陽能巴士', 'Solar bus'),
         occupancyPercent: eta.occupancyPercent,
         occupancyLabel: eta.occupancyLabel(settings.language),
+        doubleWheelchair: eta.doubleWheelchair,
+        doubleWheelchairLabel: settings.text('雙輪椅巴士', 'Double wheelchair bus'),
       ),
     );
   }

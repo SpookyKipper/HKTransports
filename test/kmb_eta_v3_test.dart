@@ -67,6 +67,7 @@ void main() {
               'ex': '2026-11-16 22:25:57',
               'dis': 5547,
               'w': 'Y',
+              'wifi': 'Y',
               'ol': '5',
             },
             <String, dynamic>{
@@ -124,6 +125,7 @@ void main() {
     expect(result[0]!.first.distanceKm, closeTo(5.547, 0.0001));
     expect(result[0]!.first.solarPowered, isTrue);
     expect(result[0]!.first.occupancyPercent, 50);
+    expect(result[0]!.first.doubleWheelchair, isTrue);
     expect(result[0]!.first.wheelchair, isFalse);
     expect(result[0]!.last.scheduled, isTrue);
     expect(result[0]!.last.occupancyPercent, 100);
@@ -131,6 +133,34 @@ void main() {
     expect(result[1]!.single.remarkZh, isEmpty);
     expect(result[2]!.single.remarkZh, contains('尾班車'));
     expect(result[2]!.single.solarPowered, isTrue);
+  });
+
+  test('drops Citybus rows from the KMB response', () async {
+    final MockClient mock = MockClient((http.Request request) async {
+      return _json(<Object>[
+        <String, Object>{
+          'routeNo': '690',
+          'bound': 1,
+          'service_type': 1,
+          'seq': 0,
+          'responsecode': 0,
+          'eta': <Object>[
+            <String, dynamic>{
+              't': '23:20 CTB',
+              'ex': '2026-11-16 23:20:00',
+              'dis': null,
+            },
+          ],
+        },
+      ]);
+    });
+
+    final Map<int, List<BusEta>>? result = await _client(
+      mock,
+    ).fetchRouteEtas(_route(stops: 1), language: 'en');
+
+    expect(result, isNotNull);
+    expect(result![0], isEmpty);
   });
 
   test('splits larger routes into batches of at most 32', () async {

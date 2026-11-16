@@ -147,9 +147,7 @@ class KmbEtaV3Client {
       final dynamic value = raw[index];
       if (value is! Map<String, dynamic>) continue;
       final String display = (value['t'] ?? '').toString().trim();
-      if (route.companies.contains(BusCompany.ctb) && _isCitybusRow(display)) {
-        continue;
-      }
+      if (_isCitybusRow(display)) continue;
       final RegExpMatch? match = RegExp(
         r'^(\d{1,2}:\d{2})\s*(.*)$',
       ).firstMatch(display);
@@ -176,6 +174,7 @@ class KmbEtaV3Client {
           distanceKm: distance == null ? null : distance.toDouble() / 1000.0,
           solarPowered: solarPowered,
           occupancyPercent: _occupancyPercent(value['ol']),
+          doubleWheelchair: value['wifi']?.toString() == 'Y',
         ),
       );
     }

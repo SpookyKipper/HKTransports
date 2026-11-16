@@ -15,6 +15,8 @@ class EtaText extends StatelessWidget {
     this.solarLabel,
     this.occupancyPercent,
     this.occupancyLabel,
+    this.doubleWheelchair = false,
+    this.doubleWheelchairLabel,
     this.maxLines,
     this.overflow,
     this.textAlign,
@@ -30,6 +32,8 @@ class EtaText extends StatelessWidget {
   final String? solarLabel;
   final int? occupancyPercent;
   final String? occupancyLabel;
+  final bool doubleWheelchair;
+  final String? doubleWheelchairLabel;
   final int? maxLines;
   final TextOverflow? overflow;
   final TextAlign? textAlign;
@@ -66,6 +70,18 @@ class EtaText extends StatelessWidget {
                 percent: occupancyPercent!,
                 color: color,
                 label: occupancyLabel,
+                style: style,
+              ),
+            ),
+          ),
+        if (doubleWheelchair)
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: _DoubleWheelchairIndicator(
+                color: color,
+                label: doubleWheelchairLabel,
                 style: style,
               ),
             ),
@@ -160,6 +176,66 @@ class _OccupancyIndicator extends StatelessWidget {
                 ),
               ),
               Icon(Icons.person, size: size * 0.55, color: color),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DoubleWheelchairIndicator extends StatelessWidget {
+  const _DoubleWheelchairIndicator({
+    required this.color,
+    required this.label,
+    required this.style,
+  });
+
+  final Color color;
+  final String? label;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final double size = style?.fontSize ?? 14;
+    final Color surface = Theme.of(context).colorScheme.surface;
+    return Tooltip(
+      message: label ?? 'Double wheelchair bus',
+      child: Semantics(
+        label: label ?? 'Double wheelchair bus',
+        child: SizedBox(
+          width: size + 2,
+          height: size + 2,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: <Widget>[
+              Positioned(
+                left: 0,
+                bottom: 0,
+                child: Icon(Icons.accessible, size: size, color: color),
+              ),
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  width: size * 0.65,
+                  height: size * 0.65,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '2',
+                    style: TextStyle(
+                      color: color,
+                      fontSize: size * 0.48,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

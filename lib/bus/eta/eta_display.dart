@@ -133,5 +133,6 @@ String etaLiveStatusKey(BusEta eta) {
     eta.distanceKm?.toString() ?? '',
     eta.solarPowered.toString(),
     eta.occupancyPercent?.toString() ?? '',
+    eta.doubleWheelchair.toString(),
   ].join('|');
 }
