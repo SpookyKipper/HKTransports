@@ -28,7 +28,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.solar_power), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byIcon(Icons.people_alt), findsOneWidget);
+    expect(find.text('50%'), findsOneWidget);
     expect(find.byIcon(Icons.accessible), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
   });

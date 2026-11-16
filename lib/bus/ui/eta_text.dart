@@ -6,6 +6,7 @@ class EtaText extends StatelessWidget {
   const EtaText({
     super.key,
     required this.base,
+    this.details,
     required this.appended,
     required this.style,
     required this.color,
@@ -23,6 +24,7 @@ class EtaText extends StatelessWidget {
   });
 
   final String base;
+  final String? details;
   final String? appended;
   final TextStyle? style;
   final Color color;
@@ -42,57 +44,96 @@ class EtaText extends StatelessWidget {
   Widget build(BuildContext context) {
     final String? text = appended;
     List<InlineSpan> spans(double opacity) {
-      return <InlineSpan>[
-        if (solarPowered)
-          WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Tooltip(
-                message: solarLabel ?? 'Solar bus',
-                child: FadeIn(
-                  key: const ValueKey<String>('solar-powered'),
-                  child: Icon(
-                    Icons.solar_power,
-                    size: style?.fontSize ?? 14,
-                    color: color,
+      final List<InlineSpan> result = <InlineSpan>[];
+      bool hasContent = false;
+
+      if (base.isNotEmpty) {
+        result.add(TextSpan(text: base));
+        hasContent = true;
+      }
+
+      final bool hasMarkers =
+          solarPowered || occupancyPercent != null || doubleWheelchair;
+      if (hasMarkers) {
+        if (hasContent) result.add(const TextSpan(text: ' · '));
+        if (solarPowered) {
+          result.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Tooltip(
+                  message: solarLabel ?? 'Solar bus',
+                  child: FadeIn(
+                    key: const ValueKey<String>('solar-powered'),
+                    child: Icon(
+                      Icons.solar_power,
+                      size: style?.fontSize ?? 14,
+                      color: color,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        if (occupancyPercent != null)
-          WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: _OccupancyIndicator(
-                percent: occupancyPercent!,
-                color: color,
-                label: occupancyLabel,
-                style: style,
+          );
+        }
+        if (occupancyPercent != null) {
+          result.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: _OccupancyIndicator(
+                  percent: occupancyPercent!,
+                  color: color,
+                  label: occupancyLabel,
+                  style: style,
+                ),
               ),
             ),
-          ),
-        if (doubleWheelchair)
-          WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: _DoubleWheelchairIndicator(
-                color: color,
-                label: doubleWheelchairLabel,
-                style: style,
+          );
+        }
+        if (doubleWheelchair) {
+          result.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: _DoubleWheelchairIndicator(
+                  color: color,
+                  label: doubleWheelchairLabel,
+                  style: style,
+                ),
               ),
             ),
-          ),
-        if (base.isNotEmpty) TextSpan(text: base),
-        if (text != null && text.isNotEmpty)
+          );
+        }
+        hasContent = true;
+      }
+
+      final String? detailText = details;
+      if (detailText != null && detailText.isNotEmpty) {
+        if (hasContent) {
+          result.add(TextSpan(text: hasMarkers ? ' ' : ' · '));
+        }
+        result.add(TextSpan(text: detailText));
+        hasContent = true;
+      }
+
+      final String? text = appended;
+      if (text != null && text.isNotEmpty) {
+        if (hasContent) result.add(const TextSpan(text: ' · '));
+        result.add(
           TextSpan(
-            text: base.isEmpty ? text : ' · $text',
+            text: text,
             style: TextStyle(color: color.withValues(alpha: opacity)),
           ),
-        if (wheelchair)
+        );
+        hasContent = true;
+      }
+
+      if (wheelchair) {
+        result.add(
           WidgetSpan(
             alignment: PlaceholderAlignment.middle,
             child: Padding(
@@ -107,7 +148,9 @@ class EtaText extends StatelessWidget {
               ),
             ),
           ),
-      ];
+        );
+      }
+      return result;
     }
 
     if (text == null || text.isEmpty) {
@@ -156,28 +199,26 @@ class _OccupancyIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double size = (style?.fontSize ?? 14) + 2;
+    final double size = style?.fontSize ?? 14;
     return Tooltip(
       message: label ?? '$percent% full',
       child: Semantics(
         label: label ?? '$percent% full',
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Stack(
-            alignment: Alignment.center,
-            children: <Widget>[
-              Positioned.fill(
-                child: CircularProgressIndicator(
-                  value: percent / 100,
-                  strokeWidth: 1.5,
-                  backgroundColor: color.withValues(alpha: 0.22),
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
-                ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Icons.people_alt, size: size, color: color),
+            const SizedBox(width: 2),
+            Text(
+              '$percent%',
+              style: TextStyle(
+                color: color,
+                fontSize: size * 0.78,
+                fontWeight: FontWeight.w600,
+                height: 1,
               ),
-              Icon(Icons.person, size: size * 0.55, color: color),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -1525,6 +1525,7 @@ class _EtaLine extends StatelessWidget {
       if (eta.scheduled && remark.isEmpty) settings.text('預定班次', 'Scheduled'),
       if (via.isNotEmpty) via,
     ];
+    final String details = segments.skip(1).join(' · ');
     final List<String> appended = <String>[?status, ?distance];
 
     final TextStyle? style = first
@@ -1534,7 +1535,8 @@ class _EtaLine extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: EtaText(
-        base: segments.join(' · '),
+        base: parts,
+        details: details,
         appended: appended.isEmpty ? null : appended.join(' · '),
         appendedKey: etaLiveStatusKey(eta),
         style: style,
