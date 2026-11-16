@@ -133,7 +133,7 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
       case ProprietaryEndpoint.kmbRouteDatabase:
         return settings.text('九巴/龍運路線資料庫', 'KMB/LWB route data');
       case ProprietaryEndpoint.kmbEtaStatus:
-        return settings.text('九巴/龍運實時到站', 'KMB/LWB live ETA');
+        return settings.text('九巴/龍運實時到站狀態', 'KMB/LWB live ETA status');
       case ProprietaryEndpoint.citybusSpecialNotices:
         return settings.text('城巴特別通告', 'Citybus special notices');
       case ProprietaryEndpoint.citybusRouteNotices:

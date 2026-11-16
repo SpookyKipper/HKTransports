@@ -35,8 +35,8 @@ class ProprietarySettingsSection extends StatelessWidget {
                   Expanded(
                     child: Text(
                       settings.text(
-                        '這些來源未獲完整授權。啟用任何來源均可能違反使用條款或授權。你需自行承擔所有風險。所有請求均由你的裝置直接發出。',
-                        'These sources are not fully licensed. Enabling any source may violate terms of use or licenses. You bear all risk. Requests are made directly from your device.',
+                        '這些來源未獲完整授權。啟用任何來源均可能違反使用條款或授權。你需自行承擔所有風險。所有請求均由你的裝置直接發出。\n\n本應用程式提供的是一個工具，使用與否是你的選擇。',
+                        'These sources are not fully licensed. Enabling any source may violate terms of use or licenses. You bear all risk. Requests are made directly from your device.\n\nThis app is a tool, and it is your choice whether to use it or not.',
                       ),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onErrorContainer,
