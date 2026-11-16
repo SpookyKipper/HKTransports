@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hktransports/app/app_transition_page.dart';
 import 'package:hktransports/app/page_bar.dart';
+import 'package:hktransports/app/app_config.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hktransports/bus/data/bus_data_updater.dart';
 import 'package:hktransports/bus/data/bus_repository.dart';
@@ -109,10 +110,14 @@ class _RoutePageState extends State<_RoutePage> {
     _upstreamEtaEnabled = settings.upstreamEtaScan;
     settings.addListener(_onSettingsChanged);
     final BusRepository repository = context.read<BusRepository>();
+    final AppConfigController appConfig = context.read<AppConfigController>();
     _etaService = EtaService(
       language: settings.language,
       settings: settings,
       databaseProvider: () => repository.database,
+      kmbEtaAllowed: () =>
+          appConfig.availabilityFor(ProprietaryEndpoint.kmbEtaStatus) ==
+          ProprietaryAvailability.supported,
     );
     _statusSubscription = _etaService.statusUpdates.listen(_onStatusUpdate);
     _prefetchNlbPage(settings);

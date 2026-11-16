@@ -256,6 +256,9 @@ void main() async {
             language: settings.language,
             settings: settings,
             databaseProvider: () => repository.database,
+            kmbEtaAllowed: () =>
+                appConfig.availabilityFor(ProprietaryEndpoint.kmbEtaStatus) ==
+                ProprietaryAvailability.supported,
           ),
         ),
         ChangeNotifierProvider<PinnedStopsController>(

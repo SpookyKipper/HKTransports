@@ -24,10 +24,12 @@ class EtaService {
     AppSettings? settings,
     BusDatabase? Function()? databaseProvider,
     KmbEtaV3Client? kmbV3,
+    bool Function()? kmbEtaAllowed,
   }) : _language = language,
        _settings = settings,
        _databaseProvider = databaseProvider,
-       _kmbV3 = kmbV3 ?? KmbEtaV3Client();
+       _kmbV3 = kmbV3 ?? KmbEtaV3Client(),
+       _kmbEtaAllowed = kmbEtaAllowed;
 
   String _language;
   final AppSettings? _settings;
@@ -35,6 +37,7 @@ class EtaService {
 
   final KmbEtaClient _kmb = KmbEtaClient();
   final KmbEtaV3Client _kmbV3;
+  final bool Function()? _kmbEtaAllowed;
   final CtbEtaClient _ctb = CtbEtaClient();
   final NlbEtaClient _nlb = NlbEtaClient();
   final GmbEtaClient _gmb = GmbEtaClient();
@@ -160,6 +163,7 @@ class EtaService {
   bool get _kmbV3Enabled =>
       _settings?.isProprietaryEnabled(ProprietaryEndpoint.kmbEtaStatus) ==
           true &&
+      (_kmbEtaAllowed?.call() ?? true) &&
       _kmbV3.isConfigured;
 
   Future<List<BusEta>> _fetchKmbRouteStop(
