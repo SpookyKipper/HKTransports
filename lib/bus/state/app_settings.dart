@@ -173,8 +173,8 @@ extension ProprietaryEndpointInfo on ProprietaryEndpoint {
         );
       case ProprietaryEndpoint.kmbEtaStatus:
         return settings.text(
-          '實時距離及班次標記',
-          'Live distance and departure markers',
+          '實時距離、太陽能及載客量',
+          'Live distance, solar bus and passenger load',
         );
       case ProprietaryEndpoint.citybusSpecialNotices:
         return settings.text('城巴特別通告', 'Citybus special notices');

@@ -147,12 +147,16 @@ class KmbEtaV3Client {
       final dynamic value = raw[index];
       if (value is! Map<String, dynamic>) continue;
       final String display = (value['t'] ?? '').toString().trim();
+      if (route.companies.contains(BusCompany.ctb) && _isCitybusRow(display)) {
+        continue;
+      }
       final RegExpMatch? match = RegExp(
         r'^(\d{1,2}:\d{2})\s*(.*)$',
       ).firstMatch(display);
       final String clock = match?.group(1) ?? '';
       final String rawRemark = match?.group(2) ?? display;
-      final bool liveTracked = display.contains('☘') || rawRemark.contains('☘');
+      final bool solarPowered =
+          display.contains('☘') || rawRemark.contains('☘');
       final String remark = _cleanRemark(rawRemark);
       final DateTime? eta =
           parseEtaTime(value['ex']?.toString()) ?? _parseClock(clock);
@@ -170,7 +174,8 @@ class KmbEtaV3Client {
           etaSeq: index + 1,
           scheduled: _isScheduled(remark),
           distanceKm: distance == null ? null : distance.toDouble() / 1000.0,
-          liveTracked: liveTracked,
+          solarPowered: solarPowered,
+          occupancyPercent: _occupancyPercent(value['ol']),
         ),
       );
     }
@@ -213,6 +218,30 @@ class KmbEtaV3Client {
       '',
     );
     return text.trim();
+  }
+
+  bool _isCitybusRow(String display) {
+    return RegExp(
+      r'(?:^|[\s·])(?:CTB|NWFB|Citybus|城巴)(?:$|[\s·])',
+      caseSensitive: false,
+    ).hasMatch(display);
+  }
+
+  int? _occupancyPercent(dynamic value) {
+    switch (value?.toString()) {
+      case 'E':
+        return 0;
+      case '2':
+        return 20;
+      case '5':
+        return 50;
+      case '8':
+        return 80;
+      case 'F':
+        return 100;
+      default:
+        return null;
+    }
   }
 
   bool _isScheduled(String remark) {

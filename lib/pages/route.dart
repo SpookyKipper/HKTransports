@@ -1540,8 +1540,10 @@ class _EtaLine extends StatelessWidget {
         style: style,
         color: color,
         wheelchair: eta.wheelchair,
-        liveTracked: eta.liveTracked,
-        liveTrackedLabel: settings.text('實時追蹤', 'Live tracked'),
+        solarPowered: eta.solarPowered,
+        solarLabel: settings.text('太陽能巴士', 'Solar bus'),
+        occupancyPercent: eta.occupancyPercent,
+        occupancyLabel: eta.occupancyLabel(settings.language),
       ),
     );
   }

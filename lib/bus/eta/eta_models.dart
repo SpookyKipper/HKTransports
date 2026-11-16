@@ -16,7 +16,8 @@ class BusEta {
     this.distanceKm,
     this.proprietaryTime,
     this.proprietaryMinutes,
-    this.liveTracked = false,
+    this.solarPowered = false,
+    this.occupancyPercent,
     this.wheelchair = false,
   });
 
@@ -41,8 +42,11 @@ class BusEta {
   final String? proprietaryTime;
   final String? proprietaryMinutes;
 
-  /// Whether the live-tracking marker was present in the source row.
-  final bool liveTracked;
+  /// Whether the source row marks this vehicle as solar-powered.
+  final bool solarPowered;
+
+  /// Passenger load percentage when the source provides one.
+  final int? occupancyPercent;
 
   /// Whether the vehicle is wheelchair accessible.
   final bool wheelchair;
@@ -65,6 +69,12 @@ class BusEta {
     return language == 'en' ? '$distance km away' : '距離 $distance 公里';
   }
 
+  String? occupancyLabel(String language) {
+    final int? value = occupancyPercent;
+    if (value == null) return null;
+    return language == 'en' ? '$value% full' : '載客 $value%';
+  }
+
   bool get hasEta => eta != null;
 
   BusEta copyWith({
@@ -74,7 +84,8 @@ class BusEta {
     String? proprietaryTime,
     String? proprietaryMinutes,
     int? etaSeq,
-    bool? liveTracked,
+    bool? solarPowered,
+    int? occupancyPercent,
     bool? wheelchair,
   }) {
     return BusEta(
@@ -92,7 +103,8 @@ class BusEta {
       distanceKm: distanceKm ?? this.distanceKm,
       proprietaryTime: proprietaryTime ?? this.proprietaryTime,
       proprietaryMinutes: proprietaryMinutes ?? this.proprietaryMinutes,
-      liveTracked: liveTracked ?? this.liveTracked,
+      solarPowered: solarPowered ?? this.solarPowered,
+      occupancyPercent: occupancyPercent ?? this.occupancyPercent,
       wheelchair: wheelchair ?? this.wheelchair,
     );
   }

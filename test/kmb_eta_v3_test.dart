@@ -16,7 +16,7 @@ RouteEntry _route({int stops = 3}) {
     slug: '690-1-CENTRAL-HONG-SING-GARDEN',
     route: '690',
     serviceType: '1',
-    companies: const <BusCompany>[BusCompany.kmb],
+    companies: const <BusCompany>[BusCompany.kmb, BusCompany.ctb],
     orig: const Terminal(en: 'CENTRAL', zh: '中環'),
     dest: const Terminal(en: 'HONG SING GARDEN', zh: '康盛花園'),
     stops: <BusCompany, List<String>>{
@@ -67,12 +67,14 @@ void main() {
               'ex': '2026-11-16 22:25:57',
               'dis': 5547,
               'w': 'Y',
+              'ol': '5',
             },
             <String, dynamic>{
               't': '22:47 預定班次☘',
               'ex': '2026-11-16 22:47:00',
               'dis': null,
               'w': 'Y',
+              'ol': 'F',
             },
           ],
         },
@@ -87,6 +89,11 @@ void main() {
               't': '22:29 九巴',
               'ex': '2026-11-16 22:29:57',
               'dis': 2984,
+            },
+            <String, dynamic>{
+              't': '22:31 CTB',
+              'ex': '2026-11-16 22:31:57',
+              'dis': null,
             },
           ],
         },
@@ -115,12 +122,15 @@ void main() {
     expect(result!.keys.toSet(), <int>{0, 1, 2});
     expect(result[0], hasLength(2));
     expect(result[0]!.first.distanceKm, closeTo(5.547, 0.0001));
-    expect(result[0]!.first.liveTracked, isTrue);
+    expect(result[0]!.first.solarPowered, isTrue);
+    expect(result[0]!.first.occupancyPercent, 50);
     expect(result[0]!.first.wheelchair, isFalse);
     expect(result[0]!.last.scheduled, isTrue);
+    expect(result[0]!.last.occupancyPercent, 100);
+    expect(result[1], hasLength(1));
     expect(result[1]!.single.remarkZh, isEmpty);
     expect(result[2]!.single.remarkZh, contains('尾班車'));
-    expect(result[2]!.single.liveTracked, isTrue);
+    expect(result[2]!.single.solarPowered, isTrue);
   });
 
   test('splits larger routes into batches of at most 32', () async {

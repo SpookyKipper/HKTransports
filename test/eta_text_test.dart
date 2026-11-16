@@ -3,41 +3,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hktransports/bus/ui/eta_text.dart';
 
 void main() {
-  testWidgets('shows a text-height wheelchair icon when requested', (
+  testWidgets('shows solar and occupancy indicators', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: EtaText(
-          base: '5 min',
-          appended: null,
-          style: TextStyle(fontSize: 20),
-          color: Colors.black,
-          appendedKey: '',
-          wheelchair: true,
+      MaterialApp(
+        home: Scaffold(
+          body: EtaText(
+            base: '22:48  3 min',
+            appended: '1.0 km away',
+            style: const TextStyle(fontSize: 14),
+            color: Colors.black,
+            appendedKey: 'test',
+            solarPowered: true,
+            solarLabel: 'Solar bus',
+            occupancyPercent: 50,
+            occupancyLabel: '50% full',
+          ),
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
-    final Icon icon = tester.widget<Icon>(find.byIcon(Icons.accessible));
-    expect(icon.size, 20);
-  });
-
-  testWidgets('hides the wheelchair icon by default', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: EtaText(
-          base: '5 min',
-          appended: null,
-          style: TextStyle(fontSize: 20),
-          color: Colors.black,
-          appendedKey: '',
-        ),
-      ),
-    );
-
+    expect(find.byIcon(Icons.solar_power), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.byIcon(Icons.accessible), findsNothing);
   });
 }

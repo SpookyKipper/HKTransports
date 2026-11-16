@@ -131,6 +131,7 @@ String etaLiveStatusKey(BusEta eta) {
     eta.statusZh ?? '',
     eta.statusEn ?? '',
     eta.distanceKm?.toString() ?? '',
-    eta.liveTracked.toString(),
+    eta.solarPowered.toString(),
+    eta.occupancyPercent?.toString() ?? '',
   ].join('|');
 }
