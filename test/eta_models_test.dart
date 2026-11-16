@@ -47,6 +47,15 @@ void main() {
     expect(eta.hasDepartedAt(now, grace: const Duration(seconds: 10)), isTrue);
   });
 
+  test('normalises scheduled status text by language', () {
+    final BusEta eta = busEta(
+      now,
+    ).copyWith(statusZh: '原定班次', statusEn: 'Scheduled Bus');
+
+    expect(eta.status('zh'), '預定班次');
+    expect(eta.status('en'), 'Scheduled');
+  });
+
   test('proprietary status and distance are localised', () {
     final BusEta eta = busEta(
       now,
@@ -101,6 +110,21 @@ void main() {
       expect(etaDisplayKey(enriched), isNot(etaDisplayKey(base)));
     },
   );
+
+  test('normalises scheduled remarks by language', () {
+    final BusEta eta = BusEta(
+      company: BusCompany.kmb,
+      eta: now,
+      remarkZh: '原定班次',
+      remarkEn: 'Scheduled Bus',
+      destZh: '甲',
+      destEn: 'A',
+      etaSeq: 1,
+    );
+
+    expect(eta.remark('zh'), '預定班次');
+    expect(eta.remark('en'), 'Scheduled');
+  });
 
   test('live status does not change the base ETA animation key', () {
     final BusEta base = busEta(now);

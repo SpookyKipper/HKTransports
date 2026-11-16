@@ -43,13 +43,15 @@ class BusEta {
   /// Whether the vehicle is wheelchair accessible.
   final bool wheelchair;
 
-  String remark(String language) => language == 'en' ? remarkEn : remarkZh;
+  String remark(String language) =>
+      normalizeEtaStatusText(language == 'en' ? remarkEn : remarkZh, language);
 
   String dest(String language) => language == 'en' ? destEn : destZh;
 
   String? status(String language) {
     final String? value = language == 'en' ? statusEn : statusZh;
-    return value == null || value.trim().isEmpty ? null : value.trim();
+    if (value == null || value.trim().isEmpty) return null;
+    return normalizeEtaStatusText(value, language);
   }
 
   String? distanceLabel(String language) {
@@ -146,4 +148,11 @@ class BusEta {
         minutes >= 0 &&
         minutes < 5;
   }
+}
+
+String normalizeEtaStatusText(String value, String language) {
+  if (language == 'en') {
+    return value.replaceAll('Scheduled Bus', 'Scheduled');
+  }
+  return value.replaceAll('原定班次', '預定班次');
 }
