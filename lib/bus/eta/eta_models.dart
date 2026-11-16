@@ -18,6 +18,8 @@ class BusEta {
     this.proprietaryMinutes,
     this.solarPowered = false,
     this.occupancyPercent,
+    this.occupancyMinPercent,
+    this.occupancyMaxPercent,
     this.doubleWheelchair = false,
     this.kmbProprietary = false,
     this.wheelchair = false,
@@ -47,8 +49,14 @@ class BusEta {
   /// Whether the source row marks this vehicle as solar-powered.
   final bool solarPowered;
 
-  /// Passenger load percentage when the source provides one.
+  /// Midpoint of the passenger-load range reported by the source.
   final int? occupancyPercent;
+
+  /// Lower bound of the passenger-load range.
+  final int? occupancyMinPercent;
+
+  /// Upper bound of the passenger-load range.
+  final int? occupancyMaxPercent;
 
   /// Whether the source marks this vehicle as double-wheelchair accessible.
   final bool doubleWheelchair;
@@ -80,7 +88,12 @@ class BusEta {
   String? occupancyLabel(String language) {
     final int? value = occupancyPercent;
     if (value == null) return null;
-    return language == 'en' ? '$value% full' : '載客 $value%';
+    final int? min = occupancyMinPercent;
+    final int? max = occupancyMaxPercent;
+    if (min == null || max == null || min == max) {
+      return language == 'en' ? '$value% full' : '載客 $value%';
+    }
+    return language == 'en' ? '$min% - $max% full' : '載客 $min% - $max%';
   }
 
   bool get hasEta => eta != null;
@@ -94,6 +107,8 @@ class BusEta {
     int? etaSeq,
     bool? solarPowered,
     int? occupancyPercent,
+    int? occupancyMinPercent,
+    int? occupancyMaxPercent,
     bool? doubleWheelchair,
     bool? kmbProprietary,
     bool? wheelchair,
@@ -115,6 +130,8 @@ class BusEta {
       proprietaryMinutes: proprietaryMinutes ?? this.proprietaryMinutes,
       solarPowered: solarPowered ?? this.solarPowered,
       occupancyPercent: occupancyPercent ?? this.occupancyPercent,
+      occupancyMinPercent: occupancyMinPercent ?? this.occupancyMinPercent,
+      occupancyMaxPercent: occupancyMaxPercent ?? this.occupancyMaxPercent,
       doubleWheelchair: doubleWheelchair ?? this.doubleWheelchair,
       kmbProprietary: kmbProprietary ?? this.kmbProprietary,
       wheelchair: wheelchair ?? this.wheelchair,

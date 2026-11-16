@@ -161,6 +161,7 @@ class KmbEtaV3Client {
       final num? distance = value['dis'] is num
           ? value['dis'] as num
           : num.tryParse((value['dis'] ?? '').toString());
+      final _OccupancyRange? occupancy = _occupancy(value['ol']);
       result.add(
         BusEta(
           company: BusCompany.kmb,
@@ -173,7 +174,9 @@ class KmbEtaV3Client {
           scheduled: _isScheduled(remark),
           distanceKm: distance == null ? null : distance.toDouble() / 1000.0,
           solarPowered: solarPowered,
-          occupancyPercent: _occupancyPercent(value['ol']),
+          occupancyPercent: occupancy?.midpoint,
+          occupancyMinPercent: occupancy?.min,
+          occupancyMaxPercent: occupancy?.max,
           doubleWheelchair: value['wifi']?.toString() == 'Y',
           kmbProprietary: true,
         ),
@@ -227,18 +230,18 @@ class KmbEtaV3Client {
     ).hasMatch(display);
   }
 
-  int? _occupancyPercent(dynamic value) {
+  _OccupancyRange? _occupancy(dynamic value) {
     switch (value?.toString()) {
       case 'E':
-        return 0;
+        return const _OccupancyRange(midpoint: 10, min: 0, max: 20);
       case '2':
-        return 20;
+        return const _OccupancyRange(midpoint: 35, min: 20, max: 50);
       case '5':
-        return 50;
+        return const _OccupancyRange(midpoint: 65, min: 50, max: 80);
       case '8':
-        return 80;
+        return const _OccupancyRange(midpoint: 90, min: 80, max: 100);
       case 'F':
-        return 100;
+        return const _OccupancyRange(midpoint: 100, min: 100, max: 100);
       default:
         return null;
     }
@@ -312,4 +315,16 @@ class KmbEtaV3Client {
     }
     return result;
   }
+}
+
+class _OccupancyRange {
+  const _OccupancyRange({
+    required this.midpoint,
+    required this.min,
+    required this.max,
+  });
+
+  final int midpoint;
+  final int min;
+  final int max;
 }

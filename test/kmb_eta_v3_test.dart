@@ -124,12 +124,16 @@ void main() {
     expect(result[0], hasLength(2));
     expect(result[0]!.first.distanceKm, closeTo(5.547, 0.0001));
     expect(result[0]!.first.solarPowered, isTrue);
-    expect(result[0]!.first.occupancyPercent, 50);
+    expect(result[0]!.first.occupancyPercent, 65);
+    expect(result[0]!.first.occupancyMinPercent, 50);
+    expect(result[0]!.first.occupancyMaxPercent, 80);
     expect(result[0]!.first.kmbProprietary, isTrue);
     expect(result[0]!.first.doubleWheelchair, isTrue);
     expect(result[0]!.first.wheelchair, isFalse);
     expect(result[0]!.last.scheduled, isTrue);
     expect(result[0]!.last.occupancyPercent, 100);
+    expect(result[0]!.last.occupancyMinPercent, 100);
+    expect(result[0]!.last.occupancyMaxPercent, 100);
     expect(result[1], hasLength(1));
     expect(result[1]!.single.remarkZh, isEmpty);
     expect(result[2]!.single.remarkZh, contains('尾班車'));
