@@ -98,6 +98,7 @@ class _RoutePageState extends State<_RoutePage> {
   bool _upstreamEtaEnabled = false;
   bool _autoFocusAttempted = false;
   bool _userSelectedStation = false;
+  bool _citybusShortRetryUsed = false;
   bool _disposed = false;
 
   @override
@@ -254,6 +255,7 @@ class _RoutePageState extends State<_RoutePage> {
 
   void _startRefresh(int index, {bool useUpstreamCache = true}) {
     _timer?.cancel();
+    _citybusShortRetryUsed = false;
     _fetch(index, scanUpstream: true, useUpstreamCache: useUpstreamCache);
     _nextRefreshAt = DateTime.now().add(
       Duration(seconds: _settings.refreshSeconds),
@@ -372,6 +374,7 @@ class _RoutePageState extends State<_RoutePage> {
         _loading.remove(index);
         _etas[index] = etas;
       });
+      _maybeScheduleCitybusShortRetry(index, etas);
       if (scanUpstream && _expandedIndex == index) {
         unawaited(_scanUpstreamEta(index, useCache: useUpstreamCache));
       }
@@ -381,6 +384,24 @@ class _RoutePageState extends State<_RoutePage> {
         setState(() => _loading.remove(index));
       }
     }
+  }
+
+  void _maybeScheduleCitybusShortRetry(int index, List<BusEta> etas) {
+    if (_disposed || index != _expandedIndex) return;
+    if (!widget.route.companies.contains(BusCompany.ctb)) return;
+
+    final bool hasCitybus = etas.any(
+      (BusEta eta) => eta.company == BusCompany.ctb,
+    );
+    if (hasCitybus) {
+      _citybusShortRetryUsed = false;
+      return;
+    }
+    if (_citybusShortRetryUsed || _settings.refreshSeconds <= 5) return;
+
+    _citybusShortRetryUsed = true;
+    _nextRefreshAt = DateTime.now().add(const Duration(seconds: 5));
+    _updateRefreshCountdown();
   }
 
   Future<List<BusEta>> _fetchRouteStopEtas(
@@ -546,6 +567,7 @@ class _RoutePageState extends State<_RoutePage> {
       });
       _timer?.cancel();
       _nextRefreshAt = null;
+      _citybusShortRetryUsed = false;
       _refreshCountdown.value = 0;
     }
   }
