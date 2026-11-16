@@ -47,9 +47,8 @@ class CitybusEtaStatusClient {
   static const String _secChUa =
       '"Chromium";v="158", "Not.A/Brand";v="24", "HeadlessChrome";v="158"';
 
-  static const Map<String, String> _homeHeaders = <String, String>{
+  static const Map<String, String> _baseHomeHeaders = <String, String>{
     'User-Agent': _ua,
-    'Accept-Language': 'zh-Hant-HK',
     'Upgrade-Insecure-Requests': '1',
     'Sec-CH-UA': _secChUa,
     'Sec-CH-UA-Mobile': '?0',
@@ -58,10 +57,9 @@ class CitybusEtaStatusClient {
     'Connection': 'keep-alive',
   };
 
-  static const Map<String, String> _xhrHeaders = <String, String>{
+  static const Map<String, String> _baseXhrHeaders = <String, String>{
     'User-Agent': _ua,
     'Accept': '*/*',
-    'Accept-Language': 'zh-Hant-HK',
     'Referer': 'https://mobile.citybus.com.hk/nwp3/',
     'Sec-CH-UA': _secChUa,
     'Sec-CH-UA-Mobile': '?0',
@@ -74,6 +72,20 @@ class CitybusEtaStatusClient {
   };
 
   final Duration _timeout;
+
+  String? _language;
+  String _locale = '0';
+  String _acceptLanguage = 'zh-Hant-HK';
+
+  Map<String, String> get _homeHeaders => <String, String>{
+    ..._baseHomeHeaders,
+    'Accept-Language': _acceptLanguage,
+  };
+
+  Map<String, String> get _xhrHeaders => <String, String>{
+    ..._baseXhrHeaders,
+    'Accept-Language': _acceptLanguage,
+  };
 
   // Reuse the nwp3 session until a request indicates it has expired or the
   // hashed result endpoint has changed.
@@ -91,12 +103,19 @@ class CitybusEtaStatusClient {
     _clearSession();
   }
 
-  Future<List<CitybusEtaStatus>> fetch(CitybusEtaArguments args) {
+  Future<List<CitybusEtaStatus>> fetch(
+    CitybusEtaArguments args, {
+    String language = 'zh',
+  }) {
+    final String normalizedLanguage = language == 'en' ? 'en' : 'zh';
     final Completer<List<CitybusEtaStatus>> completer =
         Completer<List<CitybusEtaStatus>>();
     _queue = _queue.then((_) async {
       try {
-        completer.complete(await _fetchWithRetry(args));
+        await _ensureLanguage(normalizedLanguage);
+        completer.complete(
+          await _fetchWithRetry(args, language: normalizedLanguage),
+        );
       } catch (error, stackTrace) {
         completer.completeError(error, stackTrace);
       }
@@ -104,15 +123,25 @@ class CitybusEtaStatusClient {
     return completer.future;
   }
 
+  Future<void> _ensureLanguage(String language) async {
+    if (_language == language) return;
+    _language = language;
+    _locale = language == 'en' ? '1' : '0';
+    _acceptLanguage = language == 'en' ? 'en-HK,en;q=0.9' : 'zh-Hant-HK';
+    await _closeConnection();
+    _clearSession();
+  }
+
   Future<List<CitybusEtaStatus>> _fetchWithRetry(
-    CitybusEtaArguments args,
-  ) async {
+    CitybusEtaArguments args, {
+    required String language,
+  }) async {
     Object? lastError;
     for (int attempt = 0; attempt < 2; attempt++) {
       final bool hadSession = _hasSession;
       try {
         final String body = await _fetchBody(args, bootstrap: !hadSession);
-        return parseCitybusEtaStatuses(body);
+        return parseCitybusEtaStatuses(body, language: language);
       } on _Nwp3ConnectionException catch (error) {
         lastError = error;
         await _closeConnection();
@@ -121,7 +150,7 @@ class CitybusEtaStatusClient {
         // session once on a fresh connection before bootstrapping again.
         try {
           final String body = await _fetchBody(args, bootstrap: false);
-          return parseCitybusEtaStatuses(body);
+          return parseCitybusEtaStatuses(body, language: language);
         } on _Nwp3ConnectionException catch (retryError) {
           lastError = retryError;
           await _closeConnection();
@@ -178,7 +207,7 @@ class CitybusEtaStatusClient {
 
       final _HttpResponse menu = await connection.get(
         _uri('$_basePath/menu2.php', <String, String>{
-          'l': '0',
+          'l': _locale,
           'info': '',
           'ssid': ssid,
           'sysid': '1',
@@ -196,7 +225,7 @@ class CitybusEtaStatusClient {
           'rdv': args.rdv,
           'bound': args.bound,
           'eta': 'Y',
-          'l': '0',
+          'l': _locale,
           'ref': '1',
           'altLat': args.altLat,
           'altLon': args.altLon,
@@ -345,7 +374,7 @@ class CitybusEtaStatusClient {
   ) {
     return connection.get(
       _uri('$_basePath/$path', <String, String>{
-        'l': '0',
+        'l': _locale,
         'ssid': ssid,
         'sysid': '9',
       }),
@@ -412,7 +441,10 @@ String _decodeQueryComponent(String value) {
   }
 }
 
-List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
+List<CitybusEtaStatus> parseCitybusEtaStatuses(
+  String body, {
+  String language = 'zh',
+}) {
   final String html = body.replaceFirst('\uFEFF', '').trim();
   if (html.isEmpty) return const <CitybusEtaStatus>[];
   if (html.contains('未能提供預計抵站時間')) {
@@ -484,7 +516,8 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
     double? distanceKm;
     final String statusForDistance = normalizedStatus ?? '';
     final RegExpMatch? distance = RegExp(
-      r'距離\s*[:：]?\s*([0-9]+(?:\.[0-9]+)?)\s*公里',
+      r'(?:距離|distance)\s*[:：]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:公里|km)',
+      caseSensitive: false,
     ).firstMatch(statusForDistance);
     if (distance != null) {
       distanceKm = double.tryParse(distance.group(1) ?? '');
@@ -493,13 +526,21 @@ List<CitybusEtaStatus> parseCitybusEtaStatuses(String body) {
       );
     }
 
-    final String? statusZh =
+    final String? rawStatus =
         normalizedStatus == null || normalizedStatus.isEmpty
         ? null
         : normalizedStatus;
-    final String? statusEn = statusZh == null
+    final bool english = language == 'en';
+    final String? statusZh = rawStatus == null
         ? null
-        : _translateStatus(statusZh);
+        : english
+        ? _translateEnglishStatus(rawStatus)
+        : rawStatus;
+    final String? statusEn = rawStatus == null
+        ? null
+        : english
+        ? rawStatus
+        : _translateStatus(rawStatus);
     if (statusZh == null && distanceKm == null && minutesText == null) {
       continue;
     }
@@ -556,9 +597,23 @@ String _translateStatus(String status) {
     '未開出' => 'Not yet departed',
     '正在前往' => 'En route',
     '正在上落客' => 'Boarding / alighting',
-    '已到站' => 'Arrived',
+    '已到站' || '已到達' => 'Arrived',
     '即將到達' => 'Arriving',
     '即將開出' => 'Departing soon',
+    '尾班車' => 'Last bus',
+    _ => status,
+  };
+}
+
+String _translateEnglishStatus(String status) {
+  return switch (status.trim().toLowerCase()) {
+    'not yet departed' => '未開出',
+    'en route' => '正在前往',
+    'boarding / alighting' || 'boarding/alighting' => '正在上落客',
+    'arrived' => '已到站',
+    'arriving' => '即將到達',
+    'departing soon' => '即將開出',
+    'last bus' => '尾班車',
     _ => status,
   };
 }

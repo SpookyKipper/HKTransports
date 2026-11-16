@@ -114,6 +114,36 @@ void main() {
     expect(statuses.single.distanceKm, 0.8);
   });
 
+  test('parses English nwp3 status text and distance', () {
+    final List<CitybusEtaStatus> statuses = parseCitybusEtaStatuses('''
+      <div id="nextbus_listitem">
+        <table><tr>
+          <td><table><tr><td>22:10</td></tr></table></td>
+          <td><table>
+            <tr><td>To: Central</td></tr>
+            <tr><td>Not yet departed</td></tr>
+            <tr><td>3 mins</td></tr>
+          </table></td>
+        </tr></table>
+        <table><tr>
+          <td><table><tr><td>23:50</td></tr></table></td>
+          <td><table>
+            <tr><td>To: Central</td></tr>
+            <tr><td>3 mins, last bus Distance: 0.8 km</td></tr>
+          </table></td>
+        </tr></table>
+      </div>
+      ''', language: 'en');
+
+    expect(statuses, hasLength(2));
+    expect(statuses[0].statusEn, 'Not yet departed');
+    expect(statuses[0].statusZh, '未開出');
+    expect(statuses[0].minutesText, '3 mins');
+    expect(statuses[1].statusEn, 'last bus');
+    expect(statuses[1].statusZh, '尾班車');
+    expect(statuses[1].distanceKm, 0.8);
+  });
+
   test('parses distance with a colon', () {
     final List<CitybusEtaStatus> statuses = parseCitybusEtaStatuses('''
       <div id="nextbus_listitem">

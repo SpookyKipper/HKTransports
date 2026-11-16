@@ -80,7 +80,7 @@ class EtaService {
       for (final List<BusEta> result in results) {
         merged.addAll(result);
       }
-      return _normalise(merged);
+      return _normalise(filterJointOperatorEtas(route, merged));
     } catch (error) {
       debugPrint('ETA fetch failed: $error');
       return const <BusEta>[];
@@ -192,7 +192,10 @@ class EtaService {
         .etaArguments(route, seq, _language);
     if (args == null) return const <BusEta>[];
 
-    final List<CitybusEtaStatus> statuses = await _ctbStatus.fetch(args);
+    final List<CitybusEtaStatus> statuses = await _ctbStatus.fetch(
+      args,
+      language: _language,
+    );
     if (statuses.isEmpty) return const <BusEta>[];
 
     final List<BusEta> result = <BusEta>[];
@@ -326,4 +329,25 @@ class _CachedCitybusStatus {
 
   final List<CitybusEtaStatus> statuses;
   final DateTime fetchedAt;
+}
+
+/// Removes Citybus proprietary rows that represent the KMB/LWB half of a
+/// jointly operated route. Those rows duplicate the KMB open-data entries.
+@visibleForTesting
+List<BusEta> filterJointOperatorEtas(RouteEntry route, Iterable<BusEta> etas) {
+  final bool jointWithKmb =
+      route.companies.contains(BusCompany.ctb) &&
+      route.companies.contains(BusCompany.kmb);
+  if (!jointWithKmb) return etas.toList(growable: false);
+  return etas
+      .where((BusEta eta) {
+        if (eta.company != BusCompany.ctb) return true;
+        final String status = '${eta.statusZh ?? ''} ${eta.statusEn ?? ''}'
+            .toLowerCase();
+        return !(status.contains('九巴') ||
+            status.contains('龍運') ||
+            status.contains('kmb') ||
+            status.contains('lwb'));
+      })
+      .toList(growable: false);
 }
