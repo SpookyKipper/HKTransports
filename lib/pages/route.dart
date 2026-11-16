@@ -361,6 +361,9 @@ class _RoutePageState extends State<_RoutePage> {
     bool useUpstreamCache = true,
   }) async {
     if (_loading.contains(index)) return;
+    if (!useUpstreamCache) {
+      _etaService.invalidateKmbRouteCache(widget.route);
+    }
     setState(() => _loading.add(index));
     try {
       final List<BusEta> etas = await _fetchRouteStopEtas(index);

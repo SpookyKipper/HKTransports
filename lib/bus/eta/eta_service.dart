@@ -46,6 +46,10 @@ class EtaService {
       StreamController<EtaStatusUpdate>.broadcast();
   final Map<String, _CachedCitybusStatus> _statusCache =
       <String, _CachedCitybusStatus>{};
+  final Map<String, _CachedKmbRouteEtas> _kmbRouteCache =
+      <String, _CachedKmbRouteEtas>{};
+  final Map<String, Future<Map<int, List<BusEta>>?>> _kmbRouteRequests =
+      <String, Future<Map<int, List<BusEta>>?>>{};
 
   String get language => _language;
 
@@ -94,12 +98,7 @@ class EtaService {
   ) {
     switch (company) {
       case BusCompany.kmb:
-        return _kmb.fetch(
-          route: route,
-          company: company,
-          seq: seq,
-          language: _language,
-        );
+        return _fetchKmbRouteStop(route, company, seq);
       case BusCompany.ctb:
         return _fetchCitybus(route, company, seq);
       case BusCompany.nlb:
@@ -142,6 +141,110 @@ class EtaService {
           database: _databaseProvider?.call(),
         );
     }
+  }
+
+  bool get _kmbRouteCacheEnabled => _settings?.upstreamEtaScan ?? false;
+
+  Duration get _kmbRouteEtaCacheTtl {
+    final int seconds = _settings?.refreshSeconds ?? 30;
+    return Duration(seconds: seconds.clamp(5, 120));
+  }
+
+  Future<List<BusEta>> _fetchKmbRouteStop(
+    RouteEntry route,
+    BusCompany company,
+    int seq,
+  ) async {
+    if (!_kmbRouteCacheEnabled) {
+      return _kmb.fetch(
+        route: route,
+        company: company,
+        seq: seq,
+        language: _language,
+      );
+    }
+
+    final String key = _kmbRouteCacheKey(route);
+    final Map<int, List<BusEta>>? bySeq = await _kmbRouteEtas(route, key);
+    if (bySeq == null) {
+      return _kmb.fetch(
+        route: route,
+        company: company,
+        seq: seq,
+        language: _language,
+      );
+    }
+    return _selectKmbRouteStopEtas(bySeq, route, seq);
+  }
+
+  void invalidateKmbRouteCache(RouteEntry route) {
+    _kmbRouteCache.remove(_kmbRouteCacheKey(route));
+  }
+
+  String _kmbRouteCacheKey(RouteEntry route) {
+    return '${route.key}|${route.serviceType}|'
+        '${route.boundFor(BusCompany.kmb) ?? ''}';
+  }
+
+  Future<Map<int, List<BusEta>>?> _kmbRouteEtas(
+    RouteEntry route,
+    String key,
+  ) async {
+    final _CachedKmbRouteEtas? cached = _kmbRouteCache[key];
+    if (cached != null) {
+      if (DateTime.now().difference(cached.fetchedAt) <= _kmbRouteEtaCacheTtl) {
+        return cached.bySeq;
+      }
+      _kmbRouteCache.remove(key);
+    }
+
+    final Future<Map<int, List<BusEta>>?>? running = _kmbRouteRequests[key];
+    if (running != null) return running;
+
+    final Future<Map<int, List<BusEta>>?> future = _kmb.fetchRouteEtas(route);
+    _kmbRouteRequests[key] = future;
+    try {
+      final Map<int, List<BusEta>>? bySeq = await future;
+      if (bySeq != null) {
+        _kmbRouteCache[key] = _CachedKmbRouteEtas(
+          bySeq: bySeq,
+          fetchedAt: DateTime.now(),
+        );
+      }
+      return bySeq;
+    } finally {
+      if (identical(_kmbRouteRequests[key], future)) {
+        _kmbRouteRequests.remove(key);
+      }
+    }
+  }
+
+  List<BusEta> _selectKmbRouteStopEtas(
+    Map<int, List<BusEta>> bySeq,
+    RouteEntry route,
+    int seq,
+  ) {
+    if (bySeq.isEmpty) return const <BusEta>[];
+    final int targetSeq = seq + 1;
+    int? nearest;
+    for (final int value in bySeq.keys) {
+      if (nearest == null ||
+          (value - targetSeq).abs() < (nearest - targetSeq).abs()) {
+        nearest = value;
+      }
+    }
+    if (nearest == null) return const <BusEta>[];
+    if (route.companies.length == 1 && nearest != targetSeq) {
+      return const <BusEta>[];
+    }
+    final List<String> stops = route.primaryStops;
+    if (stops.length > 1 &&
+        stops.first == stops.last &&
+        seq == 0 &&
+        nearest != targetSeq) {
+      return const <BusEta>[];
+    }
+    return List<BusEta>.of(bySeq[nearest] ?? const <BusEta>[]);
   }
 
   Future<List<BusEta>> _fetchCitybus(
@@ -322,6 +425,13 @@ class EtaStatusUpdate {
 
   final String routeKey;
   final int seq;
+}
+
+class _CachedKmbRouteEtas {
+  const _CachedKmbRouteEtas({required this.bySeq, required this.fetchedAt});
+
+  final Map<int, List<BusEta>> bySeq;
+  final DateTime fetchedAt;
 }
 
 class _CachedCitybusStatus {

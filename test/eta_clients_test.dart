@@ -103,6 +103,57 @@ void main() {
     expect(result.first.company, BusCompany.kmb);
   });
 
+  test('KMB route-level ETAs are grouped by sequence', () async {
+    final http.Client client = MockClient((request) async {
+      expect(request.url.path, '/v1/transport/kmb/route-eta/690/1');
+      return jsonResponse({
+        'data': [
+          eta(
+            company: 'KMB',
+            dir: 'I',
+            seq: 1,
+            time: '2026-10-29T22:10:00+08:00',
+            etaSeq: 1,
+          ),
+          eta(
+            company: 'KMB',
+            dir: 'I',
+            seq: 1,
+            time: '2026-10-29T22:30:00+08:00',
+            etaSeq: 2,
+          ),
+          eta(
+            company: 'KMB',
+            dir: 'I',
+            seq: 2,
+            time: '2026-10-29T22:12:00+08:00',
+          ),
+          eta(
+            company: 'KMB',
+            dir: 'O',
+            seq: 1,
+            time: '2026-10-29T22:15:00+08:00',
+          ),
+          eta(
+            company: 'KMB',
+            dir: 'I',
+            seq: 3,
+            time: '2026-10-29T22:20:00+08:00',
+            serviceType: 2,
+          ),
+        ],
+      });
+    });
+    final KmbEtaClient kmb = KmbEtaClient(client: client);
+    final Map<int, List<BusEta>>? result = await kmb.fetchRouteEtas(route());
+
+    expect(result, isNotNull);
+    expect(result!.keys.toSet(), <int>{1, 2});
+    expect(result[1], hasLength(2));
+    expect(result[2], hasLength(1));
+    expect(result[1]!.first.etaSeq, 1);
+  });
+
   test('KMB filters the other direction', () async {
     final http.Client client = MockClient((request) async {
       return jsonResponse({

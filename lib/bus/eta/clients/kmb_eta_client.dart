@@ -28,6 +28,44 @@ class KmbEtaClient implements EtaClient {
 
   final http.Client _client;
 
+  /// Fetches every stop's KMB ETAs for one route service type in one request.
+  ///
+  /// Returns null when the route-level endpoint cannot be used, allowing the
+  /// caller to fall back to the per-stop endpoint.
+  Future<Map<int, List<BusEta>>?> fetchRouteEtas(RouteEntry route) async {
+    final String? bound = route.boundFor(BusCompany.kmb);
+    if (bound == null) return null;
+
+    final Uri uri = Uri.parse(
+      'https://data.etabus.gov.hk/v1/transport/kmb/route-eta/'
+      '${route.route}/${route.serviceType}',
+    );
+    final http.Response response = await _client
+        .get(uri)
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) return null;
+    final dynamic decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) return null;
+    final List<dynamic> data = (decoded['data'] as List<dynamic>?) ?? const [];
+    final int? expectedServiceType = int.tryParse(route.serviceType.trim());
+
+    final Map<int, List<BusEta>> result = <int, List<BusEta>>{};
+    for (final dynamic value in data) {
+      if (value is! Map<String, dynamic>) continue;
+      if (value['dir']?.toString() != bound) continue;
+      final int? entryServiceType = (value['service_type'] as num?)?.toInt();
+      if (expectedServiceType != null &&
+          entryServiceType != null &&
+          entryServiceType != expectedServiceType) {
+        continue;
+      }
+      final int? entrySeq = (value['seq'] as num?)?.toInt();
+      if (entrySeq == null) continue;
+      result.putIfAbsent(entrySeq, () => <BusEta>[]).add(_etaFromEntry(value));
+    }
+    return result;
+  }
+
   @override
   Future<List<BusEta>> fetch({
     required RouteEntry route,
@@ -81,22 +119,24 @@ class KmbEtaClient implements EtaClient {
           entrySeq != targetSeq) {
         continue;
       }
-      final String remarkEn = (entry['rmk_en'] ?? '').toString();
-      final String remarkZh = (entry['rmk_tc'] ?? '').toString();
-      result.add(
-        BusEta(
-          company: BusCompany.kmb,
-          eta: parseEtaTime(entry['eta']?.toString()),
-          remarkZh: remarkZh,
-          remarkEn: remarkEn,
-          destZh: (entry['dest_tc'] ?? '').toString(),
-          destEn: (entry['dest_en'] ?? '').toString(),
-          etaSeq: (entry['eta_seq'] as num?)?.toInt() ?? 0,
-          scheduled: _isScheduled(remarkEn, remarkZh),
-        ),
-      );
+      result.add(_etaFromEntry(entry));
     }
     return result;
+  }
+
+  BusEta _etaFromEntry(Map<String, dynamic> entry) {
+    final String remarkEn = (entry['rmk_en'] ?? '').toString();
+    final String remarkZh = (entry['rmk_tc'] ?? '').toString();
+    return BusEta(
+      company: BusCompany.kmb,
+      eta: parseEtaTime(entry['eta']?.toString()),
+      remarkZh: remarkZh,
+      remarkEn: remarkEn,
+      destZh: (entry['dest_tc'] ?? '').toString(),
+      destEn: (entry['dest_en'] ?? '').toString(),
+      etaSeq: (entry['eta_seq'] as num?)?.toInt() ?? 0,
+      scheduled: _isScheduled(remarkEn, remarkZh),
+    );
   }
 
   bool _isScheduled(String en, String zh) {
