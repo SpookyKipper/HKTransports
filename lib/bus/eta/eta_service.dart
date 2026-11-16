@@ -449,15 +449,40 @@ List<BusEta> filterJointOperatorEtas(RouteEntry route, Iterable<BusEta> etas) {
       route.companies.contains(BusCompany.ctb) &&
       route.companies.contains(BusCompany.kmb);
   if (!jointWithKmb) return etas.toList(growable: false);
+
+  final List<BusEta> kmbEtas = etas
+      .where((BusEta eta) => eta.company == BusCompany.kmb && eta.eta != null)
+      .toList(growable: false);
   return etas
       .where((BusEta eta) {
         if (eta.company != BusCompany.ctb) return true;
         final String status = '${eta.statusZh ?? ''} ${eta.statusEn ?? ''}'
             .toLowerCase();
-        return !(status.contains('九巴') ||
+        if (status.contains('九巴') ||
             status.contains('龍運') ||
             status.contains('kmb') ||
-            status.contains('lwb'));
+            status.contains('lwb')) {
+          return false;
+        }
+        return !_isDuplicateCitybusJourney(eta, kmbEtas);
       })
       .toList(growable: false);
+}
+
+/// Citybus' proprietary board sometimes lists an LWB departure with no operator
+/// label, no status, and no Citybus distance. Its clock time can differ from the
+/// KMB open-data timestamp by up to a minute because nwp3 only shows minutes.
+bool _isDuplicateCitybusJourney(BusEta eta, List<BusEta> kmbEtas) {
+  final DateTime? time = eta.eta;
+  if (time == null || eta.proprietaryTime == null) return false;
+  // A live Citybus vehicle has a distance and is not a scheduled LWB row.
+  if (eta.distanceKm != null) return false;
+
+  const Duration duplicateWindow = Duration(seconds: 90);
+  for (final BusEta kmb in kmbEtas) {
+    final DateTime? kmbTime = kmb.eta;
+    if (kmbTime == null) continue;
+    if (time.difference(kmbTime).abs() <= duplicateWindow) return true;
+  }
+  return false;
 }

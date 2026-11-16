@@ -18,10 +18,17 @@ RouteEntry _route(List<BusCompany> companies) {
   );
 }
 
-BusEta _eta(BusCompany company, {String? statusZh, String? statusEn}) {
+BusEta _eta(
+  BusCompany company, {
+  String? statusZh,
+  String? statusEn,
+  DateTime? time,
+  bool proprietary = false,
+  double? distanceKm,
+}) {
   return BusEta(
     company: company,
-    eta: DateTime.utc(2026, 11, 16, 12),
+    eta: time ?? DateTime.utc(2026, 11, 16, 12),
     remarkZh: '',
     remarkEn: '',
     destZh: '乙',
@@ -29,6 +36,8 @@ BusEta _eta(BusCompany company, {String? statusZh, String? statusEn}) {
     etaSeq: 1,
     statusZh: statusZh,
     statusEn: statusEn,
+    proprietaryTime: proprietary ? '12:00' : null,
+    distanceKm: distanceKm,
   );
 }
 
@@ -49,6 +58,70 @@ void main() {
     expect(result, hasLength(2));
     expect(result[0].statusEn, 'En route');
     expect(result[1].company, BusCompany.kmb);
+  });
+
+  test('removes a Citybus LWB duplicate within the time window', () {
+    final List<BusEta> result = filterJointOperatorEtas(
+      _route(const <BusCompany>[BusCompany.ctb, BusCompany.kmb]),
+      <BusEta>[
+        _eta(BusCompany.kmb, time: DateTime.utc(2026, 11, 16, 12, 0, 30)),
+        _eta(
+          BusCompany.ctb,
+          time: DateTime.utc(2026, 11, 16, 12, 1),
+          statusZh: '預定班次',
+          proprietary: true,
+        ),
+      ],
+    );
+
+    expect(result, hasLength(1));
+    expect(result.single.company, BusCompany.kmb);
+  });
+
+  test('keeps Citybus rows outside the duplicate time window', () {
+    final List<BusEta> result = filterJointOperatorEtas(
+      _route(const <BusCompany>[BusCompany.ctb, BusCompany.kmb]),
+      <BusEta>[
+        _eta(BusCompany.kmb, time: DateTime.utc(2026, 11, 16, 12)),
+        _eta(
+          BusCompany.ctb,
+          time: DateTime.utc(2026, 11, 16, 12, 2),
+          statusZh: '預定班次',
+          proprietary: true,
+        ),
+      ],
+    );
+
+    expect(result, hasLength(2));
+  });
+
+  test('keeps a live Citybus vehicle near a KMB departure', () {
+    final List<BusEta> result = filterJointOperatorEtas(
+      _route(const <BusCompany>[BusCompany.ctb, BusCompany.kmb]),
+      <BusEta>[
+        _eta(BusCompany.kmb, time: DateTime.utc(2026, 11, 16, 12)),
+        _eta(
+          BusCompany.ctb,
+          time: DateTime.utc(2026, 11, 16, 12, 1),
+          distanceKm: 1.2,
+          proprietary: true,
+        ),
+      ],
+    );
+
+    expect(result, hasLength(2));
+  });
+
+  test('keeps open-data Citybus rows near a KMB departure', () {
+    final List<BusEta> result = filterJointOperatorEtas(
+      _route(const <BusCompany>[BusCompany.ctb, BusCompany.kmb]),
+      <BusEta>[
+        _eta(BusCompany.kmb, time: DateTime.utc(2026, 11, 16, 12)),
+        _eta(BusCompany.ctb, time: DateTime.utc(2026, 11, 16, 12, 1)),
+      ],
+    );
+
+    expect(result, hasLength(2));
   });
 
   test('keeps rows on routes without KMB', () {
