@@ -64,6 +64,9 @@ class EtaText extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 4),
                 child: Tooltip(
                   message: solarLabel ?? 'Solar bus',
+                  triggerMode: TooltipTriggerMode.tap,
+                  waitDuration: Duration.zero,
+                  showDuration: const Duration(seconds: 3),
                   child: FadeIn(
                     key: const ValueKey<String>('solar-powered'),
                     child: Icon(
@@ -114,7 +117,7 @@ class EtaText extends StatelessWidget {
       final String? detailText = details;
       if (detailText != null && detailText.isNotEmpty) {
         if (hasContent) {
-          result.add(TextSpan(text: hasMarkers ? ' ' : ' · '));
+          result.add(const TextSpan(text: ' · '));
         }
         result.add(TextSpan(text: detailText));
         hasContent = true;
@@ -199,26 +202,31 @@ class _OccupancyIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double size = style?.fontSize ?? 14;
+    final double size = (style?.fontSize ?? 14) + 2;
     return Tooltip(
       message: label ?? '$percent% full',
+      triggerMode: TooltipTriggerMode.tap,
+      waitDuration: Duration.zero,
+      showDuration: const Duration(seconds: 3),
       child: Semantics(
         label: label ?? '$percent% full',
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(Icons.people_alt, size: size, color: color),
-            const SizedBox(width: 2),
-            Text(
-              '$percent%',
-              style: TextStyle(
-                color: color,
-                fontSize: size * 0.78,
-                fontWeight: FontWeight.w600,
-                height: 1,
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              Positioned.fill(
+                child: CircularProgressIndicator(
+                  value: percent / 100,
+                  strokeWidth: 1.5,
+                  backgroundColor: color.withValues(alpha: 0.22),
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                ),
               ),
-            ),
-          ],
+              Icon(Icons.person, size: size * 0.55, color: color),
+            ],
+          ),
         ),
       ),
     );
@@ -242,6 +250,9 @@ class _DoubleWheelchairIndicator extends StatelessWidget {
     final Color surface = Theme.of(context).colorScheme.surface;
     return Tooltip(
       message: label ?? 'Double wheelchair bus',
+      triggerMode: TooltipTriggerMode.tap,
+      waitDuration: Duration.zero,
+      showDuration: const Duration(seconds: 3),
       child: Semantics(
         label: label ?? 'Double wheelchair bus',
         child: SizedBox(
