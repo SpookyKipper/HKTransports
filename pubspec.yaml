@@ -1,7 +1,7 @@
 name: hktransports
 description: "HKTransports is a public transport app for Hong Kong, providing real-time bus, minibus, and MTR information."
 publish_to: 'none'
-version: 0.1.2+5
+version: 0.1.3+6
 
 environment:
   sdk: ^3.8.0
