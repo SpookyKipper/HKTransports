@@ -52,6 +52,11 @@ bool _isKmbProprietary(BusEta eta) {
   return eta.company == BusCompany.kmb && eta.kmbProprietary;
 }
 
+/// KMB's proprietary board reports 0.0 km once the bus reaches the stop.
+bool etaArrivedAtStop(BusEta eta) {
+  return _isKmbProprietary(eta) && eta.distanceKm == 0;
+}
+
 /// The minute portion of an ETA row.
 ///
 /// Citybus proprietary rows keep their literal minute text and special states.
@@ -67,6 +72,9 @@ String? etaWaitLabel(
   final String minuteUnit = settings.text(shortMinuteUnit ? '分' : '分鐘', 'min');
   final bool citybusProprietary = _isCitybusProprietary(eta);
   if (_isKmbProprietary(eta)) {
+    if (etaArrivedAtStop(eta)) {
+      return settings.text('已到達', 'Arrived');
+    }
     if (minutes != null && minutes < 1) {
       return eta.distanceKm != null ? '<1 $minuteUnit' : '- $minuteUnit';
     }
