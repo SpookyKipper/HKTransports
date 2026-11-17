@@ -456,6 +456,7 @@ class _RoutePageState extends State<_RoutePage> {
 
   bool _isArrivedEta(BusEta? eta, DateTime now) {
     if (eta == null) return false;
+    if (etaArrivedAtStop(eta)) return true;
     final String status = '${eta.statusZh ?? ''} ${eta.statusEn ?? ''}'
         .toLowerCase();
     if (status.contains('已到達') ||

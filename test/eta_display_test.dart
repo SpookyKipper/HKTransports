@@ -48,11 +48,15 @@ void main() {
     );
 
     expect(etaArrivedAtStop(kmbEta(0.0)), isTrue);
+    expect(etaArrivedAtStop(kmbEta(0.04)), isTrue);
+    expect(etaArrivedAtStop(kmbEta(0.05)), isFalse);
     expect(etaArrivedAtStop(kmbEta(0.4)), isFalse);
     expect(etaArrivedAtStop(kmbEta(null)), isFalse);
 
     expect(kmbEta(0.0).distanceLabel('zh'), isNull);
     expect(kmbEta(0.0).distanceLabel('en'), isNull);
+    expect(kmbEta(0.04).distanceLabel('zh'), isNull);
+    expect(kmbEta(0.04).distanceLabel('en'), isNull);
     expect(kmbEta(0.4).distanceLabel('zh'), '距離 0.4 公里');
     expect(kmbEta(0.4).distanceLabel('en'), '0.4 km away');
   });

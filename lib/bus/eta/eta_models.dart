@@ -81,7 +81,7 @@ class BusEta {
   String? distanceLabel(String language) {
     final double? value = distanceKm;
     if (value == null) return null;
-    if (kmbProprietary && value == 0) return null;
+    if (kmbProprietary && value < 0.05) return null;
     final String distance = value.toStringAsFixed(1);
     return language == 'en' ? '$distance km away' : '距離 $distance 公里';
   }

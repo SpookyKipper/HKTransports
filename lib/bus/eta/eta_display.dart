@@ -54,7 +54,8 @@ bool _isKmbProprietary(BusEta eta) {
 
 /// KMB's proprietary board reports 0.0 km once the bus reaches the stop.
 bool etaArrivedAtStop(BusEta eta) {
-  return _isKmbProprietary(eta) && eta.distanceKm == 0;
+  final double? distance = eta.distanceKm;
+  return _isKmbProprietary(eta) && distance != null && distance < 0.05;
 }
 
 /// The minute portion of an ETA row.
