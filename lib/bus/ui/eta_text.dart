@@ -67,6 +67,7 @@ class EtaText extends StatelessWidget {
                   triggerMode: TooltipTriggerMode.tap,
                   waitDuration: Duration.zero,
                   showDuration: const Duration(seconds: 3),
+                  preferBelow: false,
                   child: FadeIn(
                     key: const ValueKey<String>('solar-powered'),
                     child: Icon(
@@ -208,6 +209,7 @@ class _OccupancyIndicator extends StatelessWidget {
       triggerMode: TooltipTriggerMode.tap,
       waitDuration: Duration.zero,
       showDuration: const Duration(seconds: 3),
+      preferBelow: false,
       child: Semantics(
         label: label ?? '$percent% full',
         child: SizedBox(
@@ -253,6 +255,7 @@ class _DoubleWheelchairIndicator extends StatelessWidget {
       triggerMode: TooltipTriggerMode.tap,
       waitDuration: Duration.zero,
       showDuration: const Duration(seconds: 3),
+      preferBelow: false,
       child: Semantics(
         label: label ?? 'Double wheelchair bus',
         child: SizedBox(
