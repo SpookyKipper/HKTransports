@@ -84,6 +84,8 @@ class _RouteEtaViewState extends State<RouteEtaView> {
     _fetch();
   }
 
+  bool _failed = false;
+
   Future<void> _fetch() async {
     final int requestId = ++_requestId;
     try {
@@ -95,11 +97,15 @@ class _RouteEtaViewState extends State<RouteEtaView> {
       setState(() {
         _etas = etas;
         _loading = false;
+        _failed = false;
       });
     } catch (error) {
       debugPrint('ETA refresh failed: $error');
       if (!mounted || requestId != _requestId) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _failed = true;
+      });
     }
   }
 
@@ -129,18 +135,18 @@ class _RouteEtaViewState extends State<RouteEtaView> {
 
   @override
   Widget build(BuildContext context) {
-    final AppSettings settings = context.watch<AppSettings>();
     final List<BusEta> etas = (_etas ?? const [])
         .where(
           (eta) =>
               eta.eta != null ||
               eta.proprietaryTime != null ||
-              eta.proprietaryMinutes != null ||
-              eta.remark(settings.language).isNotEmpty ||
-              eta.status(settings.language) != null,
+              eta.proprietaryMinutes != null,
         )
         .take(3)
         .toList();
+    if (_failed) {
+      return const SizedBox.shrink();
+    }
     if (_loading && _etas == null) {
       return const M3ELoadingIndicator(size: 24);
     }

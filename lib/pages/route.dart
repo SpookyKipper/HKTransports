@@ -88,6 +88,7 @@ class _RoutePageState extends State<_RoutePage> {
   final Map<int, _CachedRouteStopEtas> _routeStopEtaCache = {};
   final Map<int, Future<List<BusEta>>> _routeStopEtaRequests = {};
   final Set<int> _loading = {};
+  final Set<int> _etaFailed = {};
   final GlobalKey<RouteMapState> _mapKey = GlobalKey<RouteMapState>();
   final Map<int, GlobalKey> _stationKeys = {};
   Timer? _timer;
@@ -378,6 +379,7 @@ class _RoutePageState extends State<_RoutePage> {
       setState(() {
         _loading.remove(index);
         _etas[index] = etas;
+        _etaFailed.remove(index);
       });
       _maybeScheduleCitybusShortRetry(index, etas);
       if (scanUpstream && _expandedIndex == index) {
@@ -386,7 +388,10 @@ class _RoutePageState extends State<_RoutePage> {
     } catch (error) {
       debugPrint('ETA refresh failed: $error');
       if (mounted && !_disposed) {
-        setState(() => _loading.remove(index));
+        setState(() {
+          _loading.remove(index);
+          _etaFailed.add(index);
+        });
       }
     }
   }
@@ -1096,6 +1101,7 @@ class _RoutePageState extends State<_RoutePage> {
         _EtaList(
           route: route,
           loading: _loading.contains(index),
+          failed: _etaFailed.contains(index),
           etas: _etas[index],
           showCompany: route.companies.length > 1,
           atOrigin: index == 0,
@@ -1364,6 +1370,7 @@ class _EtaList extends StatelessWidget {
   const _EtaList({
     required this.route,
     required this.loading,
+    required this.failed,
     required this.etas,
     required this.showCompany,
     required this.atOrigin,
@@ -1373,6 +1380,7 @@ class _EtaList extends StatelessWidget {
 
   final RouteEntry route;
   final bool loading;
+  final bool failed;
   final List<BusEta>? etas;
   final bool showCompany;
   final bool atOrigin;
@@ -1397,6 +1405,15 @@ class _EtaList extends StatelessWidget {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Center(child: M3ELoadingIndicator(size: 24)),
+      );
+    }
+    if (failed) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          settings.text('請求失敗', 'Request failed'),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
       );
     }
     if (visible.isEmpty) {
