@@ -1,8 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' hide appFlavor;
 import 'package:hktransports/app/app_config.dart';
+import 'package:hktransports/app/app_version.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
 import 'package:hktransports/bus/ui/smooth_wavy_progress.dart';
 import 'package:http/http.dart' as http;
@@ -24,9 +25,17 @@ Future<bool> openAppRepositoryPage() {
   );
 }
 
-String appUpdateDownloadUrl(String versionName) {
+String appUpdateAssetName(String versionName, {String? flavor}) {
+  final String resolvedFlavor = (flavor ?? appFlavor).trim();
+  final String flavorSuffix = resolvedFlavor.isEmpty
+      ? ''
+      : '-${Uri.encodeComponent(resolvedFlavor)}';
+  return 'HKTransports-v${Uri.encodeComponent(versionName)}$flavorSuffix.apk';
+}
+
+String appUpdateDownloadUrl(String versionName, {String? flavor}) {
   return 'https://github.com/SpookyKipper/HKTransports/releases/latest/download/'
-      'HKTransports-v${Uri.encodeComponent(versionName)}.apk';
+      '${appUpdateAssetName(versionName, flavor: flavor)}';
 }
 
 class AppUpdateService {
@@ -59,7 +68,7 @@ class AppUpdateService {
       );
       await directory.create(recursive: true);
       final File file = File(
-        '${directory.path}/HKTransports-v$versionName.apk',
+        '${directory.path}/${appUpdateAssetName(versionName)}',
       );
       final IOSink sink = file.openWrite();
       final int? total = response.contentLength;

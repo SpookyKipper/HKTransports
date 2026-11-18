@@ -337,11 +337,15 @@ void main() {
     );
   });
 
-  test('builds the GitHub APK download URL from the version name', () {
+  test('builds the flavored GitHub APK download URL', () {
     expect(
-      appUpdateDownloadUrl('0.0.1'),
+      appUpdateDownloadUrl('0.0.1', flavor: 'full'),
       'https://github.com/SpookyKipper/HKTransports/releases/latest/download/'
-      'HKTransports-v0.0.1.apk',
+      'HKTransports-v0.0.1-full.apk',
     );
+  });
+
+  test('omits the flavor suffix when no flavor is provided', () {
+    expect(appUpdateAssetName('0.0.1', flavor: ''), 'HKTransports-v0.0.1.apk');
   });
 }
