@@ -203,7 +203,7 @@ class KmbRouteDataService {
       if (_isSlimDatabase(base.path)) {
         await base.copy(newSlim.path);
       } else {
-        await Isolate.run(() => _buildSlimFromBase(base.path, newSlim.path));
+        await _buildSlimFromBaseInIsolate(base.path, newSlim.path);
       }
       await _replaceDatabase(newSlim);
       final String baseline = remote.lastUpdate.isNotEmpty
@@ -253,13 +253,11 @@ class KmbRouteDataService {
       if (await full.exists()) await full.delete();
       if (await newSlim.exists()) await newSlim.delete();
       final File current = await _databaseFile();
-      await Isolate.run(
-        () => _buildIncrementalSlim(
-          currentPath: current.path,
-          fullPath: full.path,
-          newSlimPath: newSlim.path,
-          deltaPath: delta.path,
-        ),
+      await _buildIncrementalSlimInIsolate(
+        currentPath: current.path,
+        fullPath: full.path,
+        newSlimPath: newSlim.path,
+        deltaPath: delta.path,
       );
       await _replaceDatabase(newSlim);
       _storeMetadata(serverLast);
@@ -582,6 +580,26 @@ Set<String> _columns(Database db, String table) {
       .select('PRAGMA table_info($table)')
       .map((Row row) => row['name'].toString())
       .toSet();
+}
+
+Future<void> _buildSlimFromBaseInIsolate(String basePath, String slimPath) {
+  return Isolate.run(() => _buildSlimFromBase(basePath, slimPath));
+}
+
+Future<void> _buildIncrementalSlimInIsolate({
+  required String currentPath,
+  required String fullPath,
+  required String newSlimPath,
+  required String deltaPath,
+}) {
+  return Isolate.run(
+    () => _buildIncrementalSlim(
+      currentPath: currentPath,
+      fullPath: fullPath,
+      newSlimPath: newSlimPath,
+      deltaPath: deltaPath,
+    ),
+  );
 }
 
 Future<void> _buildSlimFromBase(String basePath, String slimPath) async {
