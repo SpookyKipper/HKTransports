@@ -22,16 +22,22 @@ case "${FLAVOR}" in
     ;;
 esac
 
-KMB_ETA_SECRET_FILE="${KMB_ETA_SECRET_FILE:-secrets/kmb_eta.json}"
-if [[ ! -f "${KMB_ETA_SECRET_FILE}" ]]; then
-  echo "Missing local KMB ETA secret file: ${KMB_ETA_SECRET_FILE}" >&2
-  exit 1
+DART_DEFINES=(
+  --dart-define=APP_VERSION="${APP_VERSION}"
+  --dart-define=APP_BUILD="${APP_BUILD}"
+  --dart-define=APP_FLAVOR="${FLAVOR}"
+)
+
+if [[ "${FLAVOR}" != "foss" ]]; then
+  KMB_ETA_SECRET_FILE="${KMB_ETA_SECRET_FILE:-secrets/kmb_eta.json}"
+  if [[ ! -f "${KMB_ETA_SECRET_FILE}" ]]; then
+    echo "Missing local KMB ETA secret file: ${KMB_ETA_SECRET_FILE}" >&2
+    exit 1
+  fi
+  DART_DEFINES+=(--dart-define-from-file="${KMB_ETA_SECRET_FILE}")
 fi
 
 flutter build apk --release --obfuscate \
   --flavor "${FLAVOR}" \
   --split-debug-info=./debug-info \
-  --dart-define=APP_VERSION="${APP_VERSION}" \
-  --dart-define=APP_BUILD="${APP_BUILD}" \
-  --dart-define=APP_FLAVOR="${FLAVOR}" \
-  --dart-define-from-file="${KMB_ETA_SECRET_FILE}"
+  "${DART_DEFINES[@]}"
