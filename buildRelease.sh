@@ -41,3 +41,8 @@ flutter build apk --release --obfuscate \
   --flavor "${FLAVOR}" \
   --split-debug-info=./debug-info \
   "${DART_DEFINES[@]}"
+
+SOURCE_APK="build/app/outputs/flutter-apk/app-${FLAVOR}-release.apk"
+OUTPUT_APK="build/app/outputs/flutter-apk/HKTransports-v${APP_VERSION}-${FLAVOR}.apk"
+cp "${SOURCE_APK}" "${OUTPUT_APK}"
+echo "APK: ${OUTPUT_APK}"

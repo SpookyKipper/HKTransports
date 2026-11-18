@@ -76,10 +76,14 @@
 建置 release APK 請使用：
 
 ```sh
-./buildRelease.sh
+./buildRelease.sh full
+./buildRelease.sh foss
+./buildRelease.sh gplay
 ```
 
-輸出位置：`build/app/outputs/flutter-apk/app-release.apk`
+不指定 flavor 時預設建置 `full`。
+
+輸出位置：`build/app/outputs/flutter-apk/HKTransports-v<版本>-<flavor>.apk`
 
 ## 授權
 本應用程式以 GPL-3.0 授權，詳情見 [LICENSE](LICENSE)。<br>
