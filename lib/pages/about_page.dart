@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' hide appFlavor;
 import 'package:hktransports/app/app_config.dart';
 import 'package:hktransports/app/app_update.dart';
 import 'package:hktransports/app/app_version.dart';
@@ -99,7 +99,7 @@ class _AboutPageState extends State<AboutPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${settings.text('版本渠道', 'Flavor')}: $appFlavorLabel',
+            '${settings.text('版本渠道', 'Flavor')}: $appFlavor',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onSurfaceVariant,

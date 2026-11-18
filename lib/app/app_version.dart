@@ -14,19 +14,6 @@ const String appFlavor = String.fromEnvironment(
   defaultValue: 'debug',
 );
 
-String get appFlavorLabel {
-  switch (appFlavor) {
-    case 'full':
-      return 'Full';
-    case 'foss':
-      return 'FOSS';
-    case 'gplay':
-      return 'Google Play';
-    default:
-      return 'Debug';
-  }
-}
-
 const String _defaultPackageName = 'com.spookysrv.hktransports';
 
 String get appPackageName {
