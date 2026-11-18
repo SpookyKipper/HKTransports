@@ -8,12 +8,14 @@ import 'package:http/http.dart' as http;
 class ProprietaryNotice {
   const ProprietaryNotice({
     required this.title,
+    this.direction,
     this.date,
     this.detail,
     this.url,
   });
 
   final String title;
+  final String? direction;
   final String? date;
   final String? detail;
   final Uri? url;
@@ -78,7 +80,20 @@ class ProprietaryNoticeService {
       'r': route.route,
       'l': zh ? '0' : '1',
     });
-    return parseCitybusSpecialNoticeHtml(await _getText(uri));
+    final List<ProprietaryNotice> notices = parseCitybusSpecialNoticeHtml(
+      await _getText(uri),
+    );
+    final String label = zh ? '城巴特別通告' : 'Citybus special notice';
+    return <ProprietaryNotice>[
+      for (final ProprietaryNotice notice in notices)
+        ProprietaryNotice(
+          title: notice.direction == null ? notice.title : label,
+          direction: notice.direction,
+          date: notice.date,
+          detail: notice.detail,
+          url: notice.url ?? uri,
+        ),
+    ];
   }
 
   Future<List<ProprietaryNotice>> fetchCitybusRouteNotices(
@@ -198,10 +213,6 @@ List<ProprietaryNotice> parseCitybusSpecialNoticeHtml(String source) {
       fields,
       (String label) => label.contains('方向') || label.contains('Direction'),
     );
-    final String title = <String>[
-      if (route.isNotEmpty) route,
-      if (direction.isNotEmpty) direction,
-    ].join(' · ');
     final List<String> details = [
       for (final MapEntry<String, String> field in fields)
         if (!(field.key.contains('路線') ||
@@ -216,7 +227,8 @@ List<ProprietaryNotice> parseCitybusSpecialNoticeHtml(String source) {
     }
     structured.add(
       ProprietaryNotice(
-        title: title.isEmpty ? '路線服務狀況' : title,
+        title: route.isEmpty ? '路線服務狀況' : route,
+        direction: direction.isEmpty ? null : direction,
         detail: details.isEmpty ? null : details.join('\n'),
         url: url,
       ),

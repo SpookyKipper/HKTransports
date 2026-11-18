@@ -119,7 +119,8 @@ void main() {
     final List<ProprietaryNotice> notices = parseCitybusSpecialNoticeHtml(html);
 
     expect(notices, hasLength(1));
-    expect(notices.single.title, 'E11B · 天后站 Tin Hau Station');
+    expect(notices.single.title, 'E11B');
+    expect(notices.single.direction, '天后站 Tin Hau Station');
     expect(notices.single.detail, contains('服務安排 Service Arrangement:'));
     expect(notices.single.detail, contains('停用巴士站 Suspended Bus Stop:'));
     expect(notices.single.detail, contains('臨時巴士站 Temporary Bus Stop:'));

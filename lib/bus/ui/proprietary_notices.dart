@@ -409,6 +409,20 @@ class _AsyncNoticeSectionState extends State<_AsyncNoticeSection> {
   }
 }
 
+String _directionLabel(AppSettings settings, String direction) {
+  final String value = direction.trim();
+  if (value.isEmpty) return '';
+  if (value.startsWith('往') || value.toLowerCase().startsWith('to ')) {
+    return value;
+  }
+  return settings.isChinese ? '往$value' : 'to $value';
+}
+
+String _noticeDisplayTitle(AppSettings settings, ProprietaryNotice notice) {
+  final String direction = _directionLabel(settings, notice.direction ?? '');
+  return direction.isEmpty ? notice.title : '${notice.title} · $direction';
+}
+
 class _NoticeCard extends StatelessWidget {
   const _NoticeCard({required this.notice});
 
@@ -416,7 +430,9 @@ class _NoticeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String? detail = notice.detail?.trim();
+    final AppSettings settings = context.watch<AppSettings>();
+    final bool special = (notice.direction?.trim().isNotEmpty ?? false);
+    final String? detail = special ? null : notice.detail?.trim();
     final String meta = <String>[
       if (notice.date != null) notice.date!,
       if (detail != null && detail.isNotEmpty) detail,
@@ -427,7 +443,7 @@ class _NoticeCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
-        title: Text(notice.title),
+        title: Text(_noticeDisplayTitle(settings, notice)),
         subtitle: meta.isEmpty
             ? null
             : Text(meta, maxLines: 5, overflow: TextOverflow.ellipsis),
@@ -437,8 +453,11 @@ class _NoticeCard extends StatelessWidget {
             ? const Icon(Icons.chevron_right)
             : null,
         onTap: url != null
-            ? () =>
-                  openNotice(context, url: url.toString(), title: notice.title)
+            ? () => openNotice(
+                context,
+                url: url.toString(),
+                title: _noticeDisplayTitle(settings, notice),
+              )
             : hasDetail
             ? () => _showNoticeDetails(context, <ProprietaryNotice>[notice])
             : null,
@@ -602,6 +621,9 @@ class _CitybusSpecialNoticeBannerState
             '城巴特別通告 (${notices.length})',
             'Citybus special notices (${notices.length})',
           );
+    final ProprietaryNotice notice = notices.first;
+    final String direction = _directionLabel(settings, notice.direction ?? '');
+    final Uri? url = notice.url;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Material(
@@ -609,7 +631,13 @@ class _CitybusSpecialNoticeBannerState
         borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => _showNoticeDetails(context, notices),
+          onTap: url == null
+              ? null
+              : () => openNotice(
+                  context,
+                  url: url.toString(),
+                  title: _noticeDisplayTitle(settings, notice),
+                ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
             child: Row(
@@ -633,7 +661,7 @@ class _CitybusSpecialNoticeBannerState
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        notices.first.title,
+                        direction.isEmpty ? notice.title : direction,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
