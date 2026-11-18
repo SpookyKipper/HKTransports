@@ -786,6 +786,7 @@ class _RoutePageState extends State<_RoutePage> {
       ),
       body: Column(
         children: [
+          CitybusSpecialNoticeBanner(route: route),
           KmbRouteDescription(
             route: route,
             language: settings.language,

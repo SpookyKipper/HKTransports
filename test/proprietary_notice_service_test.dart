@@ -89,6 +89,45 @@ void main() {
     );
   });
 
+  test('groups a Citybus special-notice form into one readable notice', () {
+    const String html = '''
+<div id="specialnotelist">
+  <table>
+    <tr>
+      <td><img src="bupspecial-c.png" title="路線服務狀況"></td>
+      <td>路線服務狀況</td>
+      <td><img src="close-g.png" title="關閉"></td>
+    </tr>
+  </table>
+  <table>
+    <tr><td style="background-color:#dddddd"></td></tr>
+    <tr><td style="font-weight:bold;">路線 Route</td></tr>
+    <tr><td style="border-bottom:1px solid #cccccc;">E11B</td></tr>
+    <tr><td style="font-weight:bold;">方向 Direction</td></tr>
+    <tr><td style="border-bottom:1px solid #cccccc;">天后站 Tin Hau Station</td></tr>
+    <tr><td style="font-weight:bold;">服務安排 Service Arrangement</td></tr>
+    <tr><td style="border-bottom:1px solid #cccccc;">為配合道路工程，福逸樓巴士站將臨時停用。<br>In order to facilitate road works, the stop will be suspended.</td></tr>
+    <tr><td style="font-weight:bold;">停用巴士站 Suspended Bus Stop</td></tr>
+    <tr><td style="border-bottom:1px solid #cccccc;">1. 逸東邨福逸樓, 裕東路<br>1. Fuk Yat House Yat Tung Estate, Yu Tung Road</td></tr>
+    <tr><td style="font-weight:bold;">臨時巴士站 Temporary Bus Stop</td></tr>
+    <tr><td style="border-bottom:1px solid #cccccc;">不設臨時站<br>No Temporary Bus Stop</td></tr>
+    <tr><td style="background-color:#dddddd"></td></tr>
+  </table>
+</div>
+''';
+
+    final List<ProprietaryNotice> notices = parseCitybusSpecialNoticeHtml(html);
+
+    expect(notices, hasLength(1));
+    expect(notices.single.title, 'E11B · 天后站 Tin Hau Station');
+    expect(notices.single.detail, contains('服務安排 Service Arrangement:'));
+    expect(notices.single.detail, contains('停用巴士站 Suspended Bus Stop:'));
+    expect(notices.single.detail, contains('臨時巴士站 Temporary Bus Stop:'));
+    expect(notices.single.detail, contains('\n'));
+    expect(notices.single.detail, isNot(contains('路線 Route:')));
+    expect(notices.single.detail, isNot(contains('方向 Direction:')));
+  });
+
   test('returns no notices for the Citybus empty state', () {
     const String html = '''
 <table>

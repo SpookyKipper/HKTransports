@@ -416,22 +416,242 @@ class _NoticeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> meta = [
+    final String? detail = notice.detail?.trim();
+    final String meta = <String>[
       if (notice.date != null) notice.date!,
-      if (notice.detail != null) notice.detail!,
-    ];
+      if (detail != null && detail.isNotEmpty) detail,
+    ].join('\n');
     final Uri? url = notice.url;
+    final bool hasDetail = detail != null && detail.isNotEmpty;
     return Card.filled(
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         title: Text(notice.title),
-        subtitle: meta.isEmpty ? null : Text(meta.join(' · ')),
-        trailing: url == null ? null : const Icon(Icons.open_in_new),
-        onTap: url == null
+        subtitle: meta.isEmpty
             ? null
-            : () =>
-                  openNotice(context, url: url.toString(), title: notice.title),
+            : Text(meta, maxLines: 5, overflow: TextOverflow.ellipsis),
+        trailing: url != null
+            ? const Icon(Icons.open_in_new)
+            : hasDetail
+            ? const Icon(Icons.chevron_right)
+            : null,
+        onTap: url != null
+            ? () =>
+                  openNotice(context, url: url.toString(), title: notice.title)
+            : hasDetail
+            ? () => _showNoticeDetails(context, <ProprietaryNotice>[notice])
+            : null,
+      ),
+    );
+  }
+}
+
+void _showNoticeDetails(BuildContext context, List<ProprietaryNotice> notices) {
+  final AppSettings settings = context.read<AppSettings>();
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (BuildContext sheetContext) {
+      final ThemeData theme = Theme.of(sheetContext);
+      final ColorScheme colors = theme.colorScheme;
+      return SizedBox(
+        height: MediaQuery.sizeOf(sheetContext).height * 0.8,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(
+                notices.length == 1
+                    ? notices.single.title
+                    : settings.text('通告詳情', 'Notice details'),
+                style: theme.textTheme.titleLarge,
+              ),
+            ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                itemCount: notices.length,
+                separatorBuilder: (_, _) => const Divider(height: 24),
+                itemBuilder: (BuildContext context, int index) {
+                  final ProprietaryNotice notice = notices[index];
+                  final String? detail = notice.detail?.trim();
+                  final Uri? url = notice.url;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (notices.length > 1) ...[
+                        Text(notice.title, style: theme.textTheme.titleMedium),
+                        if (notice.date != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            notice.date!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                      ] else if (notice.date != null) ...[
+                        Text(
+                          notice.date!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      if (detail != null && detail.isNotEmpty)
+                        SelectableText(
+                          detail,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      if (url != null) ...[
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: M3EButton.icon(
+                            onPressed: () => openNotice(
+                              sheetContext,
+                              url: url.toString(),
+                              title: notice.title,
+                            ),
+                            icon: const Icon(Icons.open_in_new),
+                            label: Text(settings.text('開啟通告', 'Open notice')),
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+class CitybusSpecialNoticeBanner extends StatefulWidget {
+  const CitybusSpecialNoticeBanner({super.key, required this.route});
+
+  final RouteEntry route;
+
+  @override
+  State<CitybusSpecialNoticeBanner> createState() =>
+      _CitybusSpecialNoticeBannerState();
+}
+
+class _CitybusSpecialNoticeBannerState
+    extends State<CitybusSpecialNoticeBanner> {
+  List<ProprietaryNotice>? _notices;
+  String? _loadKey;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final AppSettings settings = context.read<AppSettings>();
+    final bool enabled =
+        widget.route.companies.contains(BusCompany.ctb) &&
+        settings.isProprietaryEnabled(
+          ProprietaryEndpoint.citybusSpecialNotices,
+        );
+    final String key = '${settings.language}|$enabled';
+    if (key == _loadKey) return;
+    _loadKey = key;
+    _notices = enabled ? null : const <ProprietaryNotice>[];
+    if (enabled) _load(settings.language, key);
+  }
+
+  Future<void> _load(String language, String key) async {
+    try {
+      final List<ProprietaryNotice> notices =
+          await const ProprietaryNoticeService().fetchCitybusSpecialNotices(
+            widget.route,
+            zh: language != 'en',
+          );
+      if (!mounted || _loadKey != key) return;
+      setState(() => _notices = notices);
+    } catch (_) {
+      if (!mounted || _loadKey != key) return;
+      setState(() => _notices = const <ProprietaryNotice>[]);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettings settings = context.watch<AppSettings>();
+    final bool enabled =
+        widget.route.companies.contains(BusCompany.ctb) &&
+        settings.isProprietaryEnabled(
+          ProprietaryEndpoint.citybusSpecialNotices,
+        );
+    final List<ProprietaryNotice>? notices = _notices;
+    if (!enabled || notices == null || notices.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colors = theme.colorScheme;
+    final String title = notices.length == 1
+        ? settings.text('城巴特別通告', 'Citybus special notice')
+        : settings.text(
+            '城巴特別通告 (${notices.length})',
+            'Citybus special notices (${notices.length})',
+          );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Material(
+        color: colors.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _showNoticeDetails(context, notices),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.campaign_outlined,
+                  size: 20,
+                  color: colors.onSecondaryContainer,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: colors.onSecondaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        notices.first.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.onSecondaryContainer,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: colors.onSecondaryContainer,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

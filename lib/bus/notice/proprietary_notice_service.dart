@@ -185,6 +185,45 @@ List<ProprietaryNotice> parseCitybusSpecialNoticeHtml(String source) {
   final dom.Document document = html_parser.parse(source);
   final dom.Element? container = document.querySelector('#specialnotelist');
   if (container == null) return const [];
+
+  final List<ProprietaryNotice> structured = [];
+  for (final dom.Element table in container.querySelectorAll('table')) {
+    final List<MapEntry<String, String>> fields = _citybusSpecialFields(table);
+    if (fields.isEmpty) continue;
+    final String route = _fieldValue(
+      fields,
+      (String label) => label.contains('路線') || label.contains('Route'),
+    );
+    final String direction = _fieldValue(
+      fields,
+      (String label) => label.contains('方向') || label.contains('Direction'),
+    );
+    final String title = <String>[
+      if (route.isNotEmpty) route,
+      if (direction.isNotEmpty) direction,
+    ].join(' · ');
+    final List<String> details = [
+      for (final MapEntry<String, String> field in fields)
+        if (!(field.key.contains('路線') ||
+            field.key.contains('Route') ||
+            field.key.contains('方向') ||
+            field.key.contains('Direction')))
+          '${field.key}: ${field.value}',
+    ];
+    Uri? url;
+    for (final dom.Element row in table.querySelectorAll('tr')) {
+      url ??= _citybusLinkFromRow(row);
+    }
+    structured.add(
+      ProprietaryNotice(
+        title: title.isEmpty ? '路線服務狀況' : title,
+        detail: details.isEmpty ? null : details.join('\n'),
+        url: url,
+      ),
+    );
+  }
+  if (structured.isNotEmpty) return structured;
+
   final List<ProprietaryNotice> notices = [];
   for (final dom.Element row in container.querySelectorAll('tr')) {
     final String text = _cleanText(row.text);
@@ -210,6 +249,58 @@ List<ProprietaryNotice> parseCitybusSpecialNoticeHtml(String source) {
     );
   }
   return notices;
+}
+
+List<MapEntry<String, String>> _citybusSpecialFields(dom.Element table) {
+  final List<MapEntry<String, String>> fields = [];
+  String? label;
+  for (final dom.Element row in table.querySelectorAll('tr')) {
+    final List<dom.Element> cells = row.children
+        .where((dom.Element element) => element.localName == 'td')
+        .toList();
+    if (cells.length != 1) continue;
+    final dom.Element cell = cells.single;
+    final String text = _cleanTextWithBreaks(cell);
+    if (text.isEmpty) continue;
+    if (_isCitybusSpecialLabel(cell)) {
+      label = text;
+      continue;
+    }
+    if (label == null) continue;
+    fields.add(MapEntry<String, String>(label, text));
+    label = null;
+  }
+  return fields;
+}
+
+bool _isCitybusSpecialLabel(dom.Element cell) {
+  final String style = cell.attributes['style']?.toLowerCase() ?? '';
+  return style.contains('font-weight:bold') ||
+      style.contains('font-weight: bold') ||
+      cell.querySelector('b, strong') != null;
+}
+
+String _fieldValue(
+  List<MapEntry<String, String>> fields,
+  bool Function(String label) matches,
+) {
+  for (final MapEntry<String, String> field in fields) {
+    if (matches(field.key)) return field.value;
+  }
+  return '';
+}
+
+String _cleanTextWithBreaks(dom.Element element) {
+  final String html = element.innerHtml.replaceAll(
+    RegExp(r'<br\s*/?>', caseSensitive: false),
+    '\n',
+  );
+  final String text = html_parser.parseFragment(html).text ?? '';
+  return text
+      .split('\n')
+      .map(_cleanText)
+      .where((String line) => line.isNotEmpty)
+      .join('\n');
 }
 
 Uri? _citybusLinkFromRow(dom.Element row) {
