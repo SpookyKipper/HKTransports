@@ -262,7 +262,6 @@ class SettingsPage extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: Text(settings.text('關於應用程式', 'About App')),
-            subtitle: Text('$appVersion ($appBuildLabel) [BETA]'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/about'),
           ),

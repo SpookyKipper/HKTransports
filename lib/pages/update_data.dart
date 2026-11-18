@@ -620,7 +620,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      settings.text('九巴/龍運路線資料', 'KMB/LWB route data'),
+                      settings.text('九巴/龍運專有路線資料', 'KMB/LWB proprietory route data'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),
