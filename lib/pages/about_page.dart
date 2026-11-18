@@ -5,6 +5,7 @@ import 'package:hktransports/app/app_update.dart';
 import 'package:hktransports/app/app_version.dart';
 import 'package:hktransports/app/page_bar.dart';
 import 'package:hktransports/bus/state/app_settings.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 class AboutPage extends StatefulWidget {
@@ -106,7 +107,7 @@ class _AboutPageState extends State<AboutPage> {
             ),
           ),
           const SizedBox(height: 28),
-          FilledButton.icon(
+          M3EButton.filled(
             onPressed: _checking ? null : _checkForUpdate,
             icon: _checking
                 ? const SizedBox(
@@ -118,7 +119,7 @@ class _AboutPageState extends State<AboutPage> {
             label: Text(updateLabel),
           ),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
+          M3EButton.outlined(
             onPressed: _copyVersionInfo,
             icon: const Icon(Icons.copy_all_outlined),
             label: Text(settings.text('複製版本資訊', 'Copy version info')),
