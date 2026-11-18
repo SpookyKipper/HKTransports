@@ -12,15 +12,13 @@ class AppConfigGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (config.isCritical) return CriticalUpdateScreen(config: config);
+    if (config.isCritical) return const CriticalUpdateScreen();
     return child;
   }
 }
 
 class CriticalUpdateScreen extends StatelessWidget {
-  const CriticalUpdateScreen({super.key, required this.config});
-
-  final AppConfigController config;
+  const CriticalUpdateScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +61,7 @@ class CriticalUpdateScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 28),
                 FilledButton.icon(
-                  onPressed: () => startAppUpdate(context, config),
+                  onPressed: openAppRepositoryPage,
                   icon: const Icon(Icons.open_in_new_rounded),
                   label: Text(settings.text('更新', 'Update')),
                 ),
