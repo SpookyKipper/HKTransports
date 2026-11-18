@@ -26,6 +26,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
   int? _kmbBytes;
   DateTime? _kmbUpdatedAt;
   int? _kmbRouteDataBytes;
+  String? _kmbRouteDataVersion;
   DateTime? _kmbRouteDataUpdatedAt;
   bool _refreshingKmbRouteData = false;
   double? _kmbRouteDataProgress;
@@ -50,6 +51,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     final DateTime? kmbUpdatedAt = await bbi.storedUpdatedAt();
     final KmbRouteDataService kmbRouteData = KmbRouteDataService.instance;
     final int kmbRouteDataBytes = await kmbRouteData.storedBytes();
+    final String? kmbRouteDataVersion = kmbRouteData.storedLastUpdate;
     final DateTime? kmbRouteDataUpdatedAt = kmbRouteData.storedUpdatedAt;
     final CitybusRoutelistService citybus = CitybusRoutelistService.instance;
     final int citybusBytes = await citybus.storedBytes();
@@ -60,6 +62,7 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
       _kmbBytes = kmbBytes;
       _kmbUpdatedAt = kmbUpdatedAt;
       _kmbRouteDataBytes = kmbRouteDataBytes;
+      _kmbRouteDataVersion = kmbRouteDataVersion;
       _kmbRouteDataUpdatedAt = kmbRouteDataUpdatedAt;
       _citybusBytes = citybusBytes;
       _citybusUpdatedAt = citybusUpdatedAt;
@@ -408,6 +411,38 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
     );
   }
 
+  Widget _versionText(
+    BuildContext context,
+    AppSettings settings,
+    String? version,
+  ) {
+    final String value = version?.trim() ?? '';
+    if (value.isEmpty) return const SizedBox.shrink();
+    final ThemeData theme = Theme.of(context);
+    return Text(
+      '${settings.text('資料版本', 'Data version')}: $value',
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
+  Widget _lastUpdatedText(
+    BuildContext context,
+    AppSettings settings,
+    DateTime? updatedAt,
+  ) {
+    if (updatedAt == null) return const SizedBox.shrink();
+    final ThemeData theme = Theme.of(context);
+    return Text(
+      '${settings.text('上次更新', 'Last updated')}: '
+      '${DateFormat('yyyy-MM-dd HH:mm').format(updatedAt)}',
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
   Widget _progress(
     BuildContext context,
     AppSettings settings, {
@@ -505,11 +540,8 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                               '${repository.database!.stopCount} stops'
                         : settings.text('尚未下載', 'Not downloaded'),
                   ),
-                  if (repository.lastUpdate != null)
-                    Text(
-                      '${settings.text('上次更新', 'Last update')}: '
-                      '${DateFormat('yyyy-MM-dd HH:mm').format(repository.lastUpdate!)}',
-                    ),
+                  _versionText(context, settings, repository.md5),
+                  _lastUpdatedText(context, settings, repository.lastUpdate),
                   _sizeText(context, settings, _routeBytes),
                   if (routeBusy) _progress(context, settings, route: true),
                   if (repository.error != null) ...[
@@ -568,12 +600,8 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
+                    _lastUpdatedText(context, settings, _kmbUpdatedAt),
                     _sizeText(context, settings, _kmbBytes, optional: true),
-                    if (_kmbUpdatedAt != null)
-                      Text(
-                        '${settings.text('上次更新', 'Last updated')}: '
-                        '${DateFormat('yyyy-MM-dd HH:mm').format(_kmbUpdatedAt!)}',
-                      ),
                     if (_refreshingBbi)
                       _progress(context, settings, route: false),
                     const SizedBox(height: 12),
@@ -620,7 +648,10 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      settings.text('九巴/龍運專有路線資料', 'KMB/LWB proprietory route data'),
+                      settings.text(
+                        '九巴/龍運專有路線資料',
+                        'KMB/LWB proprietory route data',
+                      ),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),
@@ -634,17 +665,14 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    _versionText(context, settings, _kmbRouteDataVersion),
+                    _lastUpdatedText(context, settings, _kmbRouteDataUpdatedAt),
                     _sizeText(
                       context,
                       settings,
                       _kmbRouteDataBytes,
                       optional: true,
                     ),
-                    if (_kmbRouteDataUpdatedAt != null)
-                      Text(
-                        '${settings.text('上次更新', 'Last updated')}: '
-                        '${DateFormat('yyyy-MM-dd HH:mm').format(_kmbRouteDataUpdatedAt!)}',
-                      ),
                     if (_refreshingKmbRouteData) ...[
                       const SizedBox(height: 12),
                       SmoothWavyProgressIndicator(value: _kmbRouteDataProgress),
@@ -721,12 +749,8 @@ class _UpdateDataPageRouteState extends State<UpdateDataPageRoute> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    _lastUpdatedText(context, settings, _citybusUpdatedAt),
                     _sizeText(context, settings, _citybusBytes, optional: true),
-                    if (_citybusUpdatedAt != null)
-                      Text(
-                        '${settings.text('上次更新', 'Last updated')}: '
-                        '${DateFormat('yyyy-MM-dd HH:mm').format(_citybusUpdatedAt!)}',
-                      ),
                     if (_refreshingCitybus) ...[
                       const SizedBox(height: 12),
                       SmoothWavyProgressIndicator(value: _citybusProgress),
