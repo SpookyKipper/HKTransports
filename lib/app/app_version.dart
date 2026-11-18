@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 const String appVersion = String.fromEnvironment(
   'APP_VERSION',
   defaultValue: 'dev',
@@ -24,3 +26,27 @@ String get appFlavorLabel {
       return 'Debug';
   }
 }
+
+const String _defaultPackageName = 'com.spookysrv.hktransports';
+
+String get appPackageName {
+  final String base = String.fromEnvironment(
+    'APP_PACKAGE_NAME',
+    defaultValue: _defaultPackageName,
+  );
+  return kDebugMode ? '$base.debug' : base;
+}
+
+String get appBuildType {
+  if (kReleaseMode) return 'release';
+  if (kDebugMode) return 'debug';
+  return 'profile';
+}
+
+String get appVersionInfoText => <String>[
+  'Package: $appPackageName',
+  'Version name: $appVersion',
+  'Version code: $appBuildLabel',
+  'Flavor: $appFlavor',
+  'Build: $appBuildType',
+].join('\n');

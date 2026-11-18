@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hktransports/app/app_config.dart';
 import 'package:hktransports/app/app_update.dart';
 import 'package:hktransports/app/app_version.dart';
@@ -33,6 +34,17 @@ class _AboutPageState extends State<AboutPage> {
         content: Text(
           settings.text('你已使用最新版本。', 'You are on the latest version.'),
         ),
+      ),
+    );
+  }
+
+  Future<void> _copyVersionInfo() async {
+    await Clipboard.setData(ClipboardData(text: appVersionInfoText));
+    if (!mounted) return;
+    final AppSettings settings = context.read<AppSettings>();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(settings.text('版本資訊已複製。', 'Version info copied.')),
       ),
     );
   }
@@ -104,6 +116,12 @@ class _AboutPageState extends State<AboutPage> {
                   )
                 : const Icon(Icons.system_update_alt_rounded),
             label: Text(updateLabel),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _copyVersionInfo,
+            icon: const Icon(Icons.copy_all_outlined),
+            label: Text(settings.text('複製版本資訊', 'Copy version info')),
           ),
         ],
       ),
