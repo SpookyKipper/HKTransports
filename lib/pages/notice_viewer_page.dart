@@ -56,9 +56,7 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
     }
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(
-        _isCitybusSpecial ? Colors.transparent : Colors.white,
-      )
+      ..setBackgroundColor(Colors.white)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (_) {
@@ -75,7 +73,7 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
                 !isNlbNews || (finished != null && isNlbNewsUri(finished));
             if (!targetLoaded) return;
             await _applyNlbNoticeStyles();
-            await _applyCitybusSpecialStyles();
+            await _removeCitybusSpecialCloseControl();
             if (!mounted) return;
             setState(() => _loading = false);
           },
@@ -134,25 +132,21 @@ class _NoticeViewerPageState extends State<NoticeViewerPage> {
   Widget build(BuildContext context) {
     final AppSettings settings = context.watch<AppSettings>();
     final String title = settings.text('通告', 'Notice');
-    final ColorScheme scheme = _isCitybusSpecial
-        ? Theme.of(context).colorScheme
-        : (AppColorSchemes.lightOf(context) ?? fallbackLightScheme());
-    final bool dark = scheme.brightness == Brightness.dark;
+    final ColorScheme lightScheme =
+        AppColorSchemes.lightOf(context) ?? fallbackLightScheme();
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
-        statusBarBrightness: dark ? Brightness.dark : Brightness.light,
-        systemNavigationBarColor: scheme.surface,
-        systemNavigationBarIconBrightness: dark
-            ? Brightness.light
-            : Brightness.dark,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: lightScheme.surface,
+        systemNavigationBarIconBrightness: Brightness.dark,
         systemNavigationBarDividerColor: Colors.transparent,
       ),
       child: M3EScope(
-        scheme: scheme,
+        scheme: lightScheme,
         child: Theme(
-          data: buildAppTheme(scheme, settings.transitionStyle),
+          data: buildAppTheme(lightScheme, settings.transitionStyle),
           child: Builder(
             builder: (BuildContext context) {
               return Scaffold(
@@ -271,14 +265,12 @@ location.replace(${jsonEncode(target)});
     }
   }
 
-  Future<void> _applyCitybusSpecialStyles() async {
+  Future<void> _removeCitybusSpecialCloseControl() async {
     if (!_isCitybusSpecial) return;
     final WebViewController? controller = _webViewController;
     if (controller == null) return;
     try {
-      await controller.runJavaScript(
-        _citybusSpecialStyleScript(Theme.of(context).colorScheme),
-      );
+      await controller.runJavaScript(_citybusSpecialCloseScript);
     } catch (_) {
       // Leave the page usable even if the style injection fails.
     }
@@ -345,11 +337,7 @@ class _ViewerCredit extends StatelessWidget {
   }
 }
 
-String _citybusSpecialStyleScript(ColorScheme colors) {
-  final String text = _cssColor(colors.onSurface);
-  final String primary = _cssColor(colors.primary);
-  final String outline = _cssColor(colors.outlineVariant);
-  return '''
+const String _citybusSpecialCloseScript = r'''
 (() => {
   let style = document.getElementById('hktransports-citybus-special-style');
   if (!style) {
@@ -358,60 +346,14 @@ String _citybusSpecialStyleScript(ColorScheme colors) {
     document.head.appendChild(style);
   }
   style.textContent = `
-    html, body {
-      background: transparent !important;
-      color: $text !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 15px;
-      line-height: 1.45;
-      margin: 0;
-      padding: 16px;
-    }
-    #specialnotelist {
-      background: transparent !important;
-      color: $text !important;
-      height: auto !important;
-      overflow: visible !important;
-    }
-    #specialnotelist table {
-      width: 100% !important;
-      border-color: $outline !important;
-      border-collapse: collapse !important;
-    }
-    #specialnotelist td {
-      color: $text !important;
-      border-color: $outline !important;
-      padding: 8px 0 !important;
-    }
-    #specialnotelist td[style*="font-weight:bold"],
-    #specialnotelist td[style*="font-weight: bold"] {
-      color: $primary !important;
-      font-weight: 600 !important;
-      padding-top: 16px !important;
-    }
-    #specialnotelist td[style*="background-color"] {
-      background: transparent !important;
-    }
-    #specialnotelist td[style*="border-bottom"] {
-      border-bottom: 1px solid $outline !important;
-    }
     #specialnotelist img[src*="close"],
     #specialnotelist img[title="關閉"],
     #specialnotelist [onclick*="hidespecialNote"] {
       display: none !important;
     }
-    #specialnotelist iframe {
-      display: none !important;
-    }
   `;
 })();
 ''';
-}
-
-String _cssColor(Color color) {
-  final int value = color.toARGB32() & 0xFFFFFF;
-  return '#${value.toRadixString(16).padLeft(6, '0')}';
-}
 
 const String _nlbNoticeStyleScript = r'''
 (() => {
