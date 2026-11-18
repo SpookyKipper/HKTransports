@@ -23,6 +23,7 @@ import 'package:hktransports/bus/ui/app_config_dialogs.dart';
 import 'package:hktransports/bus/ui/pinned_stops_bar.dart';
 import 'package:hktransports/location/location_controller.dart';
 import 'package:hktransports/objectBox/store.dart';
+import 'package:hktransports/pages/about_page.dart';
 import 'package:hktransports/pages/credits_page.dart';
 import 'package:hktransports/pages/favorite_groups_page.dart';
 import 'package:hktransports/pages/home.dart';
@@ -152,6 +153,10 @@ final GoRouter _router = GoRouter(
           ),
         );
       },
+    ),
+    GoRoute(
+      path: '/about',
+      pageBuilder: (context, state) => _page(context, state, const AboutPage()),
     ),
     GoRoute(
       path: '/credits',

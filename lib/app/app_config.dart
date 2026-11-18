@@ -240,6 +240,8 @@ class AppConfigController {
     return _loadFuture ??= _load();
   }
 
+  Future<void> refresh() => _load();
+
   Future<void> _load() async {
     try {
       _currentVersionCode = await _versionCodeLoader();

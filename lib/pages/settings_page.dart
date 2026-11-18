@@ -260,10 +260,11 @@ class SettingsPage extends StatelessWidget {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.badge_outlined),
-            title: Text(
-              '${settings.text('版本', 'Version')} $appVersion [BETA]',
-            ),
+            leading: const Icon(Icons.info_outline),
+            title: Text(settings.text('關於應用程式', 'About App')),
+            subtitle: Text('$appVersion ($appBuildLabel) [BETA]'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/about'),
           ),
         ],
       ),
