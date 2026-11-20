@@ -13,3 +13,4 @@ There are several ways to report a vulnerability for HKTransports:
 2. Via [GitHub Private Vulnerability Reporting](https://github.com/SpookyKipper/HKTransports/security/advisories/new)
 3. Email security@spooky.hk OR security@spookysrv.com with all the details
    
+Please do NOT create GitHub issues for security vulnerabilities.
